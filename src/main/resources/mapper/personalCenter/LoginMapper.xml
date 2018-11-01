@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jgzy.core.personalCenter.mapper.LoginMapper">
+
+    <select id="selectUserCountByPwd" resultType="com.jgzy.entity.po.UserInfo">
+        SELECT
+            userInfo.id,
+            userInfo.token
+        FROM
+            user_info userInfo
+        <where>
+            userInfo.account_number = #{phoneNum}
+            AND userInfo.pass_word = #{password}
+        </where>
+    </select>
+
+    <update id="updateTokenByPwd">
+        UPDATE user_info
+        <set>
+            token = #{token}
+        </set>
+        <where>
+            account_number = #{phoneNum}
+            AND pass_word = #{password}
+        </where>
+    </update>
+</mapper>

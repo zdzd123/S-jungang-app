@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jgzy.core.personalCenter.mapper.UserActivityCouponMapper">
+    <select id="selectUserActivityCoupon" resultType="com.jgzy.entity.po.UserActivityCoupon">
+        SELECT
+            id,
+            shop_info_id,
+            amount,
+            meet_amount,
+            coupon_state,
+            coupon_user_info_id,
+            valid_date_begin,
+            valid_date_end,
+            add_time,
+            coupon_note
+        FROM
+            user_activity_coupon
+        <where>
+            coupon_user_info_id = #{id}
+            <choose>
+                <when test="type == 1">
+                    AND coupon_state = 1
+                    AND valid_date_end <![CDATA[ > ]]> #{now}
+                </when>
+                <when test="type == 2">
+                    AND coupon_state = 2
+                </when>
+                <when test="type == 3">
+                    AND coupon_state = 1
+                    AND valid_date_end <![CDATA[ < ]]> #{now}
+                </when>
+            </choose>
+        </where>
+        ORDER BY id DESC
+    </select>
+</mapper>

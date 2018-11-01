@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jgzy.core.shopOrder.mapper.ShopStockMapper">
+    <select id="selectMyStock" resultType="com.jgzy.core.shopOrder.vo.ShopStockVo">
+        SELECT
+            stock.id,
+            stock.count,
+            goods.shop_name,
+            goods.shop_describe,
+            goods.menber_price,
+            goods.stock
+        FROM
+            shop_stock stock
+        JOIN shop_goods goods ON stock.shop_goods_id = goods.id
+        <where>
+            <if test="platformGoodsCategoryId!=null">
+                goods.platform_goods_category_id = #{platformGoodsCategoryId}
+            </if>
+            <if test="shopName!=null">
+                <bind name="myShopName" value="'%' + shopName + '%'"></bind>
+                AND goods.shop_name LIKE #{myShopName}
+            </if>
+        </where>
+
+    </select>
+</mapper>

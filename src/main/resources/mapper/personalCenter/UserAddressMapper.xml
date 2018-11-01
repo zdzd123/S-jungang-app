@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jgzy.core.personalCenter.mapper.UserAddressMapper">
+    <select id="selectProvince" resultType="com.jgzy.entity.po.ProvinceInfo">
+        SELECT
+            id,
+            NAME
+        FROM
+            province_info
+        <where>
+            <if test="id != null">
+                id = #{id}
+            </if>
+        </where>
+    </select>
+    <select id="selectCity" resultType="com.jgzy.entity.po.CityInfo">
+        SELECT
+            id,
+            NAME,
+            province_id
+        FROM
+            city_info
+        <where>
+            <if test="id != null">
+                id = #{id}
+            </if>
+            <if test="provinceId != null">
+                AND province_id = #{provinceId}
+            </if>
+        </where>
+    </select>
+    <select id="selectArea" resultType="com.jgzy.entity.po.AreaInfo">
+        SELECT
+            id,
+            NAME,
+            city_id
+        FROM
+            area_info
+        <where>
+            <if test="id != null">
+                id = #{id}
+            </if>
+            <if test="cityId != null">
+                AND city_id = #{cityId}
+            </if>
+        </where>
+    </select>
+    <select id="selectUserAddress" resultType="com.jgzy.entity.po.UserAddress">
+        SELECT
+            id,
+            NAME,
+            phone,
+            zip_code,
+            province_id,
+            city_id,
+            area_id,
+            address,
+            create_user,
+            is_default,
+            add_time
+        FROM
+            user_address
+        <where>
+            create_user = #{id}
+        </where>
+    </select>
+
+    <select id="selectDetailById" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
+        SELECT
+            id,
+            `name`,
+            phone,
+            zip_code zipCode,
+            (select `name` from province_info where id = address.province_id) province,
+            (select `name` from city_info where id = address.city_id) city,
+            (select `name` from area_info where id = address.area_id) area,
+            address
+        FROM
+          user_address address
+        <where>
+            id = #{userAddressId}
+        </where>
+    </select>
+</mapper>

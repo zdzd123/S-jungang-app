@@ -1,0 +1,23 @@
+脚本
+
+use test
+
+db.createCollection("customer")
+
+db.customer.insert({
+   id: 100,
+   firstName: 'zhang',
+   lastName: 'san',
+})
+
+db.customer.insert({
+   id: 101,
+   firstName: 'wang',
+   lastName: 'wu',
+})
+
+db.customer.insert({
+   id: 102,
+   firstName: 'li',
+   lastName: 'si',
+})

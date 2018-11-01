@@ -1,0 +1,1226 @@
+									项目：直播电商+送哪儿
+创建时间：2017-04-10 
+版本：v1
+更新日志：
+	4.12（ldl）： 新增：
+					1.[直播]礼物
+					2.[直播]订阅
+					3.[直播]邀约
+					4.[直播]打赏
+					5.[直播]派发红包
+					6.[直播]收到红包
+					7.[视界]课堂
+					8.分销佣金设置
+					9.分销团队
+				   10.分销课堂
+				   11.分销素材
+				   12.视界课堂
+                   13.供应商直播
+                   14.[子]参与直播商品
+                   15.[子]直播点赞
+                   16.直播公告
+                   17.直播反馈
+                   18.直播举报
+                   19.直播评分
+                   20.直播评论
+                   21.供应商视频
+                   22.[子]参与视频商品
+				   
+	4.13（）    新增：
+				1.供应商信息
+				
+				修改：
+				1.供应商内商品分类
+				
+	4.14        修改：
+				1.平台优惠卷分类 排序字段改为 sort
+				2.平台商品规格 排序字段改为 sort
+				3.平台供应商行业 排序字段改为 sort
+				4.平台供应商分类 排序字段改为 sort
+				5.平台商品规格值 排序字段改为 sort
+				
+	4.17        修改:
+				1.分销课堂表 摘要字段由‘abstract’ 改为‘tabloid’
+				2.[分销]分销素材表  删除图片字段
+				3.[分销]分销素材表  修改附件字段类型为text
+				4.资讯分类 class_layer 字段类型又String改为int
+				
+	4.18        新增：
+				1.广告信息表  新增“图片值类型”字段
+				2.平台打印模板表 新增,模板代码,模板图片，模板类型 字段
+				3.新增 [子]平台打印模板项  表
+				4.新增 平台积分设置 表
+				5.新增 平台物流服务商
+				6.新增 平台商品品牌
+				7.新增 订单打印模板
+				8.新增 [子]订单打印模板项
+						
+	4.19        修改  商品表
+	4.20 	新增 ：
+				1.用户优惠券表中增加持有人字段 coupon_user_info_id
+				2.用户优惠券表中增加 状态字段 coupon_state
+	4.22        新增:
+				1.用户操作日志表	
+				2.shop_goods_order 新加字段  
+				->                  remarks  (      varchar )  = 备注		
+
+          /--------------------------------------------------------------------------
+									用户模块
+		  /--------------------------------------------------------------------------
+          /                 user_level : 等级
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->               level_name  (      varchar )  = 等级名称
+          ->                     sort  (          int )  = 排序
+		  ->            	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /                   user_tag : 标签
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                 tag_name  (      varchar )  = 标签名称
+          ->                     sort  (          int )  = 排序
+		  ->            	 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /                  user_info : 用户信息
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->           account_number  (      varchar )  = 账号
+		  ->           		pass_word  (      varchar )  = 密码
+		  ->            user_level_id  (          int )  = 会员等级id
+		  ->              user_tag_id  (      varchar )  = 会员标签(多个标签以,隔开)
+		  -> 	             nickname  (      varchar )  = 昵称
+		  -> 		    head_portrait  (      varchar )  = 头像
+		  ->                    point  (          int )  = 积分
+		  -> 				 balance1  (      decimal )  = 余额1
+		  ->  				 balance2  (      decimal )  = 余额2
+		  ->                    phone  (      varchar )  = 手机号
+		  ->                    email  (      varchar )  = 邮箱
+		  ->            register_time  (    timestamp )  = 注册时间
+		  ->             valid_status  (          int )  = 状态(有效=1|锁定=2)
+		  /--------------------------------------------------------------------------
+		  /                  user_log : 用户日志
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->           		 platform  (          int )  = 平台（IOS=1|Android=2）
+		  ->           operation_time  (    timestamp )  = 操作时间
+		  ->              login_state  (          int )  = 登录状态（登出=1|登入=2）
+		  ->				  user_id  (          int )  = 操作人id
+		  ->	    operation_content  (      varchar )  = 日志内容（纯文本）
+          /--------------------------------------------------------------------------
+		  /            user_goods_cart : 购物车
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                 goods_id  (          int )  = 商品信息id
+          ->            goods_spec_id  (          int )  = 商品规格id
+		  ->	    goods_cart_counts  (          int )  = 购物数量	  
+		  ->        cart_user_info_id  (          int )  = 购物人id
+		  ->            	 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /       user_activity_coupon : 优惠券
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->             shop_info_id  (          int )  = 供应商信息id
+          ->                   amount  (      decimal )  = 面额
+		  ->			  meet_amount  (      decimal )  = 单笔订单满(元)使用	  
+		  ->			 coupon_state  (          int )  = 状态(未使用=1|已使用=2)
+		  ->	  coupon_user_info_id  (          int )  = 持有人(用户id)
+		  ->         valid_date_begin  (    timestamp )  = 有效期开始
+		  ->           valid_date_end  (    timestamp )  = 有效期结束
+		  ->            	 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /       user_goods_footprint : 足迹
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                 goods_id  (          int )  = 商品信息id
+          ->   footprint_user_info_id  (          int )  = 足迹人(用户id)
+		  ->            	 add_time  (    timestamp )  = 添加时间
+		  ->                 user_del  (          int )  = 1-未删除 2-删除
+		  /--------------------------------------------------------------------------
+		  /       		  user_address : 收获地址
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                     name  (      varchar )  = 收货人姓名
+		  ->                    phone  (      varchar )  = 联系电话
+		  ->              province_id  (          int )  = 省id
+		  ->                  city_id  (          int )  = 市id
+		  ->                  area_id  (          int )  = 区id
+          ->            	  address  (      varchar )  = 详细地址
+		  ->              create_user  (          int )  = 创建人
+		  ->            	is_default (          int )  = 默认地址(否=1|是=2)
+		  ->            	 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /         user_goods_collect : 商品收藏
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                 goods_id  (          int )  = 商品信息id
+          ->     collect_user_info_id  (          int )  = 收藏人(用户id)
+		  ->             collect_time  (    timestamp )  = 收藏时间
+		  /--------------------------------------------------------------------------
+		  /          user_shop_collect : 供应商收藏
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                  shop_id  (          int )  = 供应商信息id
+          ->     collect_user_info_id  (          int )  = 收藏人(用户id)
+		  ->             collect_time  (    timestamp )  = 收藏时间
+		  /--------------------------------------------------------------------------
+		  /          user_live_collect : 直播收藏(关注)
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                  live_id  (          int )  = 供应商直播id
+          ->     collect_user_info_id  (          int )  = 收藏人(用户id)
+		  ->             collect_time  (    timestamp )  = 收藏时间
+		  /--------------------------------------------------------------------------
+		  /         user_video_collect : 视频收藏
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->            shop_video_id  (          int )  = 供应商视频id
+          ->     collect_user_info_id  (          int )  = 收藏人(用户id)
+		  ->             collect_time  (    timestamp )  = 收藏时间
+		  /--------------------------------------------------------------------------
+		  /          user_news_collect : 资讯收藏
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                   new_id  (          int )  = 资讯信息id
+          ->     collect_user_info_id  (          int )  = 收藏人(用户id)
+		  ->             collect_time  (    timestamp )  = 收藏时间
+		  /--------------------------------------------------------------------------
+		  /       			user_point : 积分明细
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->         point_trade_time  (    timestamp )  = 交易时间
+          ->               trade_type  (          int )  = 交易方式(收入=1|支出=2)
+		  ->             	 point_up  (          int )  = 增加
+		  ->               point_down  (          int )  = 减少
+		  ->              description  (         text )  = 描述
+		  ->            trade_user_id  (    timestamp )  = 交易人(用户id)
+		  /--------------------------------------------------------------------------
+		  /       	    user_bank_card : 银行卡
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->             opening_bank  (      varchar )  = 开户行(中国银行|中国建设银行|中国农业银行...)
+          ->                card_name  (      varchar )  = 户名
+		  ->              	  card_no  (      varchar )  = 账户号
+		  ->              create_user  (          int )  = 银行卡创建人(用户id)
+		  ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /       			 user_cash : 提现
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->              from_source  (      varchar )  = 提现来源1.微直播电商 <视商=1|视界=2>2.送哪儿 <默认=1>
+          ->              cash_amount  (      decimal )  = 提现金额(元)
+		  ->             opening_bank  (      varchar )  = 银行开户行
+		  ->                card_name  (      varchar )  = 银行户名
+		  ->                  card_no  (      varchar )  = 银行账户号
+		  ->         withdraw_user_id  (           id )  = 提现人(用户id)
+		  ->               apply_time  (    timestamp )  = 申请时间
+		  ->              manage_time  (    timestamp )  = 处理时间
+		  ->               remit_time  (    timestamp )  = 打款时间
+		  ->                   status  (          int )  = 状态(待处理=1|处理中=2|已打款=3)
+		  /--------------------------------------------------------------------------
+		  CREATE TABLE `user_fund` (
+		  `id` int(11) NOT NULL COMMENT 'id',
+		  `trade_time` timestamp NULL DEFAULT NULL COMMENT '交易时间',
+		  `trade_type` int(11) DEFAULT NULL COMMENT '交易方式(收入=1|支出=2)',
+		  `increase_money` decimal(11,2) DEFAULT NULL COMMENT '增加',
+		  `decrease_money` decimal(11,2) DEFAULT NULL COMMENT '减少',
+		  `trade_describe` varchar(255) DEFAULT NULL COMMENT '描述',
+		  `trade_user_id` int(11) DEFAULT NULL COMMENT '交易人(用户id)',
+		  `bussiness_type` int(11) DEFAULT NULL COMMENT '流水交易科目(1-消费，2-转入，3-转出，4-收益，5-退款，6-提现) 换货（超额消费 补差价 退款）',
+		  `account_type` int(11) DEFAULT NULL COMMENT 'int类型     账户  (1 积分point 2 余额 blance1  3 冻结户头 balance4)',
+		  `pay_type` int(11) DEFAULT NULL COMMENT '支付方式',
+		  `balance` decimal(11,2) DEFAULT NULL COMMENT '对应账户余额',
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+		  /      user_goods_commission : [商品]佣金明细
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->               trade_time  (    timestamp )  = 交易时间
+          ->               trade_type  (          int )  = 交易方式(收入=1|支出=2)
+		  ->      goods_commission_up  (          int )  = 增加
+		  ->    goods_commission_down  (          int )  = 减少
+		  ->            trade_user_id  (          int )  = 交易人(用户id)
+		  /--------------------------------------------------------------------------
+		  /    user_eyeshot_commission : [视界]佣金明细
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->               trade_time  (    timestamp )  = 交易时间
+          ->               trade_type  (          int )  = 交易方式(收入=1|支出=2)
+		  ->    eyeshot_commission_up  (      varchar )  = 增加
+		  ->  eyeshot_commission_down  (      varchar )  = 减少
+		  ->            trade_user_id  (    timestamp )  = 交易人(用户id)
+		  /--------------------------------------------------------------------------
+		  /             user_gift_info : [直播]礼物                  ---------4.12新加
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->               	 order_no  (      varchar )  = 订单编号
+          ->    platform_gift_info_id  (          int )  = 平台礼物信息id
+		  ->    	  user_gift_count  (          int )  = 礼物数量
+		  ->             give_user_id  (          int )  = 赠送人(用户id)
+		  ->         be_given_user_id  (          int )  = 被赠送人(用户id)
+          ->          mode_of_payment  (          int )  = 支付方式(现金=1|余额1=2|余额2=3)
+          ->      platform_gift_state  (          int )  = 状态(待支付=1|已支付=2)
+		  ->    	 	  giving time  (    timestamp )  = 赠送时间
+		  ->          time_of_payment  (    timestamp )  = 支付时间
+		  /--------------------------------------------------------------------------
+		  /        user_live_subscribe : [直播]订阅               ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->             shop_info_id  (          int )  = 供应商信息id
+          ->                  user_id  (          int )  = 订阅人(用户id)
+		  ->    	time_of_subscribe  (    timestamp )  = 订阅时间		  
+		  /--------------------------------------------------------------------------
+		  /           user_live_invite : [直播]邀约             ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                  live_id  (          int )  = 供应商直播id
+          ->           invite_user_id  (          int )  = 邀约人(用户id)
+		  ->        be_invite_user_id  (          int )  = 被邀约人(用户id)
+		  ->    	    time_of_invite (    timestamp )  = 邀约时间	  
+		  /--------------------------------------------------------------------------
+		  /              user_fee_info : [直播]打赏             ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                 order_no  (      varchar )  = 订单编号
+          ->           balance_of_fee  (      decimal )  = 打赏面额
+		  ->   		      fee_user_id  (          int )  = 打赏人(用户id)
+		  ->           be_fee_user_id  (          int )  = 被打赏人(用户id)
+          ->		  mode_of_payment  (          int )  = 支付方式（1支付宝2微信）
+          ->                fee_state  (          int )  = 状态(待支付=1|已支付=2)
+          ->              time_of_fee  (    timestamp )  = 打赏时间
+		  ->   		  time_of_payment  (    timestamp )  = 支付时间
+		  /--------------------------------------------------------------------------
+		  /        user_redpacket_send : [直播]派发红包             ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->             redpacket_no  (      varchar )  = 红包编号
+          ->               appoint_id  (          int )  = 指定领取人(默认0)
+		  ->   		   redpacket_type  (          int )  = 红包类型(现金=1|余额1=2|余额2=3)
+		  ->          redpacket_count  (    	  int )  = 红包个数
+          ->  redpacket_total_balance  (      decimal )  = 总金额(元)
+          ->           payout_user_id  (          int )  = 派发人(用户id)
+          ->          redpacket_state  (          int )  = 状态(待支付=1|已支付=2)
+		  ->             pay_out_time  (    timestamp )  = 派发时间
+		  ->          time_of_payment  (    timestamp )  = 支付时间
+		  /--------------------------------------------------------------------------
+		  /     user_redpacket_receive : [直播]收到红包           ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->   user_redpacket_send_id  (          int )  = 红包id
+          ->        redpacket_balance  (      decimal )  = 红包金额(元)
+		  ->   		          user_id  (          int )  = 领取人(用户id)
+		  ->              time_of_get  (    timestamp )  = 领取时间
+		  /--------------------------------------------------------------------------
+		  /             user_classroom : [视界]课堂             ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                 order_no  (      varchar )  = 订单编号
+          -> platform_live_category_id (          int )  = 平台直播分类id
+		  ->   		          user_id  (          int )  = 学员(用户id)
+		  ->              pay_of_state (    	  int )  = 状态(待支付=1|已支付=2)
+          ->          time_of_orderbuy (    timestamp )  = 购买时间
+          ->          time_of_payment  (    timestamp )  = 支付时间	  
+		  /--------------------------------------------------------------------------
+									分销模块
+		  /--------------------------------------------------------------------------
+		  /distribution_commission_set : [分销]分销佣金设置             ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->         one_level_agents  (      decimal )  = 一级代理(%)
+          ->         two_level_agents  (      decimal )  = 二级代理(%)
+		  ->   	   three_level_agents  (      decimal )  = 三级代理(%)
+		  /--------------------------------------------------------------------------
+		  /     distribution_user_team : [分销]分销团队             ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->           member_user_id  (          int )  = 团队成员(用户id)
+          ->      team_member_user_id  (          int )  = 团队创建人(用户id)
+          ->                  add_time (    timestamp )  = 添加时间 
+		  /--------------------------------------------------------------------------
+		  /     distribution_classroom : [分销]分销课堂             ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                    title  (      varchar )  = 标题
+          ->                  tabloid  (      varchar )  = 摘要
+          ->                      pic  (         text )  = 图片
+          ->                  content  (         text )  = 内容
+          ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /       distribution_gallery : [分销]分销素材             ---------4.12新加
+          /--------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                    title  (      varchar )  = 标题
+          ->                 accessory (         text )  = 附件
+          ->                  add_time (    timestamp )  = 发布时间
+		  /--------------------------------------------------------------------------
+		  /        shop_goods_category : 供应商内商品分类                 -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                       id  (          int )  = id
+		  ->             shop_info_id  (          int )  = 供应商信息id
+		  ->                parent_id  (          int )  = 上级分类id                      ----------4.13修改
+		  ->                     name  (      varchar )  = 名称                             -----------4.13修改
+		  ->        	   class_list  (      varchar )  = 菜单ID列表(逗号分隔开)          ----------4.13新加
+		  ->              class_layer  (          int )  = 导航深度                       ----------4.13新加
+		  ->                  sort_id  (          int )  = 排序                            -----------4.13修改
+		  ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /                  shop_info : 供应商信息
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->           account_number  (      varchar )  = 账号
+		  ->           		pass_word  (      varchar )  = 密码
+		  ->             company_name  (      varchar )  = 公司名字
+		  -> latform_shop_category_id  (          int )  = 供应商分类id
+		  -> latform_shop_business_id  (          int )  = 供应商行业id
+		  ->                 products  (      varchar )  = 主营产品
+		  -> 		      province_id  (          int )  = 省id
+		  -> 		 	      city_id  (          int )  = 市id
+		  -> 		          area_id  (          int )  = 区id
+		  ->           detail_address  (      varchar )  = 详细地址 
+		  ->     company_introduction  (      varchar )  = 公司介绍
+		  ->                  linkman  (      varchar )  = 联系人
+		  ->                    email  (      varchar )  = 邮箱
+		  ->           contact_number  (      varchar )  = 联系电话
+		  ->             phone_number  (      varchar )  = 手机号
+		  ->             self_support  (          int )  = 是否自营(否=1|是=2)
+		  ->             user_info_id  (          int )  = 创建人(用户id)
+		  ->                   status  (          int )  = 状态(待审核=1|未通过审核=2|已通过审核=3)
+		  ->                 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /                     shop_order_print_templet:订单打印模板                 --------------4.18新增
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->           platform_print_templet_id  (          int )  = 平台订单打印模板id
+		  ->                        templet_name  (      varchar )  = 模板名称
+		  ->                             content  (      varchar )  = 模板内容
+		  ->                                sort  (          int )  = 排序
+		  ->                            add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /                     shop_order_print_item:[子]订单打印模板项                 --------------4.18新增
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->         shop_order_print_templet_id  (          int )  = 订单打印模板id
+		  ->                           item_name  (      varchar )  = 打印名称
+		  ->                           item_code  (      varchar )  = 打印代码
+		  ->                                sort  (          int )  = 排序
+		  ->                            add_time  (    timestamp )  = 添加时间
+										      商品模块
+		  /--------------------------------------------------------------------------
+		  /            	    		   shop_goods : 商品信息
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->                           shop_name  (      varchar )  = 商品名
+		  ->                            shop_num  (      varchar )  = 编号
+		  ->          platform_goods_category_id  (          int )  = 平台商品分类id
+		  ->             platform_goods_brand_id  (          int )  = 平台商品品牌id         ---------4.19新增
+		  ->              shop_goods_category_id  (          int )  = 供应商内商品分类id
+		  ->                        market_price  (      decimal )  = 市场价
+		  ->                     marketing_price  (      decimal )  = 销售价
+		  ->                               stock  (          int )  = 库存
+		  ->                      trading_points  (          int )  = 交易积分(正为返还，负为消费积分)   ------4.19新增
+		  ->                              rebate  (          int )  = 返利(0不分销)                       ------4.19修改
+		  ->                                unit  (          int )  = 商品计量单位(件=1|重量=2|体积=3)     ------4.19新增
+		  ->                              weight  (      decimal )  = 商品重量(kg)                     ------4.19新增
+		  ->                              cubage  (      decimal )  = 商品体积(m³)                   ------4.19新增
+		  ->                             freight  (      decimal )  = 运费(卖家承担运费=1|买家承担运费=2)      ------4.19新增
+		  ->        shop_express_cost_templet_id  (          int )  = 运费模板id                       ------4.19新增
+		  ->                          snail_mail  (      decimal )  = 平邮(元)                       ------4.19新增
+		  ->                           fast_mail  (      decimal )  = 快递(元)                       ------4.19新增
+		  ->                                 EMS  (      decimal )  = EMS(元)                      ------4.19新增
+		  ->                       virtual_goods  (          int )  = 是否虚拟物品(否=1|是=2          ------4.19新增
+		  ->                       shop_describe  (         text )  = 商品描述
+		  ->                                 pic  (         text )  = 商品图片(多张以","分隔)
+		  ->                              status  (          int )  = 状态(待上架=1|已上架=2|已下架=3)          ------4.19修改
+		  ->                      grounding_time  (    timestamp )  = 上架时间                           ------4.19新增
+		  ->                  undercarriage_time  (    timestamp )  = 下架时间                           ------4.19新增
+		  ->                       access_number  (          int )  = 访问数
+		  ->                        release_time  (    timestamp )  = 发布时间
+		  /--------------------------------------------------------------------------
+		  /                     shop_goods_presell:[子]商品预售
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                       shop_goods_id  (          int )  = 商品信息id
+		  ->                       advance_price  (       decimal)  = 预售价          
+		  ->                         presell_num  (          int )  = 预售数量
+		  ->                  presell_begin_time  (    timestamp )  = 预售开始时间
+		  ->                    presell_end_time  (    timestamp )  = 预售结束时间
+		  ->                       delivery_time  (    timestamp )  = 发货日期      
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /                        shop_goods_spec：[子]商品规格
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                       shop_goods_id  (          int )  = 商品信息id
+		  ->                              art_no  (          int )  = 货号
+		  ->								 pic  (          text)  = 展示图
+		  ->                        market_price  (      decimal )  = 市场价
+		  ->                     marketing_price  (      decimal )  = 销售价
+		  ->                               stock  (          int )  = 库存数
+		  ->	   		 platform_goods_spec_ids  (      varchar )  = 平台商品规格ids(','分开)   
+		  ->           platform_goods_spec_names  (         text )  = 平台商品规格names(','分开)
+		  ->       platform_goods_spec_value_ids  (      varchar )  = 平台商品规格值ids(','分开)   
+		  ->     platform_goods_spec_value_names  (         text )  = 平台商品规格值names(','分开) 
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /                   shop_goods_attribute:[子]商品属性
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                       shop_goods_id  (          int )  = 商品信息id
+		  ->         platform_goods_attribute_id  (          int )  = 平台商品参数id    
+		  ->                      attribute_name  (      varchar )  = 属性名称
+		  ->                attribute_value_name  (      varchar )  = 属性值名称
+		  ->                attribute_value_port  (          int )  = 属性值排序
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+										      代理模块
+		  /--------------------------------------------------------------------------
+		  /                shop_distribution_goods:代理商品信息                            -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->               distribution_goods_id  (          int )  = 代理商品信息id
+		  ->            distribution_goods_price  (      decimal )  = 代理销售价(元)
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /           shop_distribution_goods_spec:代理商品规格                       -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->               distribution_goods_id  (          int )  = 代理商品信息id
+		  ->          distribution_goods_spec_id  (          int )  = 代理商品规格id
+		  ->       distribution_goods_spec_price  (      decimal )  = 代理销售价(元)
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+											  促销模块
+		  /--------------------------------------------------------------------------
+		  /                   shop_activity_coupon:优惠券
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->         platform_coupon_category_id  (          int )  = 平台优惠券分类id(默认供应商卷=4)
+		  ->                        denomination  (      decimal )  = 面额(元)
+		  ->                          full_order  (      decimal )  = 单笔订单满(元)使用
+		  ->                   coupon_begin_time  (    timestamp )  = 有效期开始日期
+		  ->                     coupon_end_time  (    timestamp )  = 有效期结束日期
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /             shop_activity_coupon_point:[积分]优惠券                              
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->                            exchange  (          int )  = 使用积分      
+		  ->                        denomination  (      decimal )  = 面额(元)
+		  ->                          full_order  (      decimal )  = 单笔订单满(元)使用
+		  ->                    point_begin_time  (    timestamp )  = 有效期开始日期      
+		  ->                      point_end_time  (    timestamp )  = 有效期结束日期      
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /             shop_activity_manzeng_main:满赠                          -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->                        manzeng_type  (          int )  = 满赠类型(全场=1|单品=2)     
+		  ->                          full_order  (      decimal )  = 满赠条件(元)
+		  ->                  manjian_begin_time  (    timestamp )  = 有效期开始日期
+		  ->                    manjian_end_time  (    timestamp )  = 有效期结束日期
+		  ->                        is_overlying  (          int )  = 是否允许叠加(否=1|是=2)        
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /       shop_activity_manzeng_goods_main:[子]参与主商品信息       -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->       shop_activity_manzeng_main_id  (          int )  = 满赠id
+		  ->                       shop_goods_id  (          int )  = 主商品id   
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /       shop_activity_manzeng_goods_give:[子]参与赠送商品信息       -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->       shop_activity_manzeng_main_id  (          int )  = 满赠id
+		  ->                       shop_goods_id  (          int )  = 赠送商品id  
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /             shop_activity_manjian_main:满减
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->                        manjian_type  (          int )  = 满赠类型(全场=1|店内分类=2|单品=3)    
+		  ->                          full_order  (      decimal )  = 单笔订单满(元)使用
+		  ->                              derate  (      decimal )  = 减免(元)
+		  ->                  manjian_begin_time  (    timestamp )  = 有效期开始日期
+		  ->                    manjian_end_time  (    timestamp )  = 有效期结束日期
+		  ->                        is_overlying  (          int )  = 是否允许叠加(否=1|是=2)        
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /   shop_activity_manjian_goods_category:[子]参与满减商品分类                     
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->       shop_activity_manjian_main_id  (          int )  = 满减id                   
+		  ->              shop_goods_category_id  (          int )  = 供应商内商品分类id         
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /       shop_activity_manjian_goods_info:[子]参与满减商品信息                        
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->       shop_activity_manjian_main_id  (          int )  = 满减id                 
+		  ->                       shop_goods_id  (          int )  = 商品id                  
+		  ->                            add_time  (    timestamp )  = 添加时间 
+		  /--------------------------------------------------------------------------
+		  /              shop_activity_baoyou_main:满包邮                                     -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->                         baoyou_type  (          int )  = 满包邮类型(全场=1|店内分类=2|单品=3)  
+		  ->                          full_order  (      decimal )  = 单笔订单满(元)使用
+		  ->                        baoyou_price  (      decimal )  = 包邮
+		  ->                  manjian_begin_time  (    timestamp )  = 有效期开始日期
+		  ->                    manjian_end_time  (    timestamp )  = 有效期结束日期      
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /    shop_activity_baoyou_goods_category:[子]参与满包邮商品分类              -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->        shop_activity_baoyou_main_id  (          int )  = 满包邮id
+		  ->              shop_goods_category_id  (          int )  = 供应商内商品分类id  
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /        shop_activity_baoyou_goods_info:[子]参与满包邮商品信息                  -------4.10新加----
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->        shop_activity_baoyou_main_id  (          int )  = 满包邮id
+		  ->                       shop_goods_id  (          int )  = 商品id
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /            shop_activity_groupbuy_main:团购
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->                        shop_info_id  (          int )  = 供应商信息id
+		  ->                       groupbuy_name  (      varchar )  = 团购名称
+		  ->                       groupbuy_show  (      varchar )  = 团购展示图
+		  ->                       groupbuy_sort  (          int )  = 排序                 
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /      shop_activity_groupbuy_goods_info:[子]参与团购商品信息
+		  /--------------------------------------------------------------------------
+		  ->                                  id  (          int )  = id
+		  ->      shop_activity_groupbuy_main_id  (          int )  = 团购id
+		  ->                       shop_goods_id  (          int )  = 商品id
+		  ->                      groupbuy_price  (      decimal )  = 团购价(元)
+		  ->                 groupbuy_begin_time  (    timestamp )  = 团购开始时间
+		  ->                   groupbuy_end_time  (    timestamp )  = 团购结束时间
+		  ->                       open_groupbuy  (          int )  = 开团人数(人)
+		  ->                    user_can_but_buy  (          int )  = 同一个账户只能购买(0)
+		  ->                            add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+								   订单模块
+		  /--------------------------------------------------------------------------
+		  /                   shop_order_tag : 订单标签
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->           	 shop_info_id  (          int )  = 供应商信息id
+          ->      			tag_names  (      varchar )  = 标签名称
+          ->                     sort  (          int )  = 排序
+		  ->            	 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /           shop_goods_order : 商品订单
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->       shop_order_tag_ids  (          int )  = 订单标签
+          ->                order_tag  (          int )  = 订单标签
+		  ->	  	         pay_type  (          int )  = 支付方式(支付宝=1|微信支付=2)  
+		  ->             need_invoice  (          int )  = 是否需要发票(否=1|是=2)
+		  ->             invoice_type  (          int )  = 发票类型(普通发票=1|电子发票=2)
+		  ->             invoice_head  (      varchar )  = 发票抬头
+		  ->          invoice_content  (         text )  = 发票内容
+		  ->          express_company  (      varchar )  = 快递公司
+		  ->               express_no  (      varchar )  = 快递单号
+		  ->              receive_man  (      varchar )  = 收货人
+		  ->            contact_phone  (      varchar )  = 联系电话
+		  ->          receive_address  (      varchar )  = 收货地址
+		  ->       order_amount_total  (      decimal )  = 订单总额(元)
+		  ->                 carriage  (      decimal )  = 运费(元)
+		  ->            coupon_amount  (      decimal )  = 优惠金额(元)
+		  ->            actual_amount  (      varchar )  = 实付金额(元)
+		  ->              create_time  (    timestamp )  = 创建时间
+		  ->                 pay_time  (    timestamp )  = 付款时间
+		  ->            send_out_time  (    timestamp )  = 发货时间
+		  ->         valid_order_time  (    timestamp )  = 订单有效期
+		  ->        submit_order_user  (          int )  = 下单人(用户id)
+		  ->             order_status  (          int )  = 状态(待付款=1|待尾款=2|待成团=61|团失败=62|待发货=3|待收货=4|待评价=5|已评价=6|待退款=7|已退款=8|待退货=9|已退货=10|交易关闭=11)
+		  ->                  remarks  (      varchar )  = 备注
+		  /--------------------------------------------------------------------------
+		  /    shop_goods_order_detail : [子]商品订单清单
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                 order_id  (          int )  = 订单编号
+          ->            shop_goods_id  (          int )  = 商品id
+		  ->			    sort_name  (      varchar )  = 商品名称  
+		  ->                      pic  (         text )  = 商品图片(多张以","分隔)
+		  ->  platform_goods_spec_ids  (      varchar )  = 商品规格
+		  ->             market_price  (      decimal )  = 市场价(元)
+		  ->          marketing_price  (      decimal )  = 销售价(元)
+		  ->                buy_count  (          int )  = 购买数量
+		  ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /  shop_goods_order_groupbuy : [子]参与团购人员
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                 order_id  (      varchar )  = 订单编号
+          ->        groupbuy_order_id  (          int )  = 参与团购订单id
+		  ->                buy_count  (          int )  = 购买数量
+		  ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /         shop_goods_comment : 商品评价
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->            shop_goods_id  (          int )  = 商品信息id
+          ->        description_score  (       double )  = 宝贝描述(1.0~5.0)
+		  ->            service_score  (       double )  = 卖家服务(1.0~5.0)
+		  ->      material_flow_score  (       double )  = 物流描述(1.0~5.0)
+		  ->                appraiser  (          int )  = 评价人(用户id)
+		  ->         appraise_content  (         text )  = 评价内容
+		  ->             appraise_pic  (         text )  = 评价图片(多图","分隔)
+		  ->            appraise_time  (    timestamp )  = 评价时间
+		  ->                   status  (          int )  = 状态(待审核=1|已审核=2)
+		  /--------------------------------------------------------------------------
+									退款/售后
+		  /--------------------------------------------------------------------------
+		  /    shop_goods_refund_cause : 退款原因
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->           		     name  (      varchar )  = 名称
+		  ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /     shop_goods_refund_info : 退款/退货
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->           	 shop_info_id  (      varchar )  = 供应商信息id
+		  ->                  order_no (      varchar )  = 订单id
+		  ->           	   is_receive  (          int )  = 是否收到货物(已收到货=1|没有收到货=2)
+		  ->              need_return  (          int )  = 是否需要退货(我需要退货=1|不需要退货=2)
+		  ->           	return_reason  (      varchar )  = 退款原因name
+		  ->             refund_amount (      decimal )  = 需要退款的金额(元)
+		  ->             refund_remark (         text )  = 退款说明
+		  ->         upload_documents  (      varchar )  = 上传凭证
+		  ->           refund_user_id  (          int )  = 退款人(用户id)
+		  ->           	  submit_time  (    timestamp )  = 提交时间
+		  ->                   status  (          int )  = 状态(待卖家处理=1|卖家拒绝退款/退货=2|待买家退货=3|买家已退货,等待卖家确认收货=4|卖家已退款=5|买家取消=9)
+		  ->       refuse_refund_time  (    timestamp )  = 卖家拒绝退款/退货时间
+		  ->        agree_refund_time  (    timestamp )  = 卖家同意退款/退货时间
+		  ->             returned_time (    timestamp )  = 买家已退货时间
+		  /--------------------------------------------------------------------------
+		  /shop_goods_refund_logistics : [子]退货物流
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->           refund_info_id  (      varchar )  = 退款/退货id
+		  ->           refund_address  (      varchar )  = 退货地址(收货人,联系电话,详细地址)
+		  ->          express_company  (      varchar )  = 物流公司(顺丰快递...)
+		  ->               express_no  (      varchar )  = 运单号码
+		  ->           	refund_remark  (         text )  = 退货说明
+		  ->         upload_documents  (      varchar )  = 上传凭证(多图","分隔)
+		  ->           	  submit_time  (    timestamp )  = 提交时间
+		  ->           submit_user_id  (          int )  = 提交人(用户id)
+          /--------------------------------------------------------------------------
+		  /   shop_goods_refund_record : 退款记录
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_info_id  (      varchar )  = 供应商信息id
+		  ->                     type  (          int )  = 分类(退=1|换=2)
+		  ->           	  create_time  (    timestamp )  = 创建时间
+		  ->                     name  (      varchar )  = 名称
+		  ->             user_info_id  (          int )  = 对方账户(用户id)
+		  ->               	 order_no  (      varchar )  = 交易号(订单编号)
+		  ->                   amount  (      decimal )  = 金额(订单实付金额)
+		  ->                   status  (          int )  = 状态(退款处理中=1|退款成功=2)
+		  ->           	  refund_time  (    timestamp )  = 退款时间
+		  ->          operate_user_id  (          int )  = 操作人(系统用户id)
+          /--------------------------------------------------------------------------
+									平台模块
+		  /--------------------------------------------------------------------------
+		  /   platform_coupon_category : 平台优惠券分类
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->            category_name  (      varchar )  = 分类名称
+          ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /     platform_shop_category : 平台供应商分类
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->            category_name  (      varchar )  = 分类名称
+          ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /     platform_shop_business : 平台供应商行业
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->            category_name  (      varchar )  = 分类名称
+          ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /    platform_goods_category : 平台商品分类
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                parent_id  (          int )  = 上级商品分类id
+          ->                      pic  (         text )  = 展示图
+		  ->           		     name  (      varchar )  = 商品分类名称
+		  ->               class_list  (      varchar )  = 菜单ID列表(逗号分隔开)
+		  ->              class_layer  (          int )  = 导航深度
+		  ->                  sort_id  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /        platform_goods_spec : 平台商品规格
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->platform_goods_category_id (          int )  = 平台商品分类id
+		  ->                spec_name  (      varchar )  = 规格名称
+		  ->                     sort  (          int )  = 规格排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /  platform_goods_spec_value : 平台商品规格值
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->   platform_goods_spec_id  (          int )  = 平台商品规格id
+		  ->          spec_value_name  (      varchar )  = 规格值名称
+		  ->                     sort  (          int )  = 规格值排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /   platform_goods_attribute : 平台商品属性
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->platform_goods_category_id (          int )  = 平台商品分类id
+		  ->           attribute_name  (      varchar )  = 属性名称
+		  ->                  is_show  (          int )  = 属性是否显示(否=1|是=2)
+		  ->                     sort  (          int )  = 属性排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  / platform_goods_attribute_value : 平台商品属性值
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->platform_goods_attribute_id(          int )  = 平台商品属性id
+		  ->     attribute_value_name  (      varchar )  = 属性值名称
+		  ->                     sort  (          int )  = 属性值排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /     platform_live_category : 平台直播分类
+		  /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+          ->                parent_id  (          int )  = 上级直播分类id
+		  ->            		 name  (      varchar )  = 分类名称
+		  ->                  is_show  (          int )  = 分类是否显示(否=1|是=2)
+		  ->               class_list  (      varchar )  = 菜单ID列表(逗号分隔开)
+		  ->              class_layer  (          int )  = 导航深度
+		  ->                  sort_id  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /    platform_video_category : 平台视频分类
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->            category_name  (      varchar )  = 分类名称
+		  ->                  is_show  (          int )  = 页面是否显示(否=1|是=2)
+		  ->         for_shop_is_show  (          int )  = 针对供应商是否显示(否=1|是=2)
+		  ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /     platform_gift_category : 平台礼物分类
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->            category_name  (      varchar )  = 分类名称
+		  ->                  is_show  (          int )  = 页面是否显示(否=1|是=2)
+		  ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /         platform_gift_info : 平台礼物配置
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->platform_gift_category_id  (          int )  = 平台礼物分类id
+		  ->                gift_name  (      varchar )  = 礼物名称
+		  ->                 gift_pic  (         text )  = 礼物图片
+		  ->               gift_price  (          int )  = 礼物金币
+		  ->                gift_note  (      varchar )  = 礼物备注
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /          platform_fee_info : 平台打赏配置
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->                 fee_name  (      varchar )  = 打赏名称
+		  ->                fee_price  (          int )  = 打赏面额
+		  ->                 fee_note  (      varchar )  = 打赏备注
+		  ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /     platform_print_templet : 平台打印模板
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             templet_type  (          int )  = 模板类型(订单=1|物流=2)           -----------4.18新增
+		  ->             templet_name  (      varchar )  = 模板名称
+		  ->             templet_code  (      varchar )  = 模板代码                          -----------4.18新增
+		  ->              templet_pic  (      varchar )  = 模板图片                          -----------4.18新增
+		  ->          templet_content  (         text )  = 模板内容
+		  ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /     platform_print_item : [子]平台打印模板项                                      -----------4.18新增
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->platform_print_templet_id  (          int )  = 平台打印模板id
+		  ->                item_name  (      varchar )  = 打印名称
+		  ->                item_code  (      varchar )  = 打印代码
+		  ->                     sort  (          int )  = 排序
+		  ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /platform_complaint_category : 平台投诉分类
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->platform_goods_category_ids(      varchar )  = 平台商品分类ids
+		  ->            category_name  (      varchar )  = 分类名称
+		  ->                     sort  (          int )  = 排序
+		  ->           		 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /    platform_complaint_shop : 平台投诉卖家
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_info_id  (          int )  = 供应商信息id
+		  ->      shop_goods_order_id  (          int )  = 订单id
+		  -> platform_complaint_category_id (     int )  = 投诉原因(平台投诉分类id)
+		  ->             phone_number  (      varchar )  = 手机号码
+		  ->    complaint_description  (         text )  = 投诉说明
+		  ->             voucher_pics  (         text )  = 上传凭证(多图","分隔)
+		  ->             user_info_id  (          int )  = 投诉人(用户id)
+		  ->                    state  (          int )  = 状态(等待卖家处理=1|平台介入处理=2|投诉完结=3|撤销投诉=9)
+		  ->              submit_time  (    timestamp )  = 提交时间
+		  ->        intervention_time  (    timestamp )  = 平台介入时间
+		  ->                 end_time  (    timestamp )  = 完结时间
+		  ->           system_user_id  (          int )  = 处理人(系统用户id)
+		  /--------------------------------------------------------------------------
+		  /    platform_point_info : 平台积分设置                                    ----------------4.18新增
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->               point_name  (      varchar )  = 积分名称
+		  ->               point_code  (      varchar )  = 积分代码
+		  ->                     rule  (      varchar )  = 积分规则
+		  ->              point_value  (          int )  = 积分值
+		  ->                     sort  (          int )  = 排序
+		  ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /    platform_express_service : 平台物流服务商                                    ----------------4.18新增
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             express_name  (      varchar )  = 公司名称
+		  ->                     logo  (      varchar )  = 公司logo
+		  ->                  website  (      varchar )  = 公司网站
+		  ->          company_summary  (      varchar )  = 公司摘要
+		  ->          company_remarks  (      varchar )  = 公司备注
+		  ->                      pic  (      varchar )  = 公司运单模板图片
+		  ->         for_shop_display  (          int )  = 针对供应商是否显示(否=1|是=2)
+		  ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+		  /    platform_goods_brand : 平台商品品牌                                    ----------------4.18新增
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->platform_goods_category_id (          int )  = 上级商品分类id
+		  ->                      pic  (      varchar )  = 展示图
+		  ->               brand_name  (      varchar )  = 商品品牌名称
+		  ->                     sort  (          int )  = 排序
+		  ->                 add_time  (    timestamp )  = 添加时间
+		  /--------------------------------------------------------------------------
+									资讯模块
+		  /--------------------------------------------------------------------------
+		  /              news_category : 资讯分类
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->                parent_id  (          int )  = 上级分类id
+		  ->                     name  (      varchar )  = 名称
+		  ->               class_list  (      varchar )  = 菜单ID列表(逗号分隔开)
+		  ->              class_layer  (          int )  = 导航深度
+		  ->                  sort_id  (          int )  = 排序
+		  ->           	     add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /                  news_info : 资讯信息
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->         news_category_id  (          int )  = 资讯分类id
+		  ->                    title  (      varchar )  = 标题
+		  ->          release_user_id  (          int )  = 发布人(系统用户id)
+		  ->                  summary  (      varchar )  = 摘要
+		  ->          news_info_paper  (      varchar )  = 资讯正文
+		  ->                   status  (          int )  = 状态(未发布=1|已发布=2)
+		  ->           	 release_time  (    timestamp )  = 发布时间
+          /--------------------------------------------------------------------------
+		  /                   news_zan : [子]资讯点赞
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             news_info_id  (          int )  = 资讯信息id
+		  ->                    title  (      varchar )  = 标题
+		  ->              zan_user_id  (          int )  = 点赞人(用户id)
+		  ->           	     zan_time  (    timestamp )  = 点赞时间
+          /--------------------------------------------------------------------------
+		  /                  news_read : [子]资讯阅读
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             news_info_id  (          int )  = 资讯信息id
+		  ->                    title  (      varchar )  = 标题
+		  ->             read_user_id  (          int )  = 阅读人(用户id)
+		  ->           	    read_time  (    timestamp )  = 阅读时间
+          /--------------------------------------------------------------------------
+								  系统模块
+          /--------------------------------------------------------------------------
+		  /              system_notice : 系统公告
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->                    title  (      varchar )  = 标题
+		  ->                  content  (         text )  = 内容
+		  ->           	 release_time  (    timestamp )  = 发布时间
+          /--------------------------------------------------------------------------
+		  /                 advert_info : 广告信息
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->              advert_site  (          int )  = 广告位置(首页=1)
+		  ->                      pic  (         text )  = 图片(多张","分隔)
+		  ->                 pic_link  (      varchar )  = 图片链接地址
+		  ->                pic_value  (      varchar )  = 图片值
+		  ->           pic_value_type  (          int )  = 图片值类型(默认=0，商品=1 资讯=2)
+		  ->			   start_time  (    timestamp )  = 开始时间
+		  ->			     end_time  (    timestamp )  = 结束时间
+		  ->                    state  (		  int )  = 状态（未开启=1|已开启=2）	
+		  ->                     sort  (          int )  = 排序
+		  ->             	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /                single_page : 单页
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->                    title  (      varchar )  = 标题
+		  ->                  content  (         text )  = 内容
+		  ->             	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /               ask_question : 常见问题
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->                    title  (      varchar )  = 标题
+		  ->                  content  (         text )  = 内容
+		  ->                     sort  (          int )  = 排序
+		  ->             	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /              feedback_type : 反馈类型
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->                type_name  (      varchar )  = 类型名称
+		  ->              type_remark  (         text )  = 类型描述
+		  ->                     sort  (      varchar )  = 排序
+		  ->             	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /              feedback_info : 建议反馈
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->         feedback_type_id  (          int )  = 问题类型(反馈类型id)
+		  ->              info_detail  (         text )  = 详细描述
+		  ->                      pic  (         text )  = 图片(多张","分隔)
+		  ->                    phone  (      varchar )  = 手机号
+		  ->         feedback_user_id  (          int )  = 反馈人(用户id)
+		  ->            feedback_time  (    timestamp )  = 反馈时间
+          /--------------------------------------------------------------------------
+		  /               message_info : 消息
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->                info_type  (          int )  = 消息类型(系统=1|发货=2)
+		  ->            message_title  (      varchar )  = 消息标题
+		  ->          message_content  (         text )  = 消息内容
+		  ->        message_content_2  (         text )  = 消息内容(extend)
+		  ->         feedback_user_id  (          int )  = 反馈人(用户id)
+		  ->                send_time  (    timestamp )  = 发送时间
+		  ->          receive_user_id  (          int )  = 接收人(用户id)
+          /--------------------------------------------------------------------------
+		  /               message_read : 消息阅读
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->          message_info_id  (          int )  = 消息id
+		  ->             read_user_id  (          int )  = 阅读人(用户id)
+		  ->                read_time  (    timestamp )  = 阅读时间
+          /--------------------------------------------------------------------------
+									直播模块
+          /--------------------------------------------------------------------------
+		  /             shop_classroom : 视界课堂  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_info_id  (          int )  = 供应商信息id
+		  ->platform_live_category_id  (          int )  = 平台直播分类id
+		  ->       type_the_subtitles  (      varchar )  = 类型副标题
+		  ->          classroom_price  (      decimal )  = 课堂价(元)
+		  ->                     sort  (          int )  = 排序
+		  ->                 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /               	 shop_live : 供应商直播  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_info_id  (          int )  = 供应商信息id
+		  ->				live_name  (      varchar )  = 直播名称
+		  ->platform_live_category_id  (          int )  = 平台直播分类id
+		  ->          		show_pics  (         text )  = 展示图
+		  ->           detail_content  (         text )  = 详情内容
+		  ->            push_flow_url  (      varchar )  = 推流地址
+		  ->            flow_play_url  (      varchar )  = 流播放地址
+		  ->        flow_playback_url  (      varchar )  = 流回放地址
+		  ->        last_time_of_play  (    timestamp )  = 最后直播时间
+		  ->             is_recommend  (          int )  = 是否推荐(否=1|是=2)
+		  ->              play_counts  (          int )  = 播放数		 
+		  ->             share_counts  (          int )  = 分享数
+		  ->      	  shop_live_state  (          int )  = 状态(未直播=1|直播中=2|回放=3)
+		  /--------------------------------------------------------------------------
+		  /            shop_live_goods : [子]参与直播商品  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_live_id  (          int )  = 供应商直播id
+		  ->			shop_goods_id  (          int )  = 商品id
+		  ->  shop_live_goods_orderNo  (      varchar )  = 编号
+		  ->        is_new_live_goods  (          int )  = 是否当前直播商品(否=1|是=2)
+		  ->           			 sort  (          int )  = 排序
+		  ->            	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /              shop_live_zan : [子]直播点赞  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_live_id  (          int )  = 供应商直播id
+		  ->			  zan_user_id  (          int )  = 点赞人(用户id)
+		  ->            	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /           shop_live_notice : 直播公告  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_live_id  (          int )  = 供应商直播id
+		  ->	 announcement_content  (         text )  = 公告内容
+		  ->  		     send_user_id  (          int )  = 发送人(用户id)
+		  ->            	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+	      /         shop_live_feedback : 直播反馈  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_live_id  (          int )  = 供应商直播id
+		  ->	 	 feedback_content  (         text )  = 反馈内容
+		  ->  		 feedback_user_id  (          int )  = 反馈人(用户id)
+		  ->            	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /           shop_live_report : 直播举报  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_live_id  (          int )  = 供应商直播id
+		  ->		   report_reasons  (      varchar )  = 举报原因
+		  ->  		   report_content  (      	 text )  = 举报内容
+		  ->           report_user_id  (          int )  = 举报人(用户id)
+		  ->            	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /            shop_live_point : 直播评分  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_live_id  (          int )  = 供应商直播id
+		  ->		   			score  (       double )  = 评分(1.0~5.0)
+		  ->  		    score_content  (      	 text )  = 评分内容
+		  ->            score_user_id  (          int )  = 评分人(用户id)
+		  ->            	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /          shop_live_commnet : 直播评论  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_live_id  (          int )  = 供应商直播id
+		  ->		   	comments_type  (          int )  = 评论类型(默认=1|打赏=2|红包=3|礼物=4)
+		  ->  		 comments_content  (      	 text )  = 评论内容
+		  ->  comments_content_extend  (         text )  = 评论内容(extend)
+		  ->         comments_user_id  (          int )  = 评论人(用户id)
+		  ->            	 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /            shop_video_info : 供应商视频  ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->             shop_info_id  (          int )  = 供应商信息id
+		  ->platform_video_category_id (          int )  = 平台视频分类id
+		  ->  		 			title  (      varchar )  = 标题
+		  ->  				 subtitle  (      varchar )  = 副标题
+		  ->         		show_pics  (         text )  = 展示图
+		  ->           	  time_length  (       double )  = 时间长度
+		  ->         		 play_url  (      varchar )  = 播放地址
+		  ->            	  remarks  (      varchar )  = 备注
+		  ->                 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /           shop_video_goods : [子]参与视频商品 ---------4.12下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->       shop_video_info_id  (          int )  = 供应商视频id
+		  ->			shop_goods_id  (          int )  = 商品id
+		  ->  		 			 sort  (          int )  = 排序
+		  ->                 add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /           shop_express_service : 服务商 ---------4.17下午
+          /--------------------------------------------------------------------------
+          ->                       id  (          int )  = id
+		  ->platform_express_service_id(          int )  = 平台物流服务商id
+		  ->                   status  (          int )  = 状态(未开通=1|已开通=2)
+		  ->                 add_time  (    timestamp )  = 开通时间
+          /--------------------------------------------------------------------------
+		  /           shop_express_cost_templet : 运费模板 ---------4.20上午
+          /--------------------------------------------------------------------------
+          ->                               id  (          int )  = id
+		  ->                     shop_info_id  (          int )  = 供应商信息id
+		  ->                     templet_name  (      varchar )  = 模板名称
+		  ->                      province_id  (          int )  = 省id
+		  ->                          city_id  (          int )  = 市id
+		  ->                          area_id  (          int )  = 区id
+		  ->                    delivery_time  (          int )  = 发货时间(12小时=12|24小时=24)
+		  ->           exemption_from_postage  (          int )  = 是否包邮(自定义运费=1|卖家承担运费=2)
+		  ->                  billing_methods  (          int )  = 计费方式(按件数(件)=1|按重量(kg)=2|按体积(m³)=3)
+		  ->                           kuaidi  (          int )  = 是否快递(否=1|是=2)
+		  ->                              EMS  (          int )  = 是否EMS(否=1|是=2)
+		  ->                          pingyou  (          int )  = 平邮(否=1|是=2)
+		  ->              kuaidi_freight_unit  (          int )  = 快递运费单位数(件/kg/m³)
+		  ->   kuaidi_transportation_expenses  (      decimal )  = 快递运费(元)
+		  ->      kuaidi_per_unit_of_increase  (          int )  = 快递每增加单位数(件/kg/m³)
+		  ->          kuaidi_increase_freight  (      decimal )  = 快递增加运费(元)
+		  ->                 EMS_freight_unit  (          int )  = EMS运费单位数(件/kg/m³)
+		  ->      EMS_transportation_expenses  (      decimal )  = EMS运费(元)
+		  ->         EMS_per_unit_of_increase  (          int )  = EMS每增加单位数(件/kg/m³)
+		  ->             EMS_increase_freight  (      decimal )  = EMS增加运费(元)
+		  ->             pingyou_freight_unit  (          int )  = 平邮运费单位数(件/kg/m³)
+		  ->  pingyou_transportation_expenses  (      decimal )  = 平邮运费(元)
+		  ->     pingyou_per_unit_of_increase  (          int )  = 平邮每增加单位数(件/kg/m³)
+		  ->         pingyou_increase_freight  (      decimal )  = 平邮增加运费(元)
+		  ->                specify_condition  (          int )  = 指定条件包邮(否=1|是=2)
+		  ->                         add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /           shop_express_cost_address : [子]运费指定地区 ---------4.20上午
+          /--------------------------------------------------------------------------
+          ->                         id  (          int )  = id
+		  -> shop_express_cost_templet_id(          int )  = 运费模板id
+		  ->        transportation_mode  (          int )  = 运送方式(快递=1|EMS=2|平邮=3)
+		  ->               province_ids  (         text )  = 省id
+		  ->                   city_ids  (         text )  = 市id
+		  ->               freight_unit  (          int )  = 运费单位数(件/kg/m³)
+		  ->    transportation_expenses  (      decimal )  = 运费(元)
+		  ->       per_unit_of_increase  (      varchar )  = 每增加单位数(件/kg/m³)
+		  ->           increase_freight  (      decimal )  = 增加运费(元)
+		  ->                   add_time  (    timestamp )  = 添加时间
+          /--------------------------------------------------------------------------
+		  /           shop_express_cost_templet_baoyou : [子]运费模板包邮 ---------4.20上午
+          /--------------------------------------------------------------------------
+          ->                          id  (          int )  = id
+		  ->shop_express_cost_templet_id  (          int )  = 运费模板id
+		  ->                province_ids  (         text )  = 省ids
+		  ->                    city_ids  (         text )  = 市ids
+		  ->   	     transportation_mode  (          int )  = 运送方式(快递=1|EMS=2|平邮=3)
+		  -> platform_express_service_id  (          int )  = 平台物流服务商id(已开通)
+		  ->                        mode  (          int )  = 方式(件数+金额=1|重量+金额=2|体积+金额=3)
+		  ->                         sum  (          int )  = 满多少(件/kg/m³)以上
+		  ->                    how_many  (      decimal )  = 满多少元以上
+		  ->                    add_time  (    timestamp )  = 添加时间
+ 		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  

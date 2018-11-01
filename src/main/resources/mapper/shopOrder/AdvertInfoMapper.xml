@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jgzy.core.shopOrder.mapper.AdvertInfoMapper">
+    <select id="selectAdvert" resultType="com.jgzy.core.shopOrder.vo.AdvertInfoVo">
+        SELECT
+            items.pic,
+            items.pic_value_type,
+            items.pic_value_parameter,
+            items.pic_value_url,
+            items.extra_field1,
+            items.extra_field2,
+            items.extra_field3,
+            info.advert_site,
+            info.platform_goods_category_id,
+            info.id
+        FROM
+            advert_items items
+        RIGHT JOIN advert_info info ON items.advert_info_id = info.id
+        <where>
+            <if test="id != null">
+                info.id = #{id}
+            </if>
+            <if test="advertSite != null">
+                info.advert_site = #{advertSite}
+            </if>
+        </where>
+    </select>
+</mapper>

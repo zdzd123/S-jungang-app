@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jgzy.core.personalCenter.mapper.UserInfoMapper">
+    <select id="statistics" resultType="com.jgzy.core.personalCenter.vo.PersonalCenterVo">
+        SELECT
+            *
+        FROM
+            (
+                SELECT
+                    count(*) collectionCount
+                FROM
+                    user_goods_collect
+                WHERE
+                    user_del = 1
+                AND collect_user_info_id = #{id}
+            ) collect,
+            (
+                SELECT
+                    count(*) footprintCount
+                FROM
+                    user_goods_footprint
+                WHERE
+                    footprint_user_info_id = #{id}
+                AND user_del = 1
+            ) footprint,
+            (
+                SELECT
+                    count(*) userActivityCoupon
+                FROM
+                    user_activity_coupon
+                WHERE
+                    coupon_user_info_id = #{id}
+                AND coupon_state = 1
+                AND valid_date_end > #{now}
+            ) coupon
+    </select>
+</mapper>

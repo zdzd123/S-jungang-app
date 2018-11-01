@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jgzy.core.personalCenter.mapper.UserGoodsFootprintMapper">
+    <select id="selectUserGoodsFootprint" resultType="com.jgzy.entity.po.UserGoodsFootprint">
+        SELECT
+            id,
+            goods_id,
+            footprint_user_info_id,
+            add_time,
+            user_del
+        FROM
+            user_goods_footprint
+        WHERE
+            user_del = 1
+            AND footprint_user_info_id = #{id}
+        ORDER BY id DESC
+    </select>
+</mapper>
