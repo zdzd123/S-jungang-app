@@ -1,6 +1,7 @@
 package com.jgzy.core.personalCenter.controller;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.jgzy.config.WeiXinPayConfig;
 import com.jgzy.constant.BaseConstant;
 import com.jgzy.constant.ErrorCodeEnum;
 import com.jgzy.constant.RedisConstant;
@@ -44,10 +45,6 @@ public class LoginController {
     private IUserInfoService userInfoService;
     @Autowired
     private IUserOauthService userOauthService;
-    @Value("${weixin.app_id}")
-    private String app_id;
-    @Value("${weixin.app_key}")
-    private String app_key;
 
     /**
      * 登录验证，成功后修改token,并返回token,oauth_openid
@@ -60,12 +57,12 @@ public class LoginController {
     @Transactional
     public ResultWrapper<LoginVo> detail(@ApiParam(value = "code", required = true) @RequestParam String code) {
         ResultWrapper<LoginVo> resultWrapper = new ResultWrapper<>();
-        System.out.println("app_id--------------------------------------------------------" + app_id);
-        System.out.println("app_key--------------------------------------------------------" + app_key);
+        System.out.println("app_id--------------------------------------------------------" + WeiXinPayConfig.getApp_id());
+        System.out.println("app_key--------------------------------------------------------" + WeiXinPayConfig.getApp_secret());
         System.out.println("code--------------------------------------------------------" + code);
 
         String string = HttpRequest.sendGet("https://api.weixin.qq.com/sns/oauth2/access_token?appid=" +
-                app_id + "&secret=" + app_key + "&code=" + code + "&grant_type=authorization_code");
+                WeiXinPayConfig.getApp_id() + "&secret=" + WeiXinPayConfig.getApp_secret() + "&code=" + code + "&grant_type=authorization_code");
         try {
             JSONObject jsonObject = new JSONObject(string);
             System.out.println("jsonObject---------------------------------------------/api/v1/weixinLogin" + jsonObject);
@@ -141,7 +138,7 @@ public class LoginController {
                     resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
                     LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
                     resultWrapper.setResult(loginVo);
-                    //RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
+                    RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
                     return resultWrapper;
                 } else {
                     System.out.println("用户 不为空！");
@@ -156,7 +153,7 @@ public class LoginController {
                     LoginVo loginVo = initLoginVo(my.getToken(), oauth_openid);
                     resultWrapper.setResult(loginVo);
                     resultWrapper.setResult(loginVo);
-                    //RedisUtil.hset(RedisConstant.REDIS_USER_KEY, my.getToken(), my);
+                    RedisUtil.hset(RedisConstant.REDIS_USER_KEY, my.getToken(), my);
                     return resultWrapper;
                 }
 
@@ -201,7 +198,7 @@ public class LoginController {
                     resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
                     LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
                     resultWrapper.setResult(loginVo);
-                    //RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
+                    RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
                     return resultWrapper;
                 } else {
                     System.out.println("用户 不为空！");
@@ -216,7 +213,7 @@ public class LoginController {
                     LoginVo loginVo = initLoginVo(my.getToken(), oauth_openid);
                     resultWrapper.setResult(loginVo);
                     resultWrapper.setResult(loginVo);
-                    //RedisUtil.hset(RedisConstant.REDIS_USER_KEY, my.getToken(), my);
+                    RedisUtil.hset(RedisConstant.REDIS_USER_KEY, my.getToken(), my);
                     return resultWrapper;
                 }
 
@@ -252,7 +249,7 @@ public class LoginController {
                 LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
                 resultWrapper.setResult(loginVo);
                 resultWrapper.setResult(loginVo);
-                //RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
+                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
                 return resultWrapper;
             }
         } catch (Exception e) {

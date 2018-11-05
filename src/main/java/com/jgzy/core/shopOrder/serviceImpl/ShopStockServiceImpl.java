@@ -25,4 +25,9 @@ public class ShopStockServiceImpl extends ServiceImpl<ShopStockMapper, ShopStock
     public ShopStockVo selectMyStock(Integer platformGoodsCategoryId, String shopName) {
          return  shopStockMapper.selectMyStock(platformGoodsCategoryId, shopName);
     }
+
+    @Override
+    public ShopStockVo selectMyStockById(Integer id) {
+        return shopStockMapper.selectMyStockById(id);
+    }
 }

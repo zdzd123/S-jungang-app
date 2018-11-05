@@ -9,17 +9,18 @@ import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.core.shopOrder.vo.CalcAmountVo;
 import com.jgzy.core.shopOrder.vo.CalcSingleAmountVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
-import com.jgzy.entity.common.ResultWrapper;
-import com.jgzy.entity.common.UserUuidThreadLocal;
-import com.jgzy.entity.common.WeiXinData;
-import com.jgzy.entity.common.WeiXinTradeType;
+import com.jgzy.entity.common.*;
 import com.jgzy.entity.po.*;
 import com.jgzy.utils.BigDecimalUtil;
 import com.jgzy.utils.CommonUtil;
+import com.jgzy.utils.TemplateMessageUtil;
 import com.jgzy.utils.WeiXinPayUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,16 +85,25 @@ public class ShopGoodsOriginatorOrderController {
         if (shopGoodsList == null || shopGoodsList.size() != voList.size()) {
             throw new OptimisticLockingFailureException("商品id有误");
         }
+        // 微信认证 openid (必填)
+        UserOauth userOauth = userOauthService.selectOne(
+                new EntityWrapper<UserOauth>()
+                        .eq("user_id", UserUuidThreadLocal.get().getId()));
+        if (userOauth == null || userOauth.getOauthOpenid() == null) {
+            throw new OptimisticLockingFailureException("微信认证有误");
+        }
         // 计算订单金额
         CalcAmountVo calcAmountVo = calcAmount(voList, advanceRechargeRecordList, shopGoodsList);
         // 生成权额信息
         if (calcAmountVo.getActualAmount() == null || calcAmountVo.getActualAmount().compareTo(new BigDecimal(0)) == 0) {
             // 权额支付信息
             List<AdvanceRechargeRecord> myAdvanceRechargeRecordList = initAdvanceRechargeRecordByAmount(calcAmountVo, advanceRechargeRecordList);
-            // 余额充足 1.更新权额 2.插入订单
-            boolean updateBatchById = advanceRechargeRecordService.updateBatchById(myAdvanceRechargeRecordList);
-            if (!updateBatchById) {
-                throw new OptimisticLockingFailureException("权额更新失败");
+            /* 余额充足 1.更新权额 2.插入订单 */
+            if (!CollectionUtils.isEmpty(myAdvanceRechargeRecordList)) {
+                boolean updateBatchById = advanceRechargeRecordService.updateBatchById(myAdvanceRechargeRecordList);
+                if (!updateBatchById) {
+                    throw new OptimisticLockingFailureException("权额更新失败");
+                }
             }
             // 插入订单
             ShopGoodsOrder shopGoodsOrder = initShopGoodsOrder(11, calcAmountVo, BaseConstant.PAY_TYPE_3);
@@ -118,18 +128,20 @@ public class ShopGoodsOriginatorOrderController {
                         new EntityWrapper<ShopStock>()
                                 .eq("user_info_id", UserUuidThreadLocal.get().getId())
                                 .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
+                boolean insert = false;
                 if (stock == null) {
                     shopStock.setCreateTime(new Date());
+                    insert = shopStockService.insert(shopStock);
                 } else {
                     shopStock.setUpdateTime(new Date());
                     if (shopStock.getDescribe().length() > 700) {
                         shopStock.setDescribe(stock.getDescribe().substring(stock.getDescribe().length() - 300) + "," + shopStock.getDescribe());
                     }
+                    insert = shopStockService.update(shopStock, new EntityWrapper<ShopStock>()
+                            .eq("user_info_id", UserUuidThreadLocal.get().getId())
+                            .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
                 }
-                boolean update = shopStockService.update(shopStock, new EntityWrapper<ShopStock>()
-                        .eq("user_info_id", UserUuidThreadLocal.get().getId())
-                        .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
-                if (!update) {
+                if (!insert) {
                     throw new OptimisticLockingFailureException("库存插入失败");
                 }
             }
@@ -144,6 +156,9 @@ public class ShopGoodsOriginatorOrderController {
             userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
             userFund.setPayType(BaseConstant.PAY_TYPE_3);
             userFundService.InsertUserFund(userFund);
+            // 推送模版消息
+            TemplateMessageUtil.initPaySuccessTemplate(userOauth.getOauthOpenid(), shopGoodsOrder.getOrderNo(), shopGoodsOrder.getOrderAmountTotal().toString(),
+                    shopGoodsOrder.getCouponAmount().toString(), shopGoodsOrder.getTotalRealPayment().toString());
         } else {
             // 第三方支付
             String out_trade_no = CommonUtil.getTradeNo();
@@ -162,7 +177,7 @@ public class ShopGoodsOriginatorOrderController {
             if (!batch) {
                 throw new OptimisticLockingFailureException("订单详情插入失败");
             }
-            Map<String, String> resultMap = weiXinPay(ip, out_trade_no, actualAmount, "");
+            Map<String, String> resultMap = weiXinPay(userOauth.getOauthOpenid(), ip, out_trade_no, actualAmount, "");
             resultWrapper.setResult(resultMap);
             return resultWrapper;
         }
@@ -179,21 +194,12 @@ public class ShopGoodsOriginatorOrderController {
      * @return
      * @throws IOException
      */
-    private Map<String, String> weiXinPay(String ip, String out_trade_no, BigDecimal actualAmount, String order_ids) throws IOException {
+    private Map<String, String> weiXinPay(String openid, String ip, String out_trade_no, BigDecimal actualAmount, String order_ids) throws IOException {
         Map<String, String> resultMap = new HashMap<>();
         // 权额不足 唤起第三方支付
         // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
         String subject = "军港之业合伙人订单"; // 订单名称 (必填)
-        // 获取服务器ip
-        UserOauth userOauth = userOauthService.selectOne(
-                new EntityWrapper<UserOauth>()
-                        .eq("user_id", UserUuidThreadLocal.get().getId()));
-        if (userOauth == null || userOauth.getOauthOpenid() == null) {
-            resultMap.put("return_code", "FAIL");
-            resultMap.put("err_code_des", "openid is null");
-            return resultMap;
-        }
-        String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
+
         String product_id = ""; // 产品id (非必填)
         String notify_url = "http://jgapi.china-mail.com.cn/api/payNotify/constant/weixinNotifyUrl";
         // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
@@ -231,6 +237,9 @@ public class ShopGoodsOriginatorOrderController {
     private List<AdvanceRechargeRecord> initAdvanceRechargeRecordByAmount(CalcAmountVo calcAmountVo, List<AdvanceRechargeRecord> advanceRechargeRecordList) {
         List<AdvanceRechargeRecord> myAdvanceRechargeRecordList = new ArrayList<>();
         for (CalcSingleAmountVo calcSingleAmountVo : calcAmountVo.getCalcAmountVoList()) {
+            if (StringUtils.isEmpty(calcSingleAmountVo.getAdvanceIds())) {
+                continue;
+            }
             String[] split = calcSingleAmountVo.getAdvanceIds().split(",");
             for (String id : split) {
                 AdvanceRechargeRecord myRecord = new AdvanceRechargeRecord();
@@ -285,8 +294,6 @@ public class ShopGoodsOriginatorOrderController {
             shopGoodsOrder.setAdvanceAmount(shopGoodsOrder.getAdvanceAmount() == null ?
                     calcSingleAmountVo.getAdvanceAmount() :
                     shopGoodsOrder.getAdvanceAmount().add(calcSingleAmountVo.getAdvanceAmount()));
-            // 耗材费
-            //shopGoodsOrder.setMaterialAmount(calcSingleAmountVo.getMaterialAmount());
             // 实际付款
             shopGoodsOrder.setTotalRealPayment(shopGoodsOrder.getTotalRealPayment() == null ?
                     calcSingleAmountVo.getSingleRealAmount() :
@@ -351,6 +358,7 @@ public class ShopGoodsOriginatorOrderController {
             shopGoodsOrderDetail.setShopGoodsId(shopGoodsOrderVo.getShopGoodsId());
             shopGoodsOrderDetail.setSortName(shopGoods.getShopName());
             shopGoodsOrderDetail.setPic(shopGoods.getPic());
+            shopGoodsOrderDetail.setMarketPrice(shopGoods.getMarketPrice());
             shopGoodsOrderDetail.setMarketPrice(shopGoods.getMarketPrice());
             shopGoodsOrderDetail.setCostPrice(shopGoods.getCostPrice());
             shopGoodsOrderDetail.setMenberPrice(shopGoods.getMenberPrice());
@@ -456,63 +464,60 @@ public class ShopGoodsOriginatorOrderController {
             // 总金额：会员价
             BigDecimal singleTotalAmount = BigDecimalUtil.mul(shopGoods.getMenberPrice(), count);
             singleCalcAmountVo.setSingleTotalAmount(singleTotalAmount);
-            // 耗材费
-//            BigDecimal materialCosts = new BigDecimal(0);
-//            if (shopGoods.getGoodsUnit() != null & shopGoods.getGoodsUnitCount()!= null) {
-//                calcMaterialCosts(vo.getCount(), shopGoods.getGoodsUnitCount(), shopGoods.getGoodsUnit(), new BigDecimal(0));
-//            }
-//            singleCalcAmountVo.setMaterialAmount(materialCosts);
             // 计算折扣：1.满减折扣 2.合伙人本身折扣 3.权额折扣 取折扣率最高的计算
             BigDecimal discountRate = new BigDecimal(1);
-            // 满减折扣
-            int size = 0;
-            for (int i = 0; i < advanceRechargeInfos.size(); i++) {
-                // 权限不够只能使用三级折扣
-                if (originatorInfo.getDiscountStatus() != 1 && i > 2) {
-                    size = i;
-                    break;
-                }
-                if (advanceRechargeInfos.get(i).getAmount().compareTo(singleTotalAmount) > 0) {
-                    size = i;
-                    break;
-                }
-            }
-            discountRate = size == 0 ? discountRate : advanceRechargeInfos.get(size).getDiscountRate();
-            // 本身折扣
-            discountRate = discountRate.compareTo(originatorInfo.getDiscount()) >= 0 ?
-                    originatorInfo.getDiscount() : discountRate;
-            // 权额折扣  判断权额能否购买
-            if (vo.getPayType().equals(BaseConstant.PAY_TYPE_3)) {
-                for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
-                    if (advanceRechargeRecord.getDiscountRate().compareTo(discountRate) > 0) {
-                        continue;
+            // TODO 写死了id，当商品为礼盒和酒具的时候不打折
+            if (shopGoods.getPlatformGoodsCategoryId() != 4 && shopGoods.getPlatformGoodsCategoryId() != 5) {
+                // 满减折扣
+                int size = 0;
+                for (int i = 0; i < advanceRechargeInfos.size(); i++) {
+                    // 权限不够只能使用三级折扣
+                    if (originatorInfo.getDiscountStatus() != 1 && i > 2) {
+                        size = i;
+                        break;
                     }
-                    // 权额折扣
-                    BigDecimal advanceRate = advanceRechargeRecord.getDiscountRate();
-                    // 权额的折扣更大
-                    if (advanceRate.compareTo(discountRate) <= 0) {
-                        // 权额金额
-                        BigDecimal advanceAmount = advanceRechargeRecord.getAmount().divide(advanceRate, 2, RoundingMode.HALF_UP);
-                        if (advanceAmount.compareTo(singleTotalAmount) >= 0) {
-                            // 权额充足
-                            singleCalcAmountVo.setAdvanceAmount(singleCalcAmountVo.getAdvanceAmount() == null ? singleTotalAmount : singleCalcAmountVo.getAdvanceAmount().add(singleTotalAmount));
-                            BigDecimal multiply = singleTotalAmount.multiply(advanceRate);
-                            advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(multiply));
-                            singleTotalAmount = new BigDecimal(0);
-                            singleCalcAmountVo.setAdvanceIds(advanceRechargeRecord.getId().toString());
-                            // 实付金额
-                            singleCalcAmountVo.setSingleRealAmount(singleCalcAmountVo.getSingleRealAmount().add(multiply));
-                            break;
-                        } else {
-                            // 权额不足
-                            singleCalcAmountVo.setAdvanceAmount(singleCalcAmountVo.getAdvanceAmount().add(advanceAmount));
-                            singleTotalAmount = singleTotalAmount.subtract(advanceAmount);
-                            advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(advanceAmount));
-                            singleCalcAmountVo.setAdvanceIds(singleCalcAmountVo.getAdvanceIds() == null ?
-                                    advanceRechargeRecord.getId().toString() :
-                                    singleCalcAmountVo.getAdvanceIds() + "," + advanceRechargeRecord.getId().toString());
-                            // 实付金额
-                            singleCalcAmountVo.setSingleRealAmount(singleCalcAmountVo.getSingleRealAmount().add(advanceAmount));
+                    if (advanceRechargeInfos.get(i).getAmount().compareTo(singleTotalAmount) > 0) {
+                        size = i;
+                        break;
+                    }
+                }
+                discountRate = size == 0 ? discountRate : advanceRechargeInfos.get(size).getDiscountRate();
+                // 本身折扣
+                discountRate = discountRate.compareTo(originatorInfo.getDiscount()) >= 0 ?
+                        originatorInfo.getDiscount() : discountRate;
+                // 权额折扣  判断权额能否购买
+                if (vo.getPayType().equals(BaseConstant.PAY_TYPE_3)) {
+                    for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
+                        if (advanceRechargeRecord.getDiscountRate().compareTo(discountRate) > 0) {
+                            continue;
+                        }
+                        // 权额折扣
+                        BigDecimal advanceRate = advanceRechargeRecord.getDiscountRate();
+                        // 权额的折扣更大
+                        if (advanceRate.compareTo(discountRate) <= 0) {
+                            // 权额金额
+                            BigDecimal advanceAmount = advanceRechargeRecord.getAmount().divide(advanceRate, 2, RoundingMode.HALF_UP);
+                            if (advanceAmount.compareTo(singleTotalAmount) >= 0) {
+                                // 权额充足
+                                singleCalcAmountVo.setAdvanceAmount(singleCalcAmountVo.getAdvanceAmount() == null ? singleTotalAmount : singleCalcAmountVo.getAdvanceAmount().add(singleTotalAmount));
+                                BigDecimal multiply = singleTotalAmount.multiply(advanceRate);
+                                advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(multiply));
+                                singleTotalAmount = new BigDecimal(0);
+                                singleCalcAmountVo.setAdvanceIds(advanceRechargeRecord.getId().toString());
+                                // 实付金额
+                                singleCalcAmountVo.setSingleRealAmount(singleCalcAmountVo.getSingleRealAmount().add(multiply));
+                                break;
+                            } else {
+                                // 权额不足
+                                singleCalcAmountVo.setAdvanceAmount(singleCalcAmountVo.getAdvanceAmount().add(advanceAmount));
+                                singleTotalAmount = singleTotalAmount.subtract(advanceAmount);
+                                advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(advanceAmount));
+                                singleCalcAmountVo.setAdvanceIds(singleCalcAmountVo.getAdvanceIds() == null ?
+                                        advanceRechargeRecord.getId().toString() :
+                                        singleCalcAmountVo.getAdvanceIds() + "," + advanceRechargeRecord.getId().toString());
+                                // 实付金额
+                                singleCalcAmountVo.setSingleRealAmount(singleCalcAmountVo.getSingleRealAmount().add(advanceAmount));
+                            }
                         }
                     }
                 }
@@ -524,17 +529,6 @@ public class ShopGoodsOriginatorOrderController {
             calcAmountVo.setActualAmount(calcAmountVo.getActualAmount().add(singleCalcAmountVo.getSingleRealAmount().add(singleCalcAmountVo.getMaterialAmount())));
             singleCalcAmountVoList.add(singleCalcAmountVo);
         }
-        // TODO 合伙人返品牌费
-//        OriginatorInfoOrder originatorInfoOrder = originatorInfoOrderService.selectOne(
-//                new EntityWrapper<OriginatorInfoOrder>()
-//                        .eq("submit_order_user", UserUuidThreadLocal.get().getId())
-//                        .ne("remian_amount", 0));
-//        if (originatorInfoOrder != null) {
-//            BigDecimal originatorAmount = originatorInfoOrder.getOrderAmount().multiply(BaseConstant.ORIGINATOR_RATE);
-//            calcAmountVo.setOriginatorAmount(originatorAmount);
-//        }
-        // TODO 运费
-        // TODO 礼盒费
         // 实际支付费用
         calcAmountVo.setCalcAmountVoList(singleCalcAmountVoList);
         return calcAmountVo;

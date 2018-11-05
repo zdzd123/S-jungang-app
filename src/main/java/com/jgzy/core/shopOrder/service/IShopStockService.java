@@ -15,4 +15,6 @@ import com.jgzy.entity.po.ShopStock;
 public interface IShopStockService extends IService<ShopStock> {
 
     ShopStockVo selectMyStock(Integer platformGoodsCategoryId, String shopName);
+
+    ShopStockVo selectMyStockById(Integer id);
 }

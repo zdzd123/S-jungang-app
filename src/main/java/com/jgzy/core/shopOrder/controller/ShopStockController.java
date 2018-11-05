@@ -112,7 +112,7 @@ public class ShopStockController {
         List<ShopStock> shopStockList = new ArrayList<>();
         for (ShopStockVo shopStockVo : voList) {
             ShopGoodsOrderDetail shopGoodsOrderDetail = new ShopGoodsOrderDetail();
-            ShopStock shopStock = shopStockService.selectById(shopStockVo.getId());
+            ShopStockVo shopStock = shopStockService.selectMyStockById(shopStockVo.getId());
             if (shopStock == null) {
                 throw new OptimisticLockingFailureException("不存在该库存！");
             }
@@ -122,12 +122,18 @@ public class ShopStockController {
             shopGoodsOrderDetail.setShopGoodsId(shopStock.getShopGoodsId());
             shopGoodsOrderDetail.setBuyCount(shopStockVo.getCount());
             shopGoodsOrderDetail.setAddTime(date);
+            // 商品具体信息
+            shopGoodsOrderDetail.setPic(shopStock.getPic());
+            shopGoodsOrderDetail.setMenberPrice(shopStock.getMenberPrice());
+            shopGoodsOrderDetail.setSortName(shopStock.getShopName());
             shopGoodsOrderDetailList.add(shopGoodsOrderDetail);
             count += shopStockVo.getCount();
             //库存
-            shopStock.setUpdateTime(date);
-            shopStock.setCount(shopStock.getCount() - shopStockVo.getCount());
-            shopStockList.add(shopStock);
+            ShopStock myShopStock = new ShopStock();
+            myShopStock.setId(shopStock.getId());
+            myShopStock.setUpdateTime(date);
+            myShopStock.setCount(shopStock.getCount() - shopStockVo.getCount());
+            shopStockList.add(myShopStock);
         }
         BigDecimal materialCosts = calcMaterialCosts(count, new BigDecimal(0));
         shopGoodsOrder.setMaterialAmount(materialCosts);
@@ -141,8 +147,17 @@ public class ShopStockController {
             shopGoodsOrder.setCarriageType(BaseConstant.CARRIAGE_TYPE_1);
             shopGoodsOrder.setOrderAmountTotal(materialCosts);
             shopGoodsOrder.setTotalRealPayment(materialCosts);
-            String ip = InetAddress.getLocalHost().getHostAddress();
-            resultMap = weiXinPay(ip, tradeNo, materialCosts, "");
+            // 当不存在耗材费时 更新库存
+            if(materialCosts.compareTo(new BigDecimal(0))==0){
+                // 更新库存
+                boolean batchById = shopStockService.updateBatchById(shopStockList);
+                if (!batchById){
+                    throw new OptimisticLockingFailureException("库存更新失败！");
+                }
+            }else {
+                String ip = InetAddress.getLocalHost().getHostAddress();
+                resultMap = weiXinPay(ip, tradeNo, materialCosts, "");
+            }
         }
         boolean insert = shopGoodsOrderService.insert(shopGoodsOrder);
         if (!insert) {

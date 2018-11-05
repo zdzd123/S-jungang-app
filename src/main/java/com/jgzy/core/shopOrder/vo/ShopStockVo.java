@@ -10,12 +10,16 @@ import java.math.BigDecimal;
 public class ShopStockVo {
     @ApiModelProperty(value = "库存id", example = "1")
     private Integer id;
+    @ApiModelProperty(value = "商品id", example = "1")
+    private Integer shopGoodsId;
     @ApiModelProperty(value = "我的库存数量", example = "1")
     private Integer count;
     @ApiModelProperty(value = "商品名称", example = "1")
     private String shopName;
     @ApiModelProperty(value = "商品描述", example = "1")
     private String shopDescribe;
+    @ApiModelProperty(value = "商品图片", example = "1.png")
+    private String pic;
     @ApiModelProperty(value = "会员价", example = "1")
     private BigDecimal menberPrice;
     @NotNull
@@ -30,6 +34,22 @@ public class ShopStockVo {
     @NotNull
     @ApiModelProperty(value = "发货地址", example = "1")
     private Integer shipAddressId;
+
+    public Integer getShopGoodsId() {
+        return shopGoodsId;
+    }
+
+    public void setShopGoodsId(Integer shopGoodsId) {
+        this.shopGoodsId = shopGoodsId;
+    }
+
+    public String getPic() {
+        return pic;
+    }
+
+    public void setPic(String pic) {
+        this.pic = pic;
+    }
 
     public Integer getAddressId() {
         return addressId;

@@ -7,6 +7,7 @@
             stock.count,
             goods.shop_name,
             goods.shop_describe,
+            goods.pic,
             goods.menber_price,
             goods.stock
         FROM
@@ -21,6 +22,25 @@
                 AND goods.shop_name LIKE #{myShopName}
             </if>
         </where>
+    </select>
 
+    <select id="selectMyStockById" resultType="com.jgzy.core.shopOrder.vo.ShopStockVo">
+        SELECT
+        stock.id,
+        goods.id as shopGoodsId,
+        stock.count,
+        goods.shop_name,
+        goods.shop_describe,
+        goods.pic,
+        goods.menber_price,
+        goods.stock
+        FROM
+        shop_stock stock
+        JOIN shop_goods goods ON stock.shop_goods_id = goods.id
+        <where>
+            <if test="id!=null">
+                stock.id = #{id}
+            </if>
+        </where>
     </select>
 </mapper>

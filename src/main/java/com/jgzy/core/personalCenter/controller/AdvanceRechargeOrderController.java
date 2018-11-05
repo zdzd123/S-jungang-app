@@ -13,9 +13,7 @@ import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.common.WeiXinData;
 import com.jgzy.entity.common.WeiXinTradeType;
 import com.jgzy.entity.po.*;
-import com.jgzy.utils.CommonUtil;
-import com.jgzy.utils.WeiXinNotify;
-import com.jgzy.utils.WeiXinPayUtil;
+import com.jgzy.utils.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -154,11 +152,13 @@ public class AdvanceRechargeOrderController {
             notify.setResultFail("order fail");
             return notify.getBodyXML();
         }
+        // 更新时间
+        Date date = new Date();
         // 更新订单
         AdvanceRechargeOrder myAdvanceRechargeOrder = new AdvanceRechargeOrder();
         myAdvanceRechargeOrder.setId(advanceRechargeOrder.getId());
         myAdvanceRechargeOrder.setOrderStatus(BaseConstant.ORDER_STATUS_11);
-        myAdvanceRechargeOrder.setPayTime(new Date());
+        myAdvanceRechargeOrder.setPayTime(date);
         advanceRechargeOrderService.updateById(myAdvanceRechargeOrder);
         // 插入流水
         UserFund userFund = new UserFund();
@@ -179,17 +179,26 @@ public class AdvanceRechargeOrderController {
         // 存在权额是更新，不存在插入
         if (advanceRechargeRecord != null){
             advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().add(totalAmount));
-            advanceRechargeRecord.setUpdateTime(new Date());
+            advanceRechargeRecord.setUpdateTime(date);
             advanceRechargeRecordService.updateById(advanceRechargeRecord);
         }else {
             advanceRechargeRecord = new AdvanceRechargeRecord();
             advanceRechargeRecord.setLevelId(advanceRechargeOrder.getLevelId());
             advanceRechargeRecord.setAmount(totalAmount);
-            advanceRechargeRecord.setCreateTime(new Date());
+            advanceRechargeRecord.setCreateTime(date);
             advanceRechargeRecord.setDiscountRate(advanceRechargeOrder.getDiscountRate());
             advanceRechargeRecord.setUserId(advanceRechargeOrder.getSubmitOrderUser());
             advanceRechargeRecordService.insert(advanceRechargeRecord);
         }
+        // 微信认证 openid (必填)
+        UserOauth userOauth = userOauthService.selectOne(
+                new EntityWrapper<UserOauth>()
+                        .eq("user_id", UserUuidThreadLocal.get().getId()));
+        if (userOauth == null || userOauth.getOauthOpenid() == null) {
+            throw new OptimisticLockingFailureException("微信认证有误");
+        }
+        // 权额充值模版消息
+        TemplateMessageUtil.initRechargeTemplate(userOauth.getOauthOpenid(), DateUtil.formatDate(date, DateUtil.DATETIME_FORMAT), totalAmount.toString());
         logger.info("-----------------------微信回调接口结束------------------------------");
         notify.setResultSuccess();
         return notify.getBodyXML();

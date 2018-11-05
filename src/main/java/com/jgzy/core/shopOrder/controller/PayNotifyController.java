@@ -6,10 +6,13 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.jgzy.config.AlipayConfig;
 import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.service.IAdvanceRechargeRecordService;
+import com.jgzy.core.personalCenter.service.IUserOauthService;
 import com.jgzy.core.shopOrder.service.*;
+import com.jgzy.entity.common.Template;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.*;
 import com.jgzy.utils.DateUtil;
+import com.jgzy.utils.TemplateMessageUtil;
 import com.jgzy.utils.WeiXinNotify;
 import com.jgzy.utils.WeiXinPayUtil;
 import io.swagger.annotations.Api;
@@ -51,6 +54,8 @@ public class PayNotifyController {
     private IShopGoodsOrderDetailService shopGoodsOrderDetailList;
     @Autowired
     private IOriginatorInfoService originatorInfoService;
+    @Autowired
+    private IUserOauthService userOauthService;
 
     @ApiOperation(value = "支付宝回调接口", notes = "支付宝回调接口")
     @PostMapping(value = "/aliNotifyUrl")
@@ -140,7 +145,7 @@ public class PayNotifyController {
     @ApiOperation(value = "微信回调接口", notes = "微信回调接口")
     @PostMapping(value = "/weixinNotifyUrl")
     @Transactional
-    public String weixinNotifyUrl(HttpServletRequest request) {
+    public String weixinNotifyUrl(HttpServletRequest request) throws Exception{
         WeiXinNotify notify = WeiXinPayUtil.notify_url(request);
         System.out.println("notify-------------------------------------------------------" + notify);
         String outTradeNo = notify.getOut_trade_no(); // 商户网站订单系统中唯一订单号
@@ -288,6 +293,16 @@ public class PayNotifyController {
                 }
             }
         }
+        // 微信认证 openid (必填)
+        UserOauth userOauth = userOauthService.selectOne(
+                new EntityWrapper<UserOauth>()
+                        .eq("user_id", UserUuidThreadLocal.get().getId()));
+        if (userOauth == null || userOauth.getOauthOpenid() == null) {
+            throw new OptimisticLockingFailureException("微信认证有误");
+        }
+        // 推送支付成功模版消息
+        TemplateMessageUtil.initPaySuccessTemplate(userOauth.getOauthOpenid(), shopGoodsOrder.getOrderNo(), shopGoodsOrder.getOrderAmountTotal().toString(),
+                shopGoodsOrder.getCouponAmount().toString(), shopGoodsOrder.getTotalRealPayment().toString());
         // TODO 品牌费返现
         logger.info("-----------------------微信回调接口结束------------------------------");
         notify.setResultSuccess();

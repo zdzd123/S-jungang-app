@@ -18,4 +18,6 @@ import org.springframework.stereotype.Repository;
 public interface ShopStockMapper extends BaseMapper<ShopStock> {
 
     ShopStockVo selectMyStock(@Param("platformGoodsCategoryId") Integer platformGoodsCategoryId, @Param("shopName")String shopName);
+
+    ShopStockVo selectMyStockById(@Param("id") Integer id);
 }

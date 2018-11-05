@@ -32,6 +32,8 @@ public class OriginatorInfo implements Serializable {
     private Integer userId;
     @ApiModelProperty(value = "用户名称", example = "1")
     private String userName;
+    @ApiModelProperty(value = "合伙人等级 1-初级 2-正式 3-中级 4-高级 5-直属", example = "1")
+    private Integer levelId;
     @ApiModelProperty(value = "身份证号码", example = "111111")
     private String identifyNo;
 //    @ApiModelProperty(value = "公司名称", example = "阿里巴巴")
@@ -69,6 +71,14 @@ public class OriginatorInfo implements Serializable {
     private BigDecimal discount;
     @ApiModelProperty(value = "查看折扣标识 0-关闭 1-打开", example = "1")
     private Integer discountStatus;
+
+    public Integer getLevelId() {
+        return levelId;
+    }
+
+    public void setLevelId(Integer levelId) {
+        this.levelId = levelId;
+    }
 
     public String getAddress() {
         return address;
