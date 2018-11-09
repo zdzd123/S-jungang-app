@@ -36,11 +36,11 @@ public class SwaggerConfig {
         return setDocket("com.jgzy.core.shopOrder", "shopOrder", pars);
     }
 
-//    @Bean
-//    Docket example() {
-//        List<Parameter> pars = setHeader();
-//        return setDocket("com.jgzy.core.example", "example", pars);
-//    }
+    @Bean
+    Docket news() {
+        List<Parameter> pars = setHeader();
+        return setDocket("com.jgzy.core.news", "news", pars);
+    }
 
     private Docket setDocket(String path, String groupName) {
         return new Docket(DocumentationType.SWAGGER_2)

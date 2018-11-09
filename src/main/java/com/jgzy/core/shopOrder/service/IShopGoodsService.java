@@ -1,6 +1,9 @@
 package com.jgzy.core.shopOrder.service;
 
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
+import com.jgzy.core.shopOrder.vo.ShopGoodsVo;
 import com.jgzy.entity.po.ShopGoods;
 
 /**
@@ -13,4 +16,5 @@ import com.jgzy.entity.po.ShopGoods;
  */
 public interface IShopGoodsService extends IService<ShopGoods> {
 
+    Page<ShopGoodsVo> selectPageVo(Page<ShopGoodsVo> page, EntityWrapper<ShopGoods> entityWrapper);
 }

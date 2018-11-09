@@ -1,18 +1,12 @@
 package com.jgzy.core;
 
-/*
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
+import com.jgzy.utils.TemplateMessageUtil;
+
 public class JgzyAppApplicationTests {
 
-    @Test
-    public void contextLoads() {
+    public static void main(String[] args) {
+        TemplateMessageUtil.initRechargeTemplate("oRwM807ryfxq-gVH8e9fZd0K3mkA", "2018-10-01 11:11:10", "100");
     }
-
 }
-*/
+

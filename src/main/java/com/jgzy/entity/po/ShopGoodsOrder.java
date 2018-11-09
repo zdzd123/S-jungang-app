@@ -113,7 +113,7 @@ public class ShopGoodsOrder implements Serializable {
     @ApiModelProperty(value = "关闭时间", example = "2018-06-29 09:17:54")
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
     private Date closingTime;
-    @ApiModelProperty(value = "订单来源（IOS=1|Android=2|Service(后台)=3|Live(直播)=4）", example = "1")
+    @ApiModelProperty(value = "订单来源（合伙人=1|库存=2|普通消费者=3|品牌费=4）", example = "1")
     private Integer orderSource;
     @ApiModelProperty(value = "订单标签", example = "1")
     private String shopOrderTag;
@@ -135,7 +135,7 @@ public class ShopGoodsOrder implements Serializable {
     private Integer parentOrderId;
     @ApiModelProperty(value = "总金额", example = "1")
     private BigDecimal totalAmount;
-    @ApiModelProperty(value = "总消耗积分", example = "1")
+    @ApiModelProperty(value = "总消耗余额", example = "1")
     private BigDecimal totalPoint;
     @TableField("total_Real_payment")
     @ApiModelProperty(value = "总实际付款", example = "1")

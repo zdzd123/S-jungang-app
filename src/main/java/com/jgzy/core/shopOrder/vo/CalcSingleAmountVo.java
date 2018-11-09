@@ -12,7 +12,7 @@ public class CalcSingleAmountVo {
     private Integer shopInfoId;
     @ApiModelProperty(value = "商品总金额", example = "200")
     private BigDecimal singleTotalAmount = new BigDecimal("0");
-    @ApiModelProperty(value = "商品折扣后金额", example = "200")
+    @ApiModelProperty(value = "商品折扣金额", example = "200")
     private BigDecimal singleRateAmount = new BigDecimal("0");
     @ApiModelProperty(value = "商品实际支付金额", example = "200")
     private BigDecimal singleRealAmount = new BigDecimal("0");
@@ -20,8 +20,8 @@ public class CalcSingleAmountVo {
     private String advanceIds;
     @ApiModelProperty(value = "权额金额", example = "200")
     private BigDecimal advanceAmount = new BigDecimal("0");
-    @ApiModelProperty(value = "耗材费", example = "200")
-    private BigDecimal materialAmount = new BigDecimal("0");
+    @ApiModelProperty(value = " 余额金额", example = "200")
+    private BigDecimal singleRemainAmount;
 
     @ApiModelProperty(value = "商品名", example = "巴朗波尔多干红葡萄酒")
     private String shopName;
@@ -35,6 +35,14 @@ public class CalcSingleAmountVo {
     //private String shopDescribe;
     @ApiModelProperty(value = "图片(多张以\",\"分隔)", example = "1.jpg")
     private String pic;
+
+    public BigDecimal getSingleRemainAmount() {
+        return singleRemainAmount;
+    }
+
+    public void setSingleRemainAmount(BigDecimal singleRemainAmount) {
+        this.singleRemainAmount = singleRemainAmount;
+    }
 
     public String getShopName() {
         return shopName;
@@ -125,14 +133,6 @@ public class CalcSingleAmountVo {
         this.advanceAmount = advanceAmount;
     }
 
-    public BigDecimal getMaterialAmount() {
-        return materialAmount;
-    }
-
-    public void setMaterialAmount(BigDecimal materialAmount) {
-        this.materialAmount = materialAmount;
-    }
-
     @Override
     public String toString() {
         return "CalcSingleAmountVo{" +
@@ -142,7 +142,6 @@ public class CalcSingleAmountVo {
                 ", singleRealAmount=" + singleRealAmount +
                 ", advanceIds='" + advanceIds + '\'' +
                 ", advanceAmount=" + advanceAmount +
-                ", materialAmount=" + materialAmount +
                 ", shopName='" + shopName + '\'' +
                 ", marketPrice=" + marketPrice +
                 ", costPrice=" + costPrice +

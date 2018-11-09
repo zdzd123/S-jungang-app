@@ -34,4 +34,10 @@
                 AND valid_date_end > #{now}
             ) coupon
     </select>
+    <update id="updateStockRight">
+        update user_info set point = IFNULL(point, 0) + #{stockRight} where id =#{id}
+    </update>
+    <update id="updateCommissionDiscount">
+      update user_info set balance1 = IFNULL(balance1, 0) + #{commission} where id = #{id}
+    </update>
 </mapper>

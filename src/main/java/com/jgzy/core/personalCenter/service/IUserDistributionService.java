@@ -5,12 +5,11 @@ import com.jgzy.entity.po.UserDistribution;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author zou
  * @since 2018-10-26
  */
 public interface IUserDistributionService extends IService<UserDistribution> {
-
 }

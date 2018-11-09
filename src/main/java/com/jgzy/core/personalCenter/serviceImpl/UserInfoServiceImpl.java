@@ -10,6 +10,7 @@ import com.jgzy.utils.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -32,5 +33,15 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         String now = DateUtil.getNow();
         PersonalCenterVo personalCenterVo = userInfoMapper.statistics(id, now);
         return personalCenterVo;
+    }
+
+    @Override
+    public boolean updateStockRightDiscount(Integer id, BigDecimal stockRight) {
+        return userInfoMapper.updateStockRight(id, stockRight);
+    }
+
+    @Override
+    public boolean updateCommissionDiscount(Integer id, BigDecimal commission) {
+        return userInfoMapper.updateCommissionDiscount(id, commission);
     }
 }

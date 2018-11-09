@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jgzy.core.personalCenter.mapper.UserDistributionConstantMapper">
+    <select id="selectMyDistributionById" resultType="com.jgzy.entity.po.UserDistributionConstant">
+        SELECT
+        user.id,
+        constant.level_id,
+        constant.commission_discount,
+        constant.stock_right_discount,
+        constant.add_time,
+        constant.update_time
+        FROM
+        user_distribution_constant constant
+        LEFT JOIN
+        user_info user ON constant.level_id = user.user_level_id
+        <where>
+            user.id = #{id}
+        </where>
+    </select>
+    <select id="selectParentDistributionById" resultType="com.jgzy.entity.po.UserDistributionConstant">
+        SELECT
+            user.id,
+            constant.level_id,
+            constant.commission_discount,
+            constant.stock_right_discount,
+            constant.add_time,
+            constant.update_time
+        FROM
+            user_distribution_constant constant
+                LEFT JOIN
+            user_info user ON constant.level_id = user.user_level_id
+                LEFT JOIN
+            user_distribution dis ON dis.parent_id = user.id
+        WHERE
+            dis.user_id = #{id}
+    </select>
+</mapper>

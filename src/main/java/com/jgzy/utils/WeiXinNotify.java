@@ -81,4 +81,34 @@ public class WeiXinNotify {
         return xml.toString();
     }
 
+    @Override
+    public String toString() {
+        return "WeiXinNotify{" +
+                "appid='" + appid + '\'' +
+                ", total_fee='" + total_fee + '\'' +
+                ", bank_type='" + bank_type + '\'' +
+                ", cash_fee='" + cash_fee + '\'' +
+                ", fee_type='" + fee_type + '\'' +
+                ", is_subscribe='" + is_subscribe + '\'' +
+                ", mch_id='" + mch_id + '\'' +
+                ", nonce_str='" + nonce_str + '\'' +
+                ", out_trade_no='" + out_trade_no + '\'' +
+                ", transaction_id='" + transaction_id + '\'' +
+                ", openid='" + openid + '\'' +
+                ", sign='" + sign + '\'' +
+                ", result_code='" + result_code + '\'' +
+                ", return_code='" + return_code + '\'' +
+                ", time_end='" + time_end + '\'' +
+                ", trade_type='" + trade_type + '\'' +
+                ", return_msg='" + return_msg + '\'' +
+                ", coupon_count='" + coupon_count + '\'' +
+                ", coupon_fee='" + coupon_fee + '\'' +
+                ", coupon_fee_0='" + coupon_fee_0 + '\'' +
+                ", coupon_id_0='" + coupon_id_0 + '\'' +
+                ", coupon_fee_1='" + coupon_fee_1 + '\'' +
+                ", coupon_id_1='" + coupon_id_1 + '\'' +
+                ", coupon_fee_2='" + coupon_fee_2 + '\'' +
+                ", coupon_id_2='" + coupon_id_2 + '\'' +
+                '}';
+    }
 }

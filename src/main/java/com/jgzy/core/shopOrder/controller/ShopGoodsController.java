@@ -5,16 +5,15 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.service.IAdvanceRechargeInfoService;
+import com.jgzy.core.shopOrder.service.IOriginatorDiscountInfoService;
 import com.jgzy.core.shopOrder.service.IOriginatorInfoService;
 import com.jgzy.core.shopOrder.service.IShopGoodsService;
 import com.jgzy.core.shopOrder.vo.CalcRateAmountVo;
 import com.jgzy.core.shopOrder.vo.CalcSingleAmountVo;
+import com.jgzy.core.shopOrder.vo.ShopGoodsVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
-import com.jgzy.entity.po.AdvanceRechargeInfo;
-import com.jgzy.entity.po.OriginatorInfo;
-import com.jgzy.entity.po.ShopGoods;
-import com.jgzy.entity.po.UserInfo;
+import com.jgzy.entity.po.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -44,15 +43,15 @@ public class ShopGoodsController {
     @Autowired
     private IOriginatorInfoService originatorInfoService;
     @Autowired
-    private IAdvanceRechargeInfoService advanceRechargeInfoService;
+    private IOriginatorDiscountInfoService originatorDiscountInfoService;
 
     @ApiOperation(value = "商品信息（分页）", notes = "商品信息（分页）")
     @PostMapping(value = "/page/list")
-    public ResultWrapper<Page<ShopGoods>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
-                                                   @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize,
-                                                   @RequestBody @Validated ShopGoods po) {
-        ResultWrapper<Page<ShopGoods>> resultWrapper = new ResultWrapper<>();
-        Page<ShopGoods> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
+    public ResultWrapper<Page<ShopGoodsVo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
+                                                     @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize,
+                                                     @RequestBody @Validated ShopGoods po) {
+        ResultWrapper<Page<ShopGoodsVo>> resultWrapper = new ResultWrapper<>();
+        Page<ShopGoodsVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
         EntityWrapper<ShopGoods> entityWrapper = new EntityWrapper<>();
         // 商品id
         if (po.getId() != null) {
@@ -81,11 +80,7 @@ public class ShopGoodsController {
         if (po.getShopName() != null){
             entityWrapper.like("shop_name", po.getShopName());
         }
-//        String now = DateUtil.getNow();
-//        entityWrapper.le("grounding_time", now);
-//        entityWrapper.ge("undercarriage_time", now);
-
-        page = shopGoodsService.selectPage(page, entityWrapper);
+        page = shopGoodsService.selectPageVo(page, entityWrapper);
         resultWrapper.setResult(page);
         return resultWrapper;
     }
@@ -98,22 +93,29 @@ public class ShopGoodsController {
                 new EntityWrapper<OriginatorInfo>()
                         .eq("user_id", UserUuidThreadLocal.get().getId())
                         .eq("status", BaseConstant.ORIGINATOR_INFO_STATUS_0));
-        List<AdvanceRechargeInfo> advanceRechargeInfos = advanceRechargeInfoService.selectList(
-                new EntityWrapper<AdvanceRechargeInfo>()
-                        .orderBy("level_id"));
+        List<OriginatorDiscountInfo> advanceRechargeInfos = originatorDiscountInfoService.selectList(
+                new EntityWrapper<OriginatorDiscountInfo>()
+                        .orderBy("discount_rate desc"));
         // 是合伙人并且能查看所有折扣
         int size = 0;
         for (int i = 0; i < advanceRechargeInfos.size(); i++) {
+
             if ((originatorInfo == null || originatorInfo.getDiscountStatus() != 1) && i > 2) {
                 size = i-1;
                 break;
             }
-            if (advanceRechargeInfos.get(i).getAmount().compareTo(amount) > 0) {
+            if (advanceRechargeInfos.get(i).getAmount().divide(
+                    advanceRechargeInfos.get(i).getDiscountRate(),2,BigDecimal.ROUND_HALF_UP).compareTo(amount) > 0) {
                 size = i;
                 break;
             }
         }
-        BigDecimal remainAmount = advanceRechargeInfos.get(size).getAmount().subtract(amount);
+        // 需要折扣的金额
+        BigDecimal totalAmount = advanceRechargeInfos.get(size).getAmount().divide(
+                advanceRechargeInfos.get(size).getDiscountRate(), 2, BigDecimal.ROUND_HALF_UP);
+        // 剩余多少享受折扣
+        BigDecimal remainAmount = totalAmount.subtract(amount);
+        // 折扣
         BigDecimal discount = advanceRechargeInfos.get(size).getDiscountRate();
         CalcRateAmountVo singleCalcAmountVo = new CalcRateAmountVo();
         singleCalcAmountVo.setRemainAmount((remainAmount.compareTo(new BigDecimal(0))<=0)?null:remainAmount);

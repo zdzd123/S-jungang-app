@@ -1,6 +1,7 @@
 package com.jgzy.utils;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -79,5 +80,46 @@ public class CommonUtil {
             e.printStackTrace();
         }
         return plainText.toUpperCase();
+    }
+
+    /**
+     * 计算耗材费
+     *
+     * @param count         个数
+     * @param materialCosts 金额0
+     * @return 耗材费
+     */
+    public static BigDecimal calcMaterialCosts(int count, BigDecimal materialCosts) {
+        if (count > 24) {
+            return materialCosts;
+        }
+        switch (count) {
+            case 1:
+                materialCosts = BigDecimalUtil.add(materialCosts, 3);
+                break;
+            case 2:
+                materialCosts = materialCosts.add(BigDecimalUtil.mul(2.4, count));
+                break;
+            case 3:
+                materialCosts = materialCosts.add(BigDecimalUtil.mul(2, count));
+                break;
+            case 4:
+                materialCosts = materialCosts.add(BigDecimalUtil.mul(1.8, count));
+                break;
+            case 5:
+                materialCosts = materialCosts.add(BigDecimalUtil.mul(1.5, count));
+                break;
+            case 6:
+                materialCosts = materialCosts.add(BigDecimalUtil.mul(1.4, count));
+                break;
+            default:
+                int remainder = count % 6;
+                materialCosts = BigDecimalUtil.mul(1.4, count - remainder);
+                if (remainder != 0){
+                    materialCosts = calcMaterialCosts(remainder, materialCosts);
+                }
+                break;
+        }
+        return materialCosts;
     }
 }

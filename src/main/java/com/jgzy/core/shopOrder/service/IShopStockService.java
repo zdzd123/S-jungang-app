@@ -1,5 +1,6 @@
 package com.jgzy.core.shopOrder.service;
 
+import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
 import com.jgzy.core.shopOrder.vo.ShopStockVo;
 import com.jgzy.entity.po.ShopStock;
@@ -14,7 +15,7 @@ import com.jgzy.entity.po.ShopStock;
  */
 public interface IShopStockService extends IService<ShopStock> {
 
-    ShopStockVo selectMyStock(Integer platformGoodsCategoryId, String shopName);
+    Page<ShopStockVo> selectMyStock(Page<ShopStockVo> page, Integer platformGoodsCategoryId, String shopName);
 
     ShopStockVo selectMyStockById(Integer id);
 }

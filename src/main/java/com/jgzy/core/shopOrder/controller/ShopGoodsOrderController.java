@@ -12,24 +12,23 @@ import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.config.AlipayConfig;
 import com.jgzy.constant.BaseConstant;
 import com.jgzy.constant.ErrorCodeEnum;
-import com.jgzy.core.personalCenter.service.IUserActivityCouponService;
-import com.jgzy.core.personalCenter.service.IUserAddressService;
-import com.jgzy.core.personalCenter.service.IUserOauthService;
+import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.core.shopOrder.service.IShopGoodsOrderDetailService;
 import com.jgzy.core.shopOrder.service.IShopGoodsOrderService;
 import com.jgzy.core.shopOrder.service.IShopGoodsService;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
-import com.jgzy.entity.common.WeiXinData;
-import com.jgzy.entity.common.WeiXinTradeType;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
+import com.jgzy.entity.common.WeiXinData;
+import com.jgzy.entity.common.WeiXinTradeType;
 import com.jgzy.entity.po.*;
 import com.jgzy.utils.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -38,7 +37,6 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -76,6 +74,10 @@ public class ShopGoodsOrderController {
     private IUserOauthService userOauthService;
     @Autowired
     private AlipayConfig alipayConfig;
+    @Autowired
+    private IAdvanceRechargeRecordService advanceRechargeRecordService;
+    @Autowired
+    private IUserInfoService userInfoService;
 
     @ApiOperation(value = "添加订单唤起支付宝支付", notes = "添加订单唤起支付宝支付")
     @PostMapping(value = "/ali/save")
@@ -153,132 +155,130 @@ public class ShopGoodsOrderController {
     @ApiOperation(value = "添加订单唤起微信支付", notes = "添加订单唤起微信支付")
     @PostMapping(value = "/weixin/save")
     @Transactional
-    public ResultWrapper<HashMap<String, String>> weixinSave(@RequestBody @Validated List<ShopGoodsOrderVo> voList, BindingResult result) {
+    public ResultWrapper<HashMap<String, String>> weixinSave(@RequestBody @Validated List<ShopGoodsOrderVo> voList, BindingResult result) throws Exception {
         ResultWrapper<HashMap<String, String>> resultWrapper = new ResultWrapper<>();
         if (result.hasErrors()) {
             return resultWrapper;
         }
-        try {
-            // 总金额  付款金额 (必填)
-            BigDecimal total_fee = new BigDecimal(0);
-            // 总订单信息
-            ShopGoodsOrder shopGoodsOrder = new ShopGoodsOrder();
+        // 总金额  付款金额 (必填)
+        BigDecimal total_fee = new BigDecimal(0);
+        // 总订单信息
+        ShopGoodsOrder shopGoodsOrder = new ShopGoodsOrder();
+        // 订单详情
+        List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = new ArrayList<>();
+        // 优惠券
+        List<UserActivityCoupon> userActivityCouponList = new ArrayList<>();
+        // 订单IDStr
+        String order_ids = "";
+        // 商户网站订单系统中唯一订单号(必填) 订单号和支付订单号
+        String out_trade_no = CommonUtil.getTradeNo();
+        for (ShopGoodsOrderVo vo : voList) {
             // 订单详情
-            List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = new ArrayList<>();
-            // 优惠券
-            List<UserActivityCoupon> userActivityCouponList = new ArrayList<>();
-            // 订单IDStr
-            String order_ids = "";
-            // 商户网站订单系统中唯一订单号(必填) 订单号和支付订单号
-            String out_trade_no = CommonUtil.getTradeNo();
-            for (ShopGoodsOrderVo vo : voList) {
-                // 订单详情
-                ShopGoodsOrderDetail shopGoodsOrderDetail = new ShopGoodsOrderDetail();
-                // 优惠券信息
-                UserActivityCoupon userActivityCoupon = new UserActivityCoupon();
-                Integer payType = vo.getPayType();
-                if (payType != BaseConstant.PAY_TYPE_2) {
-                    resultWrapper.setErrorMsg("支付类型错误");
-                    return resultWrapper;
-                }
-                // 支付类型
-                shopGoodsOrder.setPayType(payType);
-                // 校验订单信息
-                boolean checkForPay = checkForPay(vo, shopGoodsOrder, shopGoodsOrderDetail, resultWrapper);
-                if (!checkForPay) {
-                    resultWrapper.setSuccessful(checkForPay);
-                    return resultWrapper;
-                }
-                // 优惠券信息
-                if (shopGoodsOrder.getShopActivityCouponId() != null){
-                    userActivityCoupon.setId(shopGoodsOrder.getShopActivityCouponId());
-                    userActivityCoupon.setCouponState(BaseConstant.COUPON_STATE_2);
-                    userActivityCouponList.add(userActivityCoupon);
-                }
-                // 微信订单
-                shopGoodsOrder.setTradeNo(out_trade_no);
-                // 订单ID
-                shopGoodsOrder.setOrderNo(CommonUtil.getTradeNo());
-                // 总金额
-                total_fee = total_fee.add(shopGoodsOrder.getTotalRealPayment());
-                // 订单id
-                shopGoodsOrderDetailList.add(shopGoodsOrderDetail);
-            }
-            // 返回参数
-            HashMap<String, String> resultMap = new HashMap<String, String>();
-            //唤起第三方支付 weixin
-            // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-            String subject = "军港之业消费者订单"; // 订单名称 (必填)
-            // 获取服务器ip
-            String ip = InetAddress.getLocalHost().getHostAddress();
-            UserOauth userOauth = userOauthService.selectOne(
-                    new EntityWrapper<UserOauth>()
-                            .eq("user_id", UserUuidThreadLocal.get().getId()));
-            if (userOauth == null || userOauth.getOauthOpenid() == null) {
-                resultMap.put("return_code", "FAIL");
-                resultMap.put("err_code_des", "openid is null");
-                resultWrapper.setResult(resultMap);
+            ShopGoodsOrderDetail shopGoodsOrderDetail = new ShopGoodsOrderDetail();
+            // 优惠券信息
+            UserActivityCoupon userActivityCoupon = new UserActivityCoupon();
+            Integer payType = vo.getPayType();
+            if (payType != BaseConstant.PAY_TYPE_2) {
+                resultWrapper.setErrorMsg("支付类型错误");
                 return resultWrapper;
             }
-            String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
-            String product_id = ""; // 产品id (非必填)
-            String notify_url = "http://jgapi.china-mail.com.cn/api/payNotify/constant/weixinNotifyUrl";
-            // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-            // 检验订单状态以及订单的金额
-            WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
-                    out_trade_no, subject, total_fee.doubleValue(), ip, notify_url);
-            // 订单失败
-            if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
-                resultMap.put("return_code", wxData.get("return_code"));
-                if (wxData.get("return_msg") != null) {
-                    resultMap.put("return_msg", wxData.get("return_msg"));
-                } else if (wxData.get("err_code_des") != null) {
-                    resultMap.put("err_code_des", wxData.get("err_code_des"));
-                }
-                resultWrapper.setResult(resultMap);
+            // 支付类型
+            shopGoodsOrder.setPayType(payType);
+            // 校验订单信息
+            boolean checkForPay = checkForPay(vo, shopGoodsOrder, shopGoodsOrderDetail, resultWrapper);
+            if (!checkForPay) {
+                resultWrapper.setSuccessful(checkForPay);
                 return resultWrapper;
             }
-            // 插入预订单
-            boolean successful = shopGoodsOrderService.insert(shopGoodsOrder);
-            if (!successful) {
-                throw new OptimisticLockingFailureException("订单插入失败");
+            // 优惠券信息
+            if (shopGoodsOrder.getShopActivityCouponId() != null) {
+                userActivityCoupon.setId(shopGoodsOrder.getShopActivityCouponId());
+                userActivityCoupon.setCouponState(BaseConstant.COUPON_STATE_2);
+                userActivityCouponList.add(userActivityCoupon);
             }
-            // 插入订单详情
-            shopGoodsOrderDetailList.forEach(shopGoodsOrderDetail -> shopGoodsOrderDetail.setOrderId(shopGoodsOrder.getId()));
-            boolean insertBatch = shopGoodsOrderDetailService.insertBatch(shopGoodsOrderDetailList);
-            if (!insertBatch) {
-                throw new OptimisticLockingFailureException("订单详情插入失败");
-            }
-            // 更新优惠券已使用
-            boolean b = userActivityCouponService.updateBatchById(userActivityCouponList);
-            if (!b) {
-                throw new OptimisticLockingFailureException("优惠券更新失败");
-            }
-            resultMap.put("appId", wxData.get("appId"));
-            resultMap.put("nonceStr", wxData.get("nonceStr"));
-            resultMap.put("timeStamp", wxData.get("timeStamp"));
-            resultMap.put("signType", wxData.get("signType"));
-            resultMap.put("packageValue", wxData.get("package"));
-            resultMap.put("sign", wxData.get("sign"));
-            resultMap.put("order_no", out_trade_no);
-            resultMap.put("order_ids", order_ids);
-            resultWrapper.setResult(resultMap);
-        } catch (Exception e) {
-            e.printStackTrace();
+            // 微信订单
+            shopGoodsOrder.setTradeNo(out_trade_no);
+            // 订单ID
+            shopGoodsOrder.setOrderNo(CommonUtil.getTradeNo());
+            // 总金额
+            total_fee = total_fee.add(shopGoodsOrder.getTotalRealPayment());
+            // 订单id
+            shopGoodsOrderDetailList.add(shopGoodsOrderDetail);
         }
+        // 返回参数
+        HashMap<String, String> resultMap = new HashMap<String, String>();
+        //唤起第三方支付 weixin
+        // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+        String subject = "军港之业消费者订单"; // 订单名称 (必填)
+        // 获取服务器ip
+        String ip = InetAddress.getLocalHost().getHostAddress();
+        UserOauth userOauth = userOauthService.selectOne(
+                new EntityWrapper<UserOauth>()
+                        .eq("user_id", UserUuidThreadLocal.get().getId()));
+        if (userOauth == null || userOauth.getOauthOpenid() == null) {
+            resultMap.put("return_code", "FAIL");
+            resultMap.put("err_code_des", "openid is null");
+            resultWrapper.setResult(resultMap);
+            return resultWrapper;
+        }
+        String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
+        String product_id = ""; // 产品id (非必填)
+        String notify_url = "http://jgapi.china-mail.com.cn/api/payNotify/constant/weixinNotifyUrl";
+        // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+        // 检验订单状态以及订单的金额
+        WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
+                out_trade_no, subject, total_fee.doubleValue(), ip, notify_url);
+        // 订单失败
+        if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
+            resultMap.put("return_code", wxData.get("return_code"));
+            if (wxData.get("return_msg") != null) {
+                resultMap.put("return_msg", wxData.get("return_msg"));
+            } else if (wxData.get("err_code_des") != null) {
+                resultMap.put("err_code_des", wxData.get("err_code_des"));
+            }
+            resultWrapper.setResult(resultMap);
+            return resultWrapper;
+        }
+        // 插入预订单
+        boolean successful = shopGoodsOrderService.insert(shopGoodsOrder);
+        if (!successful) {
+            throw new OptimisticLockingFailureException("订单插入失败");
+        }
+        // 插入订单详情
+        shopGoodsOrderDetailList.forEach(shopGoodsOrderDetail -> shopGoodsOrderDetail.setOrderId(shopGoodsOrder.getId()));
+        boolean insertBatch = shopGoodsOrderDetailService.insertBatch(shopGoodsOrderDetailList);
+        if (!insertBatch) {
+            throw new OptimisticLockingFailureException("订单详情插入失败");
+        }
+        // 更新优惠券已使用
+        boolean b = userActivityCouponService.updateBatchById(userActivityCouponList);
+        if (!b) {
+            throw new OptimisticLockingFailureException("优惠券更新失败");
+        }
+        resultMap.put("appId", wxData.get("appId"));
+        resultMap.put("nonceStr", wxData.get("nonceStr"));
+        resultMap.put("timeStamp", wxData.get("timeStamp"));
+        resultMap.put("signType", wxData.get("signType"));
+        resultMap.put("packageValue", wxData.get("package"));
+        resultMap.put("sign", wxData.get("sign"));
+        resultMap.put("order_no", out_trade_no);
+        resultMap.put("order_ids", order_ids);
+        resultWrapper.setResult(resultMap);
         return resultWrapper;
     }
 
     /**
      * 提交订单信息校验
      *
-     * @param vo
-     * @param shopGoodsOrder
-     * @return
+     * @param vo             参数
+     * @param shopGoodsOrder 商品消息
+     * @return 地址检验标识
      */
     private boolean checkForPay(ShopGoodsOrderVo vo, ShopGoodsOrder shopGoodsOrder, ShopGoodsOrderDetail shopGoodsOrderDetail,
                                 ResultWrapper<HashMap<String, String>> resultWrapper) {
         shopGoodsOrder.setSubmitOrderUser(UserUuidThreadLocal.get().getId());
+        // 普通消费者订单
+        shopGoodsOrder.setOrderSource(BaseConstant.ORDER_SOURCE_3);
         Date date = DateUtil.getDate();
         // 验证地址
         Integer userAddressId = vo.getUserAddressId();
@@ -354,22 +354,29 @@ public class ShopGoodsOrderController {
         shopGoodsOrderDetail.setAddTime(new Date());
     }
 
-    @GetMapping(value = "/detail/{id:\\d+}")
-    @ApiImplicitParam(name = "id", value = "订单ID", required = true, paramType = "path", dataType = "Integer")
-    @ApiOperation(value = "通过id查询订单", notes = "通过id查询订单")
-    public ResultWrapper<ShopGoodsOrderVo> detail(@PathVariable("id") Integer id) {
+    @GetMapping(value = "/detail")
+    @ApiOperation(value = "查询订单", notes = "查询订单")
+    public ResultWrapper<ShopGoodsOrderVo> detail(@ApiParam(value = "订单id") @RequestParam(required = false) Integer id,
+                                                  @ApiParam(value = "订单编号") @RequestParam(required = false) String orderNo) {
         ResultWrapper<ShopGoodsOrderVo> resultWrapper = new ResultWrapper<>();
         ShopGoodsOrderVo shopGoodsOrderVo = new ShopGoodsOrderVo();
 
-        ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectById(id);
+        ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectOne(
+                new EntityWrapper<ShopGoodsOrder>().eq(id != null, "id", id)
+                        .eq(StringUtils.isNotEmpty(orderNo), "order_no", orderNo));
+        if (shopGoodsOrder == null) {
+            return resultWrapper;
+        }
         BeanUtils.copyProperties(shopGoodsOrder, shopGoodsOrderVo);
-
-        UserActivityCoupon userActivityCoupon = userActivityCouponService.selectById(shopGoodsOrder.getShopActivityCouponId());
-        // 优惠金额
-        shopGoodsOrderVo.setAmount(userActivityCoupon.getAmount());
-        // 满减要求
-        shopGoodsOrderVo.setMeetAmount(userActivityCoupon.getMeetAmount());
-
+        if (shopGoodsOrder.getShopActivityCouponId() != null) {
+            UserActivityCoupon userActivityCoupon = userActivityCouponService.selectById(shopGoodsOrder.getShopActivityCouponId());
+            // 优惠金额
+            shopGoodsOrderVo.setAmount(userActivityCoupon.getAmount());
+            // 满减要求
+            shopGoodsOrderVo.setMeetAmount(userActivityCoupon.getMeetAmount());
+        }
+        List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = shopGoodsOrderDetailService.selectList(new EntityWrapper<ShopGoodsOrderDetail>().eq("order_id", shopGoodsOrder.getId()));
+        shopGoodsOrderVo.setShopGoodsOrderDetailList(shopGoodsOrderDetailList);
         resultWrapper.setResult(shopGoodsOrderVo);
         return resultWrapper;
     }
@@ -381,12 +388,17 @@ public class ShopGoodsOrderController {
                                                         @ApiParam(value = "订单状态待审核=0待付款=1|待尾款=2|" +
                                                                 "待成团=61|团失败=62|待发货=3|待收货=4|待评价=5|" +
                                                                 "已评价=6|待退款=7|已退款=8|待退货=9|已退货=10|" +
-                                                                "交易关闭=11)") @RequestParam(required = false) Integer orderStatus) {
+                                                                "交易关闭=11)") @RequestParam(required = false) Integer orderStatus,
+                                                        @ApiParam("订单来源(合伙人=1|库存=2|普通消费者=3|品牌费=4) 逗号分割") @RequestParam(required = false) String orderSource) {
         ResultWrapper<Page<ShopGoodsOrder>> resultWrapper = new ResultWrapper<>();
         Page<ShopGoodsOrder> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
         EntityWrapper<ShopGoodsOrder> entityWrapper = new EntityWrapper<>();
         if (orderStatus != null) {
             entityWrapper.eq("order_status", orderStatus);
+        }
+        if (orderSource != null) {
+            String[] split = orderSource.split(",");
+            entityWrapper.in("order_source", split);
         }
         Set<String> orderByList = new HashSet<>();
         orderByList.add("id");
@@ -407,5 +419,90 @@ public class ShopGoodsOrderController {
         resultWrapper.setSuccessful(successful);
         return resultWrapper;
     }
+
+    @ApiOperation(value = "未支付订单唤起微信支付", notes = "未支付订单唤起微信支付")
+    @PostMapping(value = "/weixin/remianPay/{id:\\d+}")
+    @ApiImplicitParam(name = "id", value = "订单", required = true, paramType = "path", dataType = "Integer")
+    @Transactional
+    public ResultWrapper<Map<String, String>> remianPay(@PathVariable("id") String id) throws Exception {
+        ResultWrapper<Map<String, String>> resultWrapper = new ResultWrapper<>();
+        Map<String, String> resultMap = new HashMap<>();
+        ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectById(id);
+        if (shopGoodsOrder == null) {
+            throw new OptimisticLockingFailureException("该商品不存在！");
+        }
+        // 判断权额是否充足
+        if (shopGoodsOrder.getAdvanceAmount() != null && shopGoodsOrder.getBlessing() != null) {
+            String[] split = shopGoodsOrder.getBlessing().split(",");
+            List<AdvanceRechargeRecord> advanceRechargeRecordList = advanceRechargeRecordService.selectList(new EntityWrapper<AdvanceRechargeRecord>()
+                    .in("id", split));
+            BigDecimal allAdvanceAmount = new BigDecimal("0");
+            for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
+                allAdvanceAmount = allAdvanceAmount.add(advanceRechargeRecord.getAmount());
+            }
+            if (allAdvanceAmount.compareTo(shopGoodsOrder.getAdvanceAmount()) < 0) {
+                throw new OptimisticLockingFailureException("权额不足，请重新下单！");
+            }
+        }
+        // 余额不足
+        if (shopGoodsOrder.getTotalPoint() != null && (shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_4)
+                || shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_5))) {
+            UserInfo userInfo = userInfoService.selectById(UserUuidThreadLocal.get().getId());
+            if (userInfo.getBalance1().compareTo(shopGoodsOrder.getTotalPoint()) < 0) {
+                throw new OptimisticLockingFailureException("余额不足，请重新下单！");
+            }
+        }
+        // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+        String subject = null;
+        String notify_url = "http://jgapi.china-mail.com.cn/api/payNotify/constant/weixinNotifyUrl";
+        if (shopGoodsOrder.getOrderNo().contains(BaseConstant.PRE_ORDER)) {
+            subject = "军港之业合伙人订单"; // 订单名称 (必填)
+        } else if (shopGoodsOrder.getOrderNo().contains(BaseConstant.PRE_ORDER_STOCK)) {
+            subject = "军港之业库存订单"; // 订单名称 (必填)
+            notify_url = "http://jgapi.china-mail.com.cn/api/shopStock/constant/weixinNotifyUrl";
+        } else {
+            subject = "军港之业消费者订单"; // 订单名称 (必填)
+        }
+        // 获取服务器ip
+        String ip = InetAddress.getLocalHost().getHostAddress();
+        UserOauth userOauth = userOauthService.selectOne(
+                new EntityWrapper<UserOauth>()
+                        .eq("user_id", UserUuidThreadLocal.get().getId()));
+        if (userOauth == null || userOauth.getOauthOpenid() == null) {
+            resultMap.put("return_code", "FAIL");
+            resultMap.put("err_code_des", "openid is null");
+            resultWrapper.setResult(resultMap);
+            return resultWrapper;
+        }
+        String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
+        String product_id = ""; // 产品id (非必填)
+        // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+        // 检验订单状态以及订单的金额
+        shopGoodsOrder.setTradeNo(shopGoodsOrder.getOrderNo());
+        WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
+                shopGoodsOrder.getOrderNo(), subject, shopGoodsOrder.getTotalRealPayment().doubleValue(), ip, notify_url);
+        // 订单失败
+        if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
+            resultMap.put("return_code", wxData.get("return_code"));
+            if (wxData.get("return_msg") != null) {
+                resultMap.put("return_msg", wxData.get("return_msg"));
+            } else if (wxData.get("err_code_des") != null) {
+                resultMap.put("err_code_des", wxData.get("err_code_des"));
+            }
+            resultWrapper.setResult(resultMap);
+            return resultWrapper;
+        }
+        resultMap.put("appId", wxData.get("appId"));
+        resultMap.put("nonceStr", wxData.get("nonceStr"));
+        resultMap.put("timeStamp", wxData.get("timeStamp"));
+        resultMap.put("signType", wxData.get("signType"));
+        resultMap.put("packageValue", wxData.get("package"));
+        resultMap.put("sign", wxData.get("sign"));
+        resultMap.put("order_no", shopGoodsOrder.getOrderNo());
+        resultMap.put("order_ids", "");
+        resultWrapper.setResult(resultMap);
+        return resultWrapper;
+    }
+
 }
 

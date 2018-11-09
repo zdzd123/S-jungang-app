@@ -199,9 +199,9 @@ public class ShopGoods implements Serializable {
     private BigDecimal royaltyRatio;
     @ApiModelProperty(value = "brand", example = "1")
     private String brand;
-    @ApiModelProperty(value = "goodsUnit", example = "1")
+    @ApiModelProperty(value = "商品单位", example = "1")
     private String goodsUnit;
-    @ApiModelProperty(value = "goodsUnitCount", example = "1")
+    @ApiModelProperty(value = "箱量", example = "1")
     private Integer goodsUnitCount;
     @ApiModelProperty(value = "goodsBarcode", example = "1")
     private String goodsBarcode;

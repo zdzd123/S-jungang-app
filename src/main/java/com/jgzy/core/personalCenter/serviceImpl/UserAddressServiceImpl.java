@@ -53,4 +53,10 @@ public class UserAddressServiceImpl extends ServiceImpl<UserAddressMapper, UserA
     public UserAddressVo selectDetailById(Integer userAddressId) {
         return userAddressMapper.selectDetailById(userAddressId);
     }
+
+    @Override
+    public List<UserAddressVo> selectMyList() {
+        Integer id = UserUuidThreadLocal.get().getId();
+        return userAddressMapper.selectUserAddressList(id);
+    }
 }

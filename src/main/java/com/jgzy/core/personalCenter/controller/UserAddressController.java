@@ -1,9 +1,12 @@
 package com.jgzy.core.personalCenter.controller;
 
 
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.core.personalCenter.service.IUserAddressService;
+import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.entity.common.ResultWrapper;
+import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.*;
 import com.jgzy.utils.ValidatorUtil;
 import io.swagger.annotations.Api;
@@ -15,6 +18,7 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -59,6 +63,25 @@ public class UserAddressController {
         return resultWrapper;
     }
 
+    @GetMapping(value = "/detail/{id:\\d+}")
+    @ApiOperation(value = "获取指定id收获地址", notes = "获取指定id收获地址")
+    @ApiImplicitParam(name = "id", value = "用户ID", required = true, paramType = "path", dataType = "Integer")
+    public ResultWrapper<UserAddressVo> detail(@PathVariable("id") Integer id) {
+        ResultWrapper<UserAddressVo> resultWrapper = new ResultWrapper<>();
+        UserAddressVo userAddressVo = userAddressService.selectDetailById(id);
+        resultWrapper.setResult(userAddressVo);
+        return resultWrapper;
+    }
+
+    @ApiOperation(value = "获取所有收获地址", notes = "获取所有收获地址")
+    @GetMapping(value = "list")
+    public ResultWrapper<List<UserAddressVo>> listPage(){
+        ResultWrapper<List<UserAddressVo>> resultWrapper = new ResultWrapper<>();
+        List<UserAddressVo> userAddressList = userAddressService.selectMyList();
+        resultWrapper.setResult(userAddressList);
+        return resultWrapper;
+    }
+
     @ApiOperation(value = "收货地址（分页）", notes = "收货地址（分页）")
     @GetMapping(value = "/page/list")
     public ResultWrapper<Page<UserAddress>> shipListPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
@@ -87,11 +110,12 @@ public class UserAddressController {
     @PostMapping(value = "/save")
     public ResultWrapper<UserAddress> save(@RequestBody @Validated UserAddress po) {
         ResultWrapper<UserAddress> resultWrapper = new ResultWrapper<>();
-        Integer id = po.getId();
-        boolean successful = false;
-        if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            successful = userAddressService.insert(po);
+        po.setCreateUser(UserUuidThreadLocal.get().getId());
+        po.setAddTime(new Date());
+        if (po.getIsDefault() == null){
+            po.setIsDefault(2);
         }
+        boolean successful = userAddressService.insert(po);
         resultWrapper.setSuccessful(successful);
         return resultWrapper;
     }
@@ -101,15 +125,14 @@ public class UserAddressController {
     @DeleteMapping({"/delete/{id:\\d+}"})
     public ResultWrapper delete(@PathVariable("id") Integer id) {
         ResultWrapper resultWrapper = new ResultWrapper<>();
-        boolean successful;
+        boolean successful = false;
         if (ValidatorUtil.isNotNullOrEmpty(id)) {
             successful = userAddressService.deleteById(id);
-        } else {
-            successful = false;
         }
         resultWrapper.setSuccessful(successful);
         return resultWrapper;
     }
+
 
 }
 

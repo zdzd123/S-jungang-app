@@ -10,6 +10,8 @@ import com.jgzy.entity.po.UserAddressShip;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * <p>
  * 服务实现类
@@ -32,5 +34,11 @@ public class UserAddressShipServiceImpl extends ServiceImpl<UserAddressShipMappe
     @Override
     public UserAddressVo selectDetailById(Integer shipAddressId) {
         return userAddressShipMapper.selectDetailById(shipAddressId);
+    }
+
+    @Override
+    public List<UserAddressVo> selectMyList() {
+        Integer id = UserUuidThreadLocal.get().getId();
+        return userAddressShipMapper.selectMyList(id);
     }
 }

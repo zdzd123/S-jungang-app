@@ -22,4 +22,6 @@ public interface UserAddressShipMapper extends BaseMapper<UserAddressShip> {
     List<UserAddressShip> selectUserAddressShip(Page<UserAddressShip> page, @Param("id") Integer id);
 
     UserAddressVo selectDetailById(@Param("shipAddressId") Integer shipAddressId);
+
+    List<UserAddressVo> selectMyList(@Param("id") Integer id);
 }

@@ -22,15 +22,18 @@ public class BaseConstant {
     // 优惠券状态(未使用=1|已使用=2)
     public static final int COUPON_STATE_1 = 1;
     public static final int COUPON_STATE_2 = 2;
-    // 支付方式(积分=9|支付宝=1|微信支付=2|权额支付=3|权额微信混合支付=4)
+    // 支付方式(积分=9|支付宝=1|微信支付=2|权额支付=3|余额支付=4|权额余额混合支付=5)
     public static final int PAY_TYPE_1 = 1;
     public static final int PAY_TYPE_2 = 2;
     public static final int PAY_TYPE_3 = 3;
     public static final int PAY_TYPE_4 = 4;
+    public static final int PAY_TYPE_5 = 5;
+    public static final int PAY_TYPE_9 = 9;
     // 运费(卖家承担运费=1|买家承担运费=2)
     public static final int FREIGHT_2 = 2;
     // 订单状态(待审核=0待付款=1|已付款=2|待成团=61|团失败=62|
     // 待发货=3|待收货=4|待评价=5|已评价=6|待退款=7|已退款=8|待退货=9|已退货=10|交易关闭=11)"
+    public static final int ORDER_STATUS_0 = 0;
     public static final int ORDER_STATUS_1 = 1;
     public static final int ORDER_STATUS_3 = 3;
     public static final int ORDER_STATUS_6 = 6;
@@ -45,7 +48,13 @@ public class BaseConstant {
     // 9-自己消费佣金，91-自己消费佣金冻结，92-自己消费佣金冻结到期转出，93-自己消费佣金退回
     public static final int BUSSINESS_TYPE_1 = 1;
     public static final int BUSSINESS_TYPE_2 = 2;
+    public static final int BUSSINESS_TYPE_4 = 4;
+    public static final int BUSSINESS_TYPE_5 = 5;
+    public static final int BUSSINESS_TYPE_7 = 7;
+    public static final int BUSSINESS_TYPE_8 = 8;
     // 1-积分，2-余额，3-冻结，4-微信，5-支付宝，6-提现，7-荣誉值，8-权额
+    public static final int ACCOUNT_TYPE_1 = 1;
+    public static final int ACCOUNT_TYPE_2 = 2;
     public static final int ACCOUNT_TYPE_4 = 4;
     public static final int ACCOUNT_TYPE_8 = 8;
     // 状态(0-正常 1-锁定 2-待审核 3-未通过)
@@ -62,7 +71,7 @@ public class BaseConstant {
     public static final int PRE_SELL_2 = 2;
     public static final int PRE_SELL_1 = 1;
     // 品牌费返还比例
-    public static final BigDecimal ORIGINATOR_RATE = new BigDecimal(0.02);
+    public static final BigDecimal ORIGINATOR_RATE = new BigDecimal("0.02");
     // 合伙人订单前缀
     public static final String PRE_ORDER = "HHR";
     // 库存订单前缀
@@ -70,4 +79,11 @@ public class BaseConstant {
     // 运费标识 1-到付 2-等待计算
     public static final int CARRIAGE_TYPE_1 = 1;
     public static final int CARRIAGE_TYPE_2 = 2;
+    // 是否放入库存 1=不存入 2=存入
+    public static final int IS_STOCK_1 = 1;
+    public static final int IS_STOCK_2 = 2;
+    // 订单来源 合伙人=1|库存=2|普通消费者=3
+    public static final int ORDER_SOURCE_1 = 1;
+    public static final int ORDER_SOURCE_2 = 2;
+    public static final int ORDER_SOURCE_3 = 3;
 }

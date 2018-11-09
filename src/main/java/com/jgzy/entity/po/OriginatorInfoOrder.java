@@ -45,7 +45,17 @@ public class OriginatorInfoOrder implements Serializable {
     @ApiModelProperty(value = "付款时间", example = "2018-06-29 09:17:54")
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
     private Date payTime;
+    @ApiModelProperty(value = "更新时间", example = "2018-06-29 09:17:54")
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+    private Date updateTime;
 
+    public Date getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
 
     public Integer getId() {
         return id;

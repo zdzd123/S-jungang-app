@@ -1,8 +1,11 @@
 package com.jgzy.core.personalCenter.controller;
 
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.core.personalCenter.service.IUserAddressShipService;
+import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.entity.common.ResultWrapper;
+import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.UserAddressShip;
 import com.jgzy.utils.ValidatorUtil;
 import io.swagger.annotations.Api;
@@ -14,6 +17,9 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
+import java.util.List;
+
 @RefreshScope
 @RestController
 @RequestMapping("/api/userAddressShip")
@@ -21,6 +27,25 @@ import org.springframework.web.bind.annotation.*;
 public class UserAddressShipController {
     @Autowired
     private IUserAddressShipService userAddressShipService;
+
+    @GetMapping(value = "/detail/{id:\\d+}")
+    @ApiOperation(value = "获取默认发货地址", notes = "获取默认发货地址")
+    @ApiImplicitParam(name = "id", value = "用户ID", required = true, paramType = "path", dataType = "Integer")
+    public ResultWrapper<UserAddressVo> detail(@PathVariable("id") Integer id) {
+        ResultWrapper<UserAddressVo> resultWrapper = new ResultWrapper<>();
+        UserAddressVo userAddressVo = userAddressShipService.selectDetailById(id);
+        resultWrapper.setResult(userAddressVo);
+        return resultWrapper;
+    }
+
+    @ApiOperation(value = "获取所有发货地址", notes = "获取所有发货地址")
+    @GetMapping(value = "/list")
+    public ResultWrapper<List<UserAddressVo>> listPage(){
+        ResultWrapper<List<UserAddressVo>> resultWrapper = new ResultWrapper<>();
+        List<UserAddressVo> userAddressVoList = userAddressShipService.selectMyList();
+        resultWrapper.setResult(userAddressVoList);
+        return resultWrapper;
+    }
 
     @ApiOperation(value = "发货地址（分页）", notes = "发货地址（分页）")
     @GetMapping(value = "/page/list")
@@ -50,11 +75,9 @@ public class UserAddressShipController {
     @PostMapping(value = "/save")
     public ResultWrapper<UserAddressShip> save(@RequestBody @Validated UserAddressShip po) {
         ResultWrapper<UserAddressShip> resultWrapper = new ResultWrapper<>();
-        Integer id = po.getId();
-        boolean successful = false;
-        if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            successful = userAddressShipService.insert(po);
-        }
+        po.setCreateUser(UserUuidThreadLocal.get().getId());
+        po.setAddTime(new Date());
+        boolean successful = userAddressShipService.insert(po);
         resultWrapper.setSuccessful(successful);
         return resultWrapper;
     }

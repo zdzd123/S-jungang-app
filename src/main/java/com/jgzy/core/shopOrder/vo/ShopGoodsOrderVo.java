@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.annotations.TableId;
 import com.baomidou.mybatisplus.annotations.TableName;
 import com.baomidou.mybatisplus.enums.IdType;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.jgzy.entity.po.AdvanceRechargeInfo;
+import com.jgzy.entity.po.AdvertInfo;
+import com.jgzy.entity.po.ShopGoodsOrderDetail;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.validator.constraints.NotBlank;
@@ -17,6 +20,7 @@ import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * <p>
@@ -33,20 +37,26 @@ public class ShopGoodsOrderVo{
     private Integer shopGoodsId;
     @ApiModelProperty(value = "购买数量", example = "1")
     @NotNull
-    @DecimalMin(value = "0")
     private Integer count;
-    @ApiModelProperty(value = "支付方式(积分=9|支付宝=1|微信支付=2|权额支付=3)", example = "2")
-    @NotNull
+    @ApiModelProperty(value = "支付方式(积分=9|支付宝=1|微信支付=2|权额支付=3|余额=4|权额余额混合支付=5)", example = "2")
     private Integer payType;
     @ApiModelProperty(value = "收货人地址ID", example = "1")
-    @NotNull
     private Integer userAddressId;
+    @ApiModelProperty(value = "发货人地址ID", example = "1")
+    private Integer shipperId;
     @ApiModelProperty(value = "优惠券ID", example = "1")
     private Integer userActivityCouponId;
     @ApiModelProperty(value = "优惠券面额", example = "100")
     private BigDecimal amount;
     @ApiModelProperty(value = "优惠券单笔订单满(元)使用", example = "1000")
     private BigDecimal meetAmount;
+    @ApiModelProperty(value = "是否放入库存 1=不存入 2=存入", example = "1")
+    @NotNull
+    private Integer isStock;
+    @ApiModelProperty(value = "权额IDs 逗号分割", example = "1")
+    private String advanceRechargeIds;
+    @ApiModelProperty(value = "运费标识 1-到付 2-等待计算", example = "1")
+    private Integer carriageType;
 
     @ApiModelProperty(value = "订单id", example = "1")
     private String orderNo;
@@ -83,12 +93,22 @@ public class ShopGoodsOrderVo{
     private String contactPhone;
     @ApiModelProperty(value = "收货地址", example = "1")
     private String receiveAddress;
+    @ApiModelProperty(value = "发货人", example = "1")
+    private String shipper;
+    @ApiModelProperty(value = "发货联系电话", example = "18311111111")
+    private String shipperPhone;
+    @ApiModelProperty(value = "发货地址", example = "1")
+    private String shipperAddress;
     @ApiModelProperty(value = "订单总额(元)", example = "100")
     private BigDecimal orderAmountTotal;
     @ApiModelProperty(value = "运费(元)", example = "1")
     private BigDecimal carriage;
     @ApiModelProperty(value = "优惠金额(元)", example = "1")
     private BigDecimal couponAmount;
+    @ApiModelProperty(value = "权额购买金额", example = "200")
+    private BigDecimal advanceAmount;
+    @ApiModelProperty(value = "耗材费", example = "200")
+    private BigDecimal materialAmount;
     @ApiModelProperty(value = "创建时间", example = "2018-06-29 09:17:54")
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
     private Date createTime;
@@ -130,8 +150,6 @@ public class ShopGoodsOrderVo{
     private String tradeNo;
     @ApiModelProperty(value = "userDel", example = "1")
     private Integer userDel;
-    @ApiModelProperty(value = "isStock", example = "1")
-    private Integer isStock;
     @ApiModelProperty(value = "isPoint", example = "1")
     private Integer isPoint;
     @ApiModelProperty(value = "isRead", example = "1")
@@ -146,6 +164,80 @@ public class ShopGoodsOrderVo{
     private BigDecimal totalPoint;
     @ApiModelProperty(value = "总实际付款", example = "1")
     private BigDecimal totalRealPayment;
+    @ApiModelProperty(value = "订单详情", example = "1")
+    private List<ShopGoodsOrderDetail> shopGoodsOrderDetailList;
+
+    public Integer getShipperId() {
+        return shipperId;
+    }
+
+    public void setShipperId(Integer shipperId) {
+        this.shipperId = shipperId;
+    }
+
+    public String getAdvanceRechargeIds() {
+        return advanceRechargeIds;
+    }
+
+    public void setAdvanceRechargeIds(String advanceRechargeIds) {
+        this.advanceRechargeIds = advanceRechargeIds;
+    }
+
+    public String getShipper() {
+        return shipper;
+    }
+
+    public void setShipper(String shipper) {
+        this.shipper = shipper;
+    }
+
+    public String getShipperPhone() {
+        return shipperPhone;
+    }
+
+    public void setShipperPhone(String shipperPhone) {
+        this.shipperPhone = shipperPhone;
+    }
+
+    public String getShipperAddress() {
+        return shipperAddress;
+    }
+
+    public void setShipperAddress(String shipperAddress) {
+        this.shipperAddress = shipperAddress;
+    }
+
+    public Integer getCarriageType() {
+        return carriageType;
+    }
+
+    public void setCarriageType(Integer carriageType) {
+        this.carriageType = carriageType;
+    }
+
+    public BigDecimal getAdvanceAmount() {
+        return advanceAmount;
+    }
+
+    public void setAdvanceAmount(BigDecimal advanceAmount) {
+        this.advanceAmount = advanceAmount;
+    }
+
+    public BigDecimal getMaterialAmount() {
+        return materialAmount;
+    }
+
+    public void setMaterialAmount(BigDecimal materialAmount) {
+        this.materialAmount = materialAmount;
+    }
+
+    public List<ShopGoodsOrderDetail> getShopGoodsOrderDetailList() {
+        return shopGoodsOrderDetailList;
+    }
+
+    public void setShopGoodsOrderDetailList(List<ShopGoodsOrderDetail> shopGoodsOrderDetailList) {
+        this.shopGoodsOrderDetailList = shopGoodsOrderDetailList;
+    }
 
     public Integer getShopGoodsId() {
         return shopGoodsId;

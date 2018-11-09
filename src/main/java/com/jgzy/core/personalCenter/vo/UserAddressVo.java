@@ -44,20 +44,72 @@ public class UserAddressVo{
     @ApiModelProperty(value = "省", example = "江苏省")
     private String province;
     /**
+     * 省id
+     */
+    @ApiModelProperty(value = "省", example = "江苏省")
+    private String provinceId;
+    /**
      * 市id
      */
     @ApiModelProperty(value = "市", example = "无锡市")
     private String city;
+    /**
+     * 市id
+     */
+    @ApiModelProperty(value = "市", example = "无锡市")
+    private String cityId;
     /**
      * 区id
      */
     @ApiModelProperty(value = "区", example = "锡山区")
     private String area;
     /**
+     * 区id
+     */
+    @ApiModelProperty(value = "区", example = "锡山区")
+    private String areaId;
+    /**
      * 详细地址
      */
     @ApiModelProperty(value = "详细地址", example = "科技园")
     private String address;
+    /**
+     * 默认地址(否=1|是=2)
+     */
+    @ApiModelProperty(value = "默认地址(否=1|是=2)", example = "1")
+    private Integer isDefault;
+
+    public String getProvinceId() {
+        return provinceId;
+    }
+
+    public void setProvinceId(String provinceId) {
+        this.provinceId = provinceId;
+    }
+
+    public String getCityId() {
+        return cityId;
+    }
+
+    public void setCityId(String cityId) {
+        this.cityId = cityId;
+    }
+
+    public String getAreaId() {
+        return areaId;
+    }
+
+    public void setAreaId(String areaId) {
+        this.areaId = areaId;
+    }
+
+    public Integer getIsDefault() {
+        return isDefault;
+    }
+
+    public void setIsDefault(Integer isDefault) {
+        this.isDefault = isDefault;
+    }
 
     public Integer getId() {
         return id;

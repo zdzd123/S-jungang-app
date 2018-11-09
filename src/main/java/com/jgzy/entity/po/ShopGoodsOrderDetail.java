@@ -45,6 +45,8 @@ public class ShopGoodsOrderDetail implements Serializable {
     private BigDecimal menberPrice;
     @ApiModelProperty(value = "购买数量", example = "1")
     private Integer buyCount;
+    @ApiModelProperty(value = "箱量", example = "1")
+    private Integer goodsUnitCount;
     @ApiModelProperty(value = "添加时间", example = "2018-06-29 09:17:54")
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
     private Date addTime;
@@ -75,6 +77,13 @@ public class ShopGoodsOrderDetail implements Serializable {
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
     private Date extractTime;
 
+    public Integer getGoodsUnitCount() {
+        return goodsUnitCount;
+    }
+
+    public void setGoodsUnitCount(Integer goodsUnitCount) {
+        this.goodsUnitCount = goodsUnitCount;
+    }
 
     public Integer getId() {
         return id;

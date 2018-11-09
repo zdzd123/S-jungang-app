@@ -24,11 +24,9 @@ import java.util.Map;
  */
 public class TemplateMessageUtil {
     // 支付成功
-    @Value("${template.pay_success}")
-    private static String TEMPLATE_PAY_SUCCESS;
+    private static final String TEMPLATE_PAY_SUCCESS = "labWUz72DvnQkLlnC93D4Rk4xBQ-LtLHBcSl5PuLgYI";
     // 充值成功
-    @Value("${template.recharge_success}")
-    private static String TEMPLATE_RECHARGE_SUCCESS;
+    private static final String TEMPLATE_RECHARGE_SUCCESS = "lbzHMpCkqe7IfFSaMPwoVK7HUB1eEZpYMPpbVclIRYM";
 
     /**
      * 初始化消息模版
@@ -36,7 +34,7 @@ public class TemplateMessageUtil {
      * @param templateId 模版id
      * @return 消息模版
      */
-    private static Template initTemplate(String openId , String templateId) {
+    private static Template initTemplate(String openId, String templateId) {
         Template template = new Template();
         template.setTemplateId(templateId);
         template.setToUser(openId);
@@ -80,6 +78,24 @@ public class TemplateMessageUtil {
         paras.add(new TemplateParam("keyword4", couponAmount, "#565656"));
         paras.add(new TemplateParam("keyword5", totalRealPayMent, "#565656"));
         paras.add(new TemplateParam("remark", "详情请查看我的订单中心", "#565656"));
+        template.setTemplateParamList(paras);
+        return sendTemplateMsg(template);
+    }
+
+    /**
+     * 品牌费消息模版
+     *
+     * @param tradeNo          订单号
+     * @param orderAmountTotal 金额
+     * @return 消息模版
+     */
+    public static boolean initOriPaySuccessTemplate(String openId, String tradeNo, String orderAmountTotal) {
+        Template template = initTemplate(openId, TEMPLATE_PAY_SUCCESS);
+        List<TemplateParam> paras = new ArrayList<>();
+        paras.add(new TemplateParam("first", "尊金的顾客：您已支付品牌费成功", "#565656"));
+        paras.add(new TemplateParam("keyword2", tradeNo, "#565656"));
+        paras.add(new TemplateParam("keyword3", orderAmountTotal, "#565656"));
+        paras.add(new TemplateParam("remark", "支付品牌费成功", "#565656"));
         template.setTemplateParamList(paras);
         return sendTemplateMsg(template);
     }

@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.service.IService;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.entity.po.UserAddressShip;
 
+import java.util.List;
+
 /**
  * <p>
  * 服务类
@@ -23,4 +25,6 @@ public interface IUserAddressShipService extends IService<UserAddressShip> {
     Page<UserAddressShip> getUserAddressShip(Page<UserAddressShip> page);
 
     UserAddressVo selectDetailById(Integer shipAddressId);
+
+    List<UserAddressVo> selectMyList();
 }

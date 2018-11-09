@@ -61,4 +61,11 @@ public interface IUserAddressService extends IService<UserAddress> {
      * @return
      */
     UserAddressVo selectDetailById(Integer userAddressId);
+
+    /**
+     * 获取地址详情
+     *
+     * @return 地址
+     */
+    List<UserAddressVo> selectMyList();
 }

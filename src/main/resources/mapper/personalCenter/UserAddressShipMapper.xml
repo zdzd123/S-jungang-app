@@ -22,18 +22,39 @@
     </select>
     <select id="selectDetailById" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
         SELECT
-        id,
-        `name`,
-        phone,
-        zip_code zipCode,
-        (select `name` from province_info where id = address.province_id) province,
-        (select `name` from city_info where id = address.city_id) city,
-        (select `name` from area_info where id = address.area_id) area,
-        address
-        FROM
-        user_address_ship address
+            id,
+            `name`,
+            phone,
+            zip_code zipCode,
+            (select `name` from province_info where id = address.province_id) province,
+            province_id,
+            (select `name` from city_info where id = address.city_id) city,
+            city_id,
+            (select `name` from area_info where id = address.area_id) area,
+            area_id,
+            is_default,
+            address
+            FROM
+            user_address_ship address
         <where>
             id = #{shipAddressId}
+        </where>
+    </select>
+    <select id="selectMyList" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
+        SELECT
+            id,
+            `name`,
+            phone,
+            zip_code zipCode,
+            (select `name` from province_info where id = address.province_id) province,
+            (select `name` from city_info where id = address.city_id) city,
+            (select `name` from area_info where id = address.area_id) area,
+            is_default,
+            address
+        FROM
+          user_address_ship address
+        <where>
+            create_user = #{id}
         </where>
     </select>
 </mapper>

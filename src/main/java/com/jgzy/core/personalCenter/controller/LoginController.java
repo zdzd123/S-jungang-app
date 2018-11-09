@@ -55,7 +55,7 @@ public class LoginController {
     @GetMapping(value = "/detail")
     @ApiOperation(value = "登录", notes = "登录")
     @Transactional
-    public ResultWrapper<LoginVo> detail(@ApiParam(value = "code", required = true) @RequestParam String code) {
+    public ResultWrapper<LoginVo> detail(@ApiParam(value = "code", required = true) @RequestParam String code){
         ResultWrapper<LoginVo> resultWrapper = new ResultWrapper<>();
         System.out.println("app_id--------------------------------------------------------" + WeiXinPayConfig.getApp_id());
         System.out.println("app_key--------------------------------------------------------" + WeiXinPayConfig.getApp_secret());
@@ -63,14 +63,14 @@ public class LoginController {
 
         String string = HttpRequest.sendGet("https://api.weixin.qq.com/sns/oauth2/access_token?appid=" +
                 WeiXinPayConfig.getApp_id() + "&secret=" + WeiXinPayConfig.getApp_secret() + "&code=" + code + "&grant_type=authorization_code");
-        try {
-            JSONObject jsonObject = new JSONObject(string);
-            System.out.println("jsonObject---------------------------------------------/api/v1/weixinLogin" + jsonObject);
-            String access_token = jsonObject.getString("access_token");
-            String openid = jsonObject.getString("openid");
-            String userInfo = HttpRequest.sendGet("https://api.weixin.qq.com/sns/userinfo?access_token=" +
-                    access_token + "&openid=" + openid + "&lang=zh_CN ");
-            JSONObject userInfoJsonObject = new JSONObject(userInfo);
+        JSONObject jsonObject = new JSONObject(string);
+        System.out.println("jsonObject---------------------------------------------/api/v1/weixinLogin" + jsonObject);
+        // TODO access_token每2个小时后更新，每天限制10000次
+        String access_token = jsonObject.getString("access_token");
+        String openid = jsonObject.getString("openid");
+        String userInfo = HttpRequest.sendGet("https://api.weixin.qq.com/sns/userinfo?access_token=" +
+                access_token + "&openid=" + openid + "&lang=zh_CN ");
+        JSONObject userInfoJsonObject = new JSONObject(userInfo);
 
 //            String openid= null;
 //            String json = "{\n" +
@@ -86,175 +86,161 @@ public class LoginController {
 //                    "}";
 //            JSONObject userInfoJsonObject = new JSONObject(json);
 
-            System.out.println("userInfoJsonObject---------------------------------------------/api/v1/weixinLogin" + userInfoJsonObject);
-            openid = userInfoJsonObject.getString("openid");
-            String nickname = EmojiFilterUtil.filterEmoji2(userInfoJsonObject.getString("nickname"));
-            int sex = userInfoJsonObject.getInt("sex");
+        System.out.println("userInfoJsonObject---------------------------------------------/api/v1/weixinLogin" + userInfoJsonObject);
+        openid = userInfoJsonObject.getString("openid");
+        String nickname = EmojiFilterUtil.filterEmoji2(userInfoJsonObject.getString("nickname"));
+        int sex = userInfoJsonObject.getInt("sex");
 //            String province = userInfoJsonObject.getString("province");
 //            String city = userInfoJsonObject.getString("city");
 //            String country = userInfoJsonObject.getString("country");
-            String headimgurl = userInfoJsonObject.getString("headimgurl");
-            //String unionid = userInfoJsonObject.getString("unionid");
+        String headimgurl = userInfoJsonObject.getString("headimgurl");
+        //String unionid = userInfoJsonObject.getString("unionid");
 
-            String oauth_name = "weixinh5";
-            String oauth_openid = openid;
-            String head_portrait = headimgurl;
+        String oauth_name = "weixinh5";
+        String oauth_openid = openid;
+        String head_portrait = headimgurl;
 
-            int platform = 4;// 微信
+        int platform = 4;// 微信
 
-            if (StringUtils.isEmpty(oauth_openid) || StringUtils.isEmpty(head_portrait) ||
-                    StringUtils.isEmpty(nickname)) {
-                resultWrapper.setErrorMsg("openid、头像或昵称为空");
-                resultWrapper.setErrorCode(ErrorCodeEnum.ERROR_ARGS_MISS.getKey());
-                return resultWrapper;
-            }
+        if (StringUtils.isEmpty(oauth_openid) || StringUtils.isEmpty(head_portrait) ||
+                StringUtils.isEmpty(nickname)) {
+            resultWrapper.setErrorMsg("openid、头像或昵称为空");
+            resultWrapper.setErrorCode(ErrorCodeEnum.ERROR_ARGS_MISS.getKey());
+            return resultWrapper;
+        }
 
-            UserOauth user_oauth = userOauthService.selectOne(new EntityWrapper<UserOauth>()
-                    .eq("oauth_openid", oauth_openid).eq("oauth_name", "weixin"));
-            UserOauth user_oauth_h5 = userOauthService.selectOne(new EntityWrapper<UserOauth>()
-                    .eq("oauth_openid", oauth_openid));
+        UserOauth user_oauth = userOauthService.selectOne(new EntityWrapper<UserOauth>()
+                .eq("oauth_openid", oauth_openid).eq("oauth_name", "weixin"));
+        UserOauth user_oauth_h5 = userOauthService.selectOne(new EntityWrapper<UserOauth>()
+                .eq("oauth_openid", oauth_openid));
 
-            if (user_oauth_h5 != null) {
-                UserInfo user = userInfoService.selectById(user_oauth_h5.getUserId());
-                System.out.println("用户认证 user_oauth_h5不为空！");
-                if (user == null) {
-                    System.out.println("用户 为空！");
-                    // 创建新用户
-                    UserInfo model = new UserInfo();
-                    model.setId(user_oauth_h5.getUserId());
-                    model.setNickname(nickname);
-                    model.setGender(sex);
-                    model.setHeadPortrait(head_portrait);
-                    model.setRegisterTime(new Date());
-                    model.setFromSource(platform);
-                    model.setValidStatus(1);
-                    model.setToken(CommonUtil.getUUID());
-                    boolean insert = userInfoService.insert(model);
-                    if (!insert) {
-                        setLoginFail(resultWrapper);
-                        return resultWrapper;
-                    }
-                    resultWrapper.setErrorMsg("登录成功");
-                    resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
-                    LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
-                    resultWrapper.setResult(loginVo);
-                    RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
-                    return resultWrapper;
-                } else {
-                    System.out.println("用户 不为空！");
-                    UserInfo my = new UserInfo();
-                    my.setId(user.getId());
-                    my.setToken(CommonUtil.getUUID());
-                    boolean updateById = userInfoService.updateById(my);
-                    if (!updateById) {
-                        setLoginFail(resultWrapper);
-                        return resultWrapper;
-                    }
-                    LoginVo loginVo = initLoginVo(my.getToken(), oauth_openid);
-                    resultWrapper.setResult(loginVo);
-                    resultWrapper.setResult(loginVo);
-                    RedisUtil.hset(RedisConstant.REDIS_USER_KEY, my.getToken(), my);
-                    return resultWrapper;
-                }
-
-            } else if (user_oauth_h5 == null && user_oauth != null) {
-                UserInfo user = userInfoService.selectById(user_oauth.getUserId());
-                System.out.println("用户认证   user_oauth不为空！user_oauth_h5为空 ");
-
-                // 用户认证
-                UserOauth newuoModel = new UserOauth();
-                newuoModel.setOauthName(oauth_name);
-                newuoModel.setOauthOpenid(oauth_openid);
-                newuoModel.setAddTime(new Date());
-                newuoModel.setUserName(nickname);
-                newuoModel.setUserId(user_oauth.getUserId());
-
-                System.out.println("插入user_oauth_h5 ");
-                boolean insert = userOauthService.insert(newuoModel);
-                if (!insert) {
-                    setLoginFail(resultWrapper);
-                    return resultWrapper;
-                }
-
-                if (user == null) {
-                    System.out.println("用户 为空！");
-                    // 创建新用户
-                    UserInfo model = new UserInfo();
-                    model.setId(user_oauth.getUserId());
-                    model.setNickname(nickname);
-                    model.setGender(sex);
-                    model.setHeadPortrait(head_portrait);
-                    model.setRegisterTime(new Date());
-                    model.setFromSource(platform);
-                    model.setValidStatus(1);
-                    model.setToken(CommonUtil.getUUID());
-
-                    boolean insertUser = userInfoService.insert(model);
-                    if (!insertUser) {
-                        setLoginFail(resultWrapper);
-                        return resultWrapper;
-                    }
-                    resultWrapper.setErrorMsg("登录成功");
-                    resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
-                    LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
-                    resultWrapper.setResult(loginVo);
-                    RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
-                    return resultWrapper;
-                } else {
-                    System.out.println("用户 不为空！");
-                    UserInfo my = new UserInfo();
-                    my.setId(user.getId());
-                    my.setToken(CommonUtil.getUUID());
-                    boolean updateById = userInfoService.updateById(my);
-                    if (!updateById) {
-                        setLoginFail(resultWrapper);
-                        return resultWrapper;
-                    }
-                    LoginVo loginVo = initLoginVo(my.getToken(), oauth_openid);
-                    resultWrapper.setResult(loginVo);
-                    resultWrapper.setResult(loginVo);
-                    RedisUtil.hset(RedisConstant.REDIS_USER_KEY, my.getToken(), my);
-                    return resultWrapper;
-                }
-
-            } else {
-
-                System.out.println("用户认证 为空！ user_oauth is null; user_oauth_h5 is null");
-
-                // 用户信息
+        if (user_oauth_h5 != null) {
+            UserInfo user = userInfoService.selectById(user_oauth_h5.getUserId());
+            System.out.println("用户认证 user_oauth_h5不为空！");
+            if (user == null) {
+                System.out.println("用户 为空！");
+                // 创建新用户
                 UserInfo model = new UserInfo();
-                model.setGender(sex);
+                model.setId(user_oauth_h5.getUserId());
                 model.setNickname(nickname);
+                model.setGender(sex);
                 model.setHeadPortrait(head_portrait);
                 model.setRegisterTime(new Date());
                 model.setFromSource(platform);
+                model.setValidStatus(1);
                 model.setToken(CommonUtil.getUUID());
+                model.setUserLevelId(1);
                 boolean insert = userInfoService.insert(model);
                 if (!insert) {
                     setLoginFail(resultWrapper);
                     return resultWrapper;
                 }
-                // 用户认证
-                UserOauth newuoModel = new UserOauth();
-                newuoModel.setOauthName(oauth_name);
-                newuoModel.setOauthOpenid(oauth_openid);
-                newuoModel.setAddTime(new Date());
-                newuoModel.setUserName(nickname);
-                newuoModel.setUserId(model.getId());
-                boolean insertOauth = userOauthService.insert(newuoModel);
-                if (!insertOauth) {
-                    setLoginFail(resultWrapper);
-                    return resultWrapper;
-                }
+                resultWrapper.setErrorMsg("登录成功");
+                resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
                 LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
-                resultWrapper.setResult(loginVo);
                 resultWrapper.setResult(loginVo);
                 RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
                 return resultWrapper;
+            } else {
+                System.out.println("用户 不为空！");
+                user.setToken(CommonUtil.getUUID());
+                boolean updateById = userInfoService.updateById(user);
+                if (!updateById) {
+                    setLoginFail(resultWrapper);
+                    return resultWrapper;
+                }
+                LoginVo loginVo = initLoginVo(user.getToken(), oauth_openid);
+                resultWrapper.setResult(loginVo);
+                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, user.getToken(), user);
+                return resultWrapper;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            setLoginFail(resultWrapper);
+
+        } else if (user_oauth_h5 == null && user_oauth != null) {
+            UserInfo user = userInfoService.selectById(user_oauth.getUserId());
+            System.out.println("用户认证   user_oauth不为空！user_oauth_h5为空 ");
+
+            // 用户认证
+            UserOauth newuoModel = new UserOauth();
+            newuoModel.setOauthName(oauth_name);
+            newuoModel.setOauthOpenid(oauth_openid);
+            newuoModel.setAddTime(new Date());
+            newuoModel.setUserName(nickname);
+            newuoModel.setUserId(user_oauth.getUserId());
+            System.out.println("插入user_oauth_h5 ");
+            boolean insert = userOauthService.insert(newuoModel);
+            if (!insert) {
+                setLoginFail(resultWrapper);
+                return resultWrapper;
+            }
+            if (user == null) {
+                System.out.println("用户 为空！");
+                // 创建新用户
+                UserInfo model = new UserInfo();
+                model.setId(user_oauth.getUserId());
+                model.setNickname(nickname);
+                model.setGender(sex);
+                model.setHeadPortrait(head_portrait);
+                model.setRegisterTime(new Date());
+                model.setFromSource(platform);
+                model.setValidStatus(1);
+                model.setUserLevelId(1);
+                model.setToken(CommonUtil.getUUID());
+                boolean insertUser = userInfoService.insert(model);
+                if (!insertUser) {
+                    setLoginFail(resultWrapper);
+                    return resultWrapper;
+                }
+                resultWrapper.setErrorMsg("登录成功");
+                resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
+                LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
+                resultWrapper.setResult(loginVo);
+                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
+                return resultWrapper;
+            } else {
+                user.setToken(CommonUtil.getUUID());
+                boolean updateById = userInfoService.updateById(user);
+                if (!updateById) {
+                    setLoginFail(resultWrapper);
+                    return resultWrapper;
+                }
+                LoginVo loginVo = initLoginVo(user.getToken(), oauth_openid);
+                resultWrapper.setResult(loginVo);
+                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, user.getToken(), user);
+                return resultWrapper;
+            }
+
+        } else {
+            System.out.println("用户认证 为空！ user_oauth is null; user_oauth_h5 is null");
+            // 用户信息
+            UserInfo model = new UserInfo();
+            model.setGender(sex);
+            model.setNickname(nickname);
+            model.setHeadPortrait(head_portrait);
+            model.setUserLevelId(1);
+            model.setRegisterTime(new Date());
+            model.setFromSource(platform);
+            model.setToken(CommonUtil.getUUID());
+            boolean insert = userInfoService.insert(model);
+            if (!insert) {
+                setLoginFail(resultWrapper);
+                return resultWrapper;
+            }
+            // 用户认证
+            UserOauth newuoModel = new UserOauth();
+            newuoModel.setOauthName(oauth_name);
+            newuoModel.setOauthOpenid(oauth_openid);
+            newuoModel.setAddTime(new Date());
+            newuoModel.setUserName(nickname);
+            newuoModel.setUserId(model.getId());
+            boolean insertOauth = userOauthService.insert(newuoModel);
+            if (!insertOauth) {
+                setLoginFail(resultWrapper);
+                return resultWrapper;
+            }
+            LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
+            resultWrapper.setResult(loginVo);
+            resultWrapper.setResult(loginVo);
+            RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
             return resultWrapper;
         }
     }

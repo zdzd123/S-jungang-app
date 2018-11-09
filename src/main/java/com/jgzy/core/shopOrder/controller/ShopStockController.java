@@ -3,6 +3,7 @@ package com.jgzy.core.shopOrder.controller;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.mapper.Wrapper;
+import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.service.IUserAddressService;
 import com.jgzy.core.personalCenter.service.IUserAddressShipService;
@@ -11,6 +12,7 @@ import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.core.shopOrder.service.IShopGoodsOrderDetailService;
 import com.jgzy.core.shopOrder.service.IShopGoodsOrderService;
 import com.jgzy.core.shopOrder.service.IShopStockService;
+import com.jgzy.core.shopOrder.service.IUserFundService;
 import com.jgzy.core.shopOrder.vo.ShopStockVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
@@ -65,15 +67,19 @@ public class ShopStockController {
     private IUserAddressService userAddressService;
     @Autowired
     private IUserAddressShipService userAddressShipService;
+    @Autowired
+    private IUserFundService userFundService;
 
-    @GetMapping(value = "/detail")
-    @ApiOperation(value = "获取我的库存", notes = "获取我的库存")
-    public ResultWrapper<ShopStockVo> detail(@ApiParam(value = "平台分类id") @RequestParam(required = false) Integer platformGoodsCategoryId,
-                                             @ApiParam(value = "商品名称") @RequestParam(required = false) String shopName) {
-        ResultWrapper<ShopStockVo> resultWrapper = new ResultWrapper<>();
-        ShopStockVo shopStockVo = shopStockService.selectMyStock(platformGoodsCategoryId, shopName);
-
-        resultWrapper.setResult(shopStockVo);
+    @ApiOperation(value = "获取我的库存(分页)", notes = "获取我的库存(分页)")
+    @GetMapping(value = "/page/list")
+    public ResultWrapper<Page<ShopStockVo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
+            @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize,
+                                          @ApiParam(value = "平台分类id") @RequestParam(required = false) Integer platformGoodsCategoryId,
+                                          @ApiParam(value = "商品名称") @RequestParam(required = false) String shopName){
+        ResultWrapper<Page<ShopStockVo>> resultWrapper = new ResultWrapper<>();
+        Page<ShopStockVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
+        page = shopStockService.selectMyStock(page, platformGoodsCategoryId, shopName);
+        resultWrapper.setResult(page);
         return resultWrapper;
     }
 
@@ -82,7 +88,7 @@ public class ShopStockController {
     public ResultWrapper<BigDecimal> calcAmountForShow(@ApiParam(value = "商品数量", required = true) @RequestParam Integer count) {
         ResultWrapper<BigDecimal> resultWrapper = new ResultWrapper<>();
 
-        BigDecimal materialAmount = calcMaterialCosts(count, new BigDecimal(0));
+        BigDecimal materialAmount = CommonUtil.calcMaterialCosts(count, new BigDecimal(0));
 
         resultWrapper.setResult(materialAmount);
         return resultWrapper;
@@ -101,6 +107,8 @@ public class ShopStockController {
         Date date = new Date();
         // 订单
         ShopGoodsOrder shopGoodsOrder = new ShopGoodsOrder();
+        // 库存订单
+        shopGoodsOrder.setOrderSource(BaseConstant.ORDER_SOURCE_2);
         shopGoodsOrder.setOrderNo(BaseConstant.PRE_ORDER_STOCK + tradeNo);
         shopGoodsOrder.setSubmitOrderUser(UserUuidThreadLocal.get().getId());
         shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_1);
@@ -135,7 +143,7 @@ public class ShopStockController {
             myShopStock.setCount(shopStock.getCount() - shopStockVo.getCount());
             shopStockList.add(myShopStock);
         }
-        BigDecimal materialCosts = calcMaterialCosts(count, new BigDecimal(0));
+        BigDecimal materialCosts = CommonUtil.calcMaterialCosts(count, new BigDecimal(0));
         shopGoodsOrder.setMaterialAmount(materialCosts);
         if (carriageType.equals(2)) {
             // 等待计算
@@ -259,59 +267,18 @@ public class ShopStockController {
         return resultMap;
     }
 
-    /**
-     * 计算耗材费
-     *
-     * @param count         个数
-     * @param materialCosts 金额
-     * @return 耗材费
-     */
-    private BigDecimal calcMaterialCosts(int count, BigDecimal materialCosts) {
-        if (count > 24) {
-            return materialCosts;
-        }
-        switch (count) {
-            case 1:
-                materialCosts = BigDecimalUtil.add(materialCosts, 3);
-                break;
-            case 2:
-                materialCosts = materialCosts.add(BigDecimalUtil.mul(2.4, count));
-                break;
-            case 3:
-                materialCosts = materialCosts.add(BigDecimalUtil.mul(2, count));
-                break;
-            case 4:
-                materialCosts = materialCosts.add(BigDecimalUtil.mul(1.8, count));
-                break;
-            case 5:
-                materialCosts = materialCosts.add(BigDecimalUtil.mul(1.5, count));
-                break;
-            case 6:
-                materialCosts = materialCosts.add(BigDecimalUtil.mul(1.4, count));
-                break;
-            default:
-                int remainder = count % 6;
-                materialCosts = BigDecimalUtil.mul(1.4, count - remainder);
-                if (remainder != 0){
-                    materialCosts = calcMaterialCosts(remainder, materialCosts);
-                }
-                break;
-        }
-        return materialCosts;
-    }
-
     @ApiOperation(value = "微信回调接口", notes = "微信回调接口")
     @PostMapping(value = "/constant/weixinNotifyUrl")
     @Transactional
     public String weixinNotifyUrl(HttpServletRequest request) {
-//        WeiXinNotify notify = WeiXinPayUtil.notify_url(request);
-//        System.out.println("notify-------------------------------------------------------" + notify);
-//        String outTradeNo = notify.getOut_trade_no(); // 商户网站订单系统中唯一订单号
-//        BigDecimal totalAmount = new BigDecimal(notify.getTotal_fee()); // 付款金额
+        WeiXinNotify notify = WeiXinPayUtil.notify_url(request);
+        System.out.println("notify-------------------------------------------------------" + notify);
+        String outTradeNo = notify.getOut_trade_no(); // 商户网站订单系统中唯一订单号
+        BigDecimal totalAmount = new BigDecimal(notify.getTotal_fee()); // 付款金额
 
-        WeiXinNotify notify = new WeiXinNotify();
-        String outTradeNo = "KC110109052816156";
-        BigDecimal totalAmount = new BigDecimal("3");
+//        WeiXinNotify notify = new WeiXinNotify();
+//        String outTradeNo = "KC110109052816156";
+//        BigDecimal totalAmount = new BigDecimal("3");
 
         // 校验订单
         ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectOne(
@@ -322,7 +289,7 @@ public class ShopStockController {
             return notify.getBodyXML();
         }
         // 判断金额是否正确
-        if (shopGoodsOrder.getTotalRealPayment().compareTo(totalAmount) != 0) {
+        if (shopGoodsOrder.getTotalRealPayment().multiply(new BigDecimal("100")).compareTo(totalAmount) != 0) {
             logger.info("-----------------------TotalAmount fail------------------------------");
             notify.setResultFail("TotalAmount fail");
             return notify.getBodyXML();
@@ -364,6 +331,17 @@ public class ShopStockController {
                 return notify.getBodyXML();
             }
         }
+        // 插入流水
+        UserFund userFund = new UserFund();
+        userFund.setDecreaseMoney(shopGoodsOrder.getTotalRealPayment());
+        userFund.setTradeDescribe("微信支付");
+        userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_4);
+        userFund.setPayType(BaseConstant.PAY_TYPE_2);
+        userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
+        userFund.setOrderNo(outTradeNo);
+        userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+        userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
+        userFundService.InsertUserFund(userFund);
         logger.info("-----------------------微信回调接口结束------------------------------");
         notify.setResultSuccess();
         return notify.getBodyXML();
@@ -374,7 +352,6 @@ public class ShopStockController {
     @Transactional
     public ResultWrapper<Map<String, String>> weixinPayForOrder(@ApiParam(value = "订单编号", required = true) @RequestParam Integer orderId) throws Exception{
         ResultWrapper<Map<String, String>> resultWrapper = new ResultWrapper<>();
-        Map<String, String> resultMap = new HashMap<>();
         ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectById(orderId);
         if (!shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)) {
             throw new OptimisticLockingFailureException("订单不是支付状态");
@@ -386,7 +363,7 @@ public class ShopStockController {
         shopGoodsOrder.setTotalRealPayment(shopGoodsOrder.getMaterialAmount().add(shopGoodsOrder.getCarriage()));
         String ip = InetAddress.getLocalHost().getHostAddress();
         // 微信支付
-        resultMap = weiXinPay(ip, shopGoodsOrder.getTradeNo(), shopGoodsOrder.getTotalRealPayment(), "");
+        Map<String, String> resultMap = weiXinPay(ip, shopGoodsOrder.getTradeNo(), shopGoodsOrder.getTotalRealPayment(), "");
         resultWrapper.setResult(resultMap);
         return resultWrapper;
     }

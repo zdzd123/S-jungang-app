@@ -29,4 +29,6 @@ public interface UserAddressMapper extends BaseMapper<UserAddress> {
     List<UserAddress> selectUserAddress(Page<UserAddress> page, @Param("id") Integer id);
 
     UserAddressVo selectDetailById(@Param("userAddressId") Integer userAddressId);
+
+    List<UserAddressVo> selectUserAddressList(@Param("id") Integer id);
 }
