@@ -17,4 +17,6 @@ import com.jgzy.entity.po.ShopGoods;
 public interface IShopGoodsService extends IService<ShopGoods> {
 
     Page<ShopGoodsVo> selectPageVo(Page<ShopGoodsVo> page, EntityWrapper<ShopGoods> entityWrapper);
+
+    boolean updateStockById(Integer buyCount, Integer shopGoodsId);
 }

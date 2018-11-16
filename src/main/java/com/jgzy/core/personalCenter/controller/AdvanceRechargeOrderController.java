@@ -14,11 +14,13 @@ import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.common.WeiXinData;
 import com.jgzy.entity.common.WeiXinTradeType;
 import com.jgzy.entity.po.*;
-import com.jgzy.utils.*;
+import com.jgzy.utils.CommonUtil;
+import com.jgzy.utils.WeiXinNotify;
+import com.jgzy.utils.WeiXinPayUtil;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +33,6 @@ import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * <p>
@@ -60,7 +61,7 @@ public class AdvanceRechargeOrderController {
     private IUserFundService userFundService;
 
     @ApiOperation(value = "新增权额订单", notes = "新增权额订单")
-    @PostMapping(value = "/save")
+    @GetMapping(value = "/save")
     public ResultWrapper<HashMap<String, String>> save(@ApiParam(value = "权额id", required = true) @RequestParam Integer id,
                                                        @ApiParam(value = "支付类型 支付宝=1|微信支付=2") @RequestParam Integer payType) throws Exception {
         ResultWrapper<HashMap<String, String>> resultWrapper = new ResultWrapper<>();
@@ -93,7 +94,7 @@ public class AdvanceRechargeOrderController {
         }
         String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
         String product_id = ""; // 产品id (非必填)
-        String notify_url = "/api/advanceRechargeOrder/constant/weixinNotifyUrl";
+        String notify_url = "http://jgapi.china-mail.com.cn/api/advanceRechargeOrder/constant/weixinNotifyUrl";
         // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
         // 检验订单状态以及订单的金额
         // TODO 测试用支付
@@ -143,19 +144,23 @@ public class AdvanceRechargeOrderController {
         String outTradeNo = notify.getOut_trade_no(); // 商户网站订单系统中唯一订单号
         BigDecimal totalAmount = new BigDecimal(notify.getTotal_fee());// 付款金额
 
+//        WeiXinNotify notify = new WeiXinNotify();
+//        String outTradeNo = "1115085323-6984";
+
         AdvanceRechargeOrder advanceRechargeOrder = advanceRechargeOrderService.selectOne(
                 new EntityWrapper<AdvanceRechargeOrder>().eq("order_no", outTradeNo));
-        if (advanceRechargeOrder == null || advanceRechargeOrder.getAmount() == null ||
-                advanceRechargeOrder.getAmount().compareTo(totalAmount) != 0) {
-            notify.setResultFail("order fail");
-            return notify.getBodyXML();
-        }
         // TODO 测试用隐藏判断金额是否正确
-//        if (advanceRechargeOrder.getAmount().multiply(new BigDecimal("100")).compareTo(totalAmount) != 0) {
-//            logger.info("-----------------------TotalAmount fail------------------------------");
-//            notify.setResultFail("TotalAmount fail" + advanceRechargeOrder.getAmount());
+//        if (advanceRechargeOrder == null || advanceRechargeOrder.getAmount() == null ||
+//                advanceRechargeOrder.getAmount().compareTo(totalAmount) != 0) {
+//            logger.info("-----------------------OrderStatus fail------------------------------");
+//            notify.setResultFail("order fail");
 //            return notify.getBodyXML();
 //        }
+        if (!advanceRechargeOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)) {
+            logger.info("-----------------------OrderStatus fail------------------------------");
+            notify.setResultFail("OrderStatus fail" + advanceRechargeOrder.getOrderStatus());
+            return notify.getBodyXML();
+        }
         // 更新时间
         Date date = new Date();
         // 更新订单
@@ -167,29 +172,31 @@ public class AdvanceRechargeOrderController {
         // 插入流水
         UserFund userFund = new UserFund();
         userFund.setTradeUserId(advanceRechargeOrder.getSubmitOrderUser());
-        userFund.setDecreaseMoney(totalAmount);
+        userFund.setIncreaseMoney(advanceRechargeOrder.getAmount());
         userFund.setOrderNo(outTradeNo);
         userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
         userFund.setTradeDescribe("权额充值");
         userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_8);
         userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_2);
         userFund.setPayType(BaseConstant.PAY_TYPE_2);
+        userFund.setTradeTime(date);
         userFundService.InsertUserFund(userFund);
         // 插入权额
         AdvanceRechargeRecord advanceRechargeRecord = advanceRechargeRecordService.selectOne(
                 new EntityWrapper<AdvanceRechargeRecord>()
                         .eq("level_id", advanceRechargeOrder.getLevelId())
-                        .eq("discount_rate", advanceRechargeOrder.getDiscountRate()));
+                        .eq("discount_rate", advanceRechargeOrder.getDiscountRate())
+                        .eq("user_id", advanceRechargeOrder.getSubmitOrderUser()));
         // 存在权额是更新，不存在插入
         if (advanceRechargeRecord != null) {
             advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount()
-                    .add(totalAmount.divide(advanceRechargeOrder.getDiscountRate(), 2, BigDecimal.ROUND_HALF_UP)));
+                    .add(advanceRechargeOrder.getAmount().divide(advanceRechargeOrder.getDiscountRate(), 2, BigDecimal.ROUND_HALF_UP)));
             advanceRechargeRecord.setUpdateTime(date);
             advanceRechargeRecordService.updateById(advanceRechargeRecord);
         } else {
             advanceRechargeRecord = new AdvanceRechargeRecord();
             advanceRechargeRecord.setLevelId(advanceRechargeOrder.getLevelId());
-            advanceRechargeRecord.setAmount(totalAmount.divide(advanceRechargeOrder.getDiscountRate(), 2, BigDecimal.ROUND_HALF_UP));
+            advanceRechargeRecord.setAmount(advanceRechargeOrder.getAmount().divide(advanceRechargeOrder.getDiscountRate(), 2, BigDecimal.ROUND_HALF_UP));
             advanceRechargeRecord.setCreateTime(date);
             advanceRechargeRecord.setDiscountRate(advanceRechargeOrder.getDiscountRate());
             advanceRechargeRecord.setUserId(advanceRechargeOrder.getSubmitOrderUser());
@@ -209,12 +216,14 @@ public class AdvanceRechargeOrderController {
         return notify.getBodyXML();
     }
 
-    @GetMapping(value = "/detail/{id:\\d+}")
+    @GetMapping(value = "/detail")
     @ApiOperation(value = "查询权额订单", notes = "查询权额订单")
-    @ApiImplicitParam(name = "id", value = "订单id", required = true, paramType = "path", dataType = "Integer")
-    public ResultWrapper<AdvanceRechargeOrder> detail(@PathVariable(value = "id") Integer id) {
+    public ResultWrapper<AdvanceRechargeOrder> detail(@ApiParam(value = "订单id") @RequestParam(required = false) Integer id,
+                                                      @ApiParam(value = "订单编号") @RequestParam(required = false) String orderNo) {
         ResultWrapper<AdvanceRechargeOrder> resultWrapper = new ResultWrapper<>();
-        AdvanceRechargeOrder advanceRechargeOrder = advanceRechargeOrderService.selectById(id);
+        AdvanceRechargeOrder advanceRechargeOrder = advanceRechargeOrderService.selectOne(
+                new EntityWrapper<AdvanceRechargeOrder>().eq(id != null, "id", id)
+                        .eq(StringUtils.isNotEmpty(orderNo), "order_no", orderNo));
         resultWrapper.setResult(advanceRechargeOrder);
         return resultWrapper;
     }

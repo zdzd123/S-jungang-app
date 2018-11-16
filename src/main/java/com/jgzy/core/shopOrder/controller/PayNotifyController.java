@@ -5,10 +5,7 @@ import com.alipay.api.internal.util.AlipaySignature;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.jgzy.config.AlipayConfig;
 import com.jgzy.constant.BaseConstant;
-import com.jgzy.core.personalCenter.service.IAdvanceRechargeRecordService;
-import com.jgzy.core.personalCenter.service.IUserDistributionConstantService;
-import com.jgzy.core.personalCenter.service.IUserInfoService;
-import com.jgzy.core.personalCenter.service.IUserOauthService;
+import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.entity.po.*;
 import com.jgzy.utils.DateUtil;
@@ -61,6 +58,12 @@ public class PayNotifyController {
     private IOriginatorInfoOrderService originatorInfoOrderService;
     @Autowired
     private IOriginatorInfoService originatorInfoService;
+    @Autowired
+    private IShopGoodsService shopGoodsService;
+    @Autowired
+    private IUserDistributionService userDistributionService;
+    @Autowired
+    private IDistributionCommissionSetService distributionCommissionSetService;
 
     @ApiOperation(value = "支付宝回调接口", notes = "支付宝回调接口")
     @PostMapping(value = "/aliNotifyUrl")
@@ -150,18 +153,17 @@ public class PayNotifyController {
     @ApiOperation(value = "微信回调接口", notes = "微信回调接口")
     @PostMapping(value = "/weixinNotifyUrl")
     @Transactional
-    public String weixinNotifyUrl(HttpServletRequest request) throws Exception {
+    public String weixinNotifyUrl(HttpServletRequest request) {
         logger.info("-----------------------——微信回调开始——------------------------------");
         BigDecimal zero = new BigDecimal("0");
         Date date = new Date();
-        // 佣金股权金额
-        BigDecimal commissionAmont = new BigDecimal("0");
         WeiXinNotify notify = WeiXinPayUtil.notify_url(request);
         String outTradeNo = notify.getOut_trade_no(); // 商户网站订单系统中唯一订单号
         BigDecimal totalAmount = new BigDecimal(notify.getTotal_fee()); // 付款金额
 
+        // TODO 测试代码
 //        WeiXinNotify notify = new WeiXinNotify();
-//        String outTradeNo = "HHR110918001414628";
+//        String outTradeNo = "HHR1115090822-2001";
 
         // 校验订单
         ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectOne(
@@ -169,6 +171,11 @@ public class PayNotifyController {
         if (shopGoodsOrder == null) {
             logger.info("-----------------------OutTradeNo fail------------------------------");
             notify.setResultFail("OutTradeNo fail" + outTradeNo);
+            return notify.getBodyXML();
+        }
+        if (!shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)) {
+            logger.info("-----------------------OrderStatus fail------------------------------");
+            notify.setResultFail("OrderStatus fail" + shopGoodsOrder.getOrderStatus());
             return notify.getBodyXML();
         }
         Integer id = shopGoodsOrder.getSubmitOrderUser();
@@ -179,84 +186,83 @@ public class PayNotifyController {
 //            return notify.getBodyXML();
 //        }
         // 佣金股权金
-        commissionAmont = commissionAmont.add(shopGoodsOrder.getTotalRealPayment());
+//        commissionAmount = commissionAmount.add(shopGoodsOrder.getTotalRealPayment());
         List<UserFund> userFundList = new ArrayList<>();
-        // 判断是否有权额支付
-        if (shopGoodsOrder.getAdvanceAmount() != null && shopGoodsOrder.getAdvanceAmount().compareTo(zero) > 0) {
-            // 佣金股权金
-            commissionAmont = commissionAmont.add(shopGoodsOrder.getAdvanceAmount());
-            // 获取用户权额
-            List<AdvanceRechargeRecord> advanceRechargeRecordList = advanceRechargeRecordService.selectList(
-                    new EntityWrapper<AdvanceRechargeRecord>()
-                            .eq("user_id", id)
-                            .ne("amount", 0)
-                            .orderBy("level_id DESC"));
-            List<AdvanceRechargeRecord> myAdvanceRechargeRecordList = new ArrayList<>();
-            // 权额金额
-            BigDecimal advanceAmount = shopGoodsOrder.getAdvanceAmount();
-            if (advanceAmount != null && advanceAmount.compareTo(new BigDecimal(0)) > 0) {
-                // 处理权额
-                for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
-                    if (!shopGoodsOrder.getBlessing().contains(advanceRechargeRecord.getId().toString())) {
-                        continue;
-                    }
-                    if (advanceRechargeRecord.getAmount().compareTo(advanceAmount) >= 0) {
-                        // 权额足够
-                        AdvanceRechargeRecord myAdvanceRechargeRecord = new AdvanceRechargeRecord();
-                        myAdvanceRechargeRecord.setId(advanceRechargeRecord.getId());
-                        myAdvanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(advanceAmount));
-                        myAdvanceRechargeRecordList.add(myAdvanceRechargeRecord);
-                        break;
-                    } else {
-                        // 权额不足
-                        AdvanceRechargeRecord myAdvanceRechargeRecord = new AdvanceRechargeRecord();
-                        myAdvanceRechargeRecord.setId(advanceRechargeRecord.getId());
-                        myAdvanceRechargeRecord.setAmount(new BigDecimal(0));
-                        myAdvanceRechargeRecordList.add(myAdvanceRechargeRecord);
-                    }
-                }
-                // 流水
-                UserFund userFund = new UserFund();
-                userFund.setTradeUserId(id);
-                userFund.setDecreaseMoney(advanceAmount);
-                userFund.setTradeDescribe("权额支付");
-                userFund.setOrderNo(outTradeNo);
-                userFund.setTradeTime(date);
-                userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
-                userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_8);
-                userFund.setPayType(BaseConstant.PAY_TYPE_3);
-                userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
-                userFundList.add(userFund);
-            }
-            // 更新权额
-            if (!CollectionUtils.isEmpty(myAdvanceRechargeRecordList)) {
-                boolean b = advanceRechargeRecordService.updateBatchById(myAdvanceRechargeRecordList);
-                if (!b) {
-                    logger.info("-----------------------updateAdvance fail------------------------------");
-                    notify.setResultFail("updateAdvance fail");
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    return notify.getBodyXML();
-                }
-            }
-        }
+//        // 判断是否有权额支付
+//        if (shopGoodsOrder.getAdvanceAmount() != null && shopGoodsOrder.getAdvanceAmount().compareTo(zero) > 0) {
+//            // 佣金股权金
+//            commissionAmount = commissionAmount.add(shopGoodsOrder.getAdvanceAmount());
+//            // 获取用户权额
+//            List<AdvanceRechargeRecord> advanceRechargeRecordList = advanceRechargeRecordService.selectList(
+//                    new EntityWrapper<AdvanceRechargeRecord>()
+//                            .eq("user_id", id)
+//                            .ne("amount", 0)
+//                            .orderBy("level_id DESC"));
+//            List<AdvanceRechargeRecord> myAdvanceRechargeRecordList = new ArrayList<>();
+//            // 权额金额
+//            BigDecimal advanceAmount = shopGoodsOrder.getAdvanceAmount();
+//            if (advanceAmount != null && advanceAmount.compareTo(new BigDecimal(0)) > 0) {
+//                // 处理权额
+//                for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
+//                    if (!shopGoodsOrder.getBlessing().contains(advanceRechargeRecord.getId().toString())) {
+//                        continue;
+//                    }
+//                    if (advanceRechargeRecord.getAmount().compareTo(advanceAmount) >= 0) {
+//                        // 权额足够
+//                        AdvanceRechargeRecord myAdvanceRechargeRecord = new AdvanceRechargeRecord();
+//                        myAdvanceRechargeRecord.setId(advanceRechargeRecord.getId());
+//                        myAdvanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(advanceAmount));
+//                        myAdvanceRechargeRecordList.add(myAdvanceRechargeRecord);
+//                        break;
+//                    } else {
+//                        // 权额不足
+//                        AdvanceRechargeRecord myAdvanceRechargeRecord = new AdvanceRechargeRecord();
+//                        myAdvanceRechargeRecord.setId(advanceRechargeRecord.getId());
+//                        myAdvanceRechargeRecord.setAmount(new BigDecimal(0));
+//                        myAdvanceRechargeRecordList.add(myAdvanceRechargeRecord);
+//                    }
+//                }
+//                // 流水
+//                UserFund userFund = new UserFund();
+//                userFund.setTradeUserId(id);
+//                userFund.setDecreaseMoney(advanceAmount);
+//                userFund.setTradeDescribe("权额支付");
+//                userFund.setOrderNo(outTradeNo);
+//                userFund.setTradeTime(date);
+//                userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+//                userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_8);
+//                userFund.setPayType(BaseConstant.PAY_TYPE_3);
+//                userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
+//                userFundList.add(userFund);
+//            }
+//            // 更新权额
+//            if (!CollectionUtils.isEmpty(myAdvanceRechargeRecordList)) {
+//                boolean b = advanceRechargeRecordService.updateBatchById(myAdvanceRechargeRecordList);
+//                if (!b) {
+//                    logger.info("-----------------------updateAdvance fail------------------------------");
+//                    notify.setResultFail("updateAdvance fail");
+//                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//                    return notify.getBodyXML();
+//                }
+//            }
+//        }
         //订单
         ShopGoodsOrder myShopGoodsOrder = new ShopGoodsOrder();
         myShopGoodsOrder.setId(shopGoodsOrder.getId());
         myShopGoodsOrder.setPayTime(date);
         // 入库单为结束
+        // 存入库存
+        List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = shopGoodsOrderDetailService.selectList(
+                new EntityWrapper<ShopGoodsOrderDetail>()
+                        .eq("order_id", shopGoodsOrder.getId()));
         if (shopGoodsOrder.getIsStock() != null && shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)) {
             myShopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_11);
             myShopGoodsOrder.setClosingTime(date);
-            // 存入库存
-            List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = shopGoodsOrderDetailService.selectList(
-                    new EntityWrapper<ShopGoodsOrderDetail>()
-                            .eq("order_id", shopGoodsOrder.getId()));
             for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
                 ShopStock shopStock = new ShopStock();
                 shopStock.setUserInfoId(id);
                 shopStock.setShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
                 shopStock.setCount(shopGoodsOrderDetail.getBuyCount());
-                shopStock.setDescribe(shopGoodsOrderDetail.getOrderId().toString());
                 ShopStock stock = shopStockService.selectOne(
                         new EntityWrapper<ShopStock>()
                                 .eq("user_info_id", id)
@@ -267,11 +273,11 @@ public class PayNotifyController {
                     stockFlag = shopStockService.insert(shopStock);
                 } else {
                     shopStock.setUpdateTime(date);
-                    if (shopStock.getDescribe().length() > 650) {
+                    if (stock.getDescribe().length() > 650) {
                         shopStock.setDescribe(stock.getDescribe().substring(stock.getDescribe().length() - 300));
                     }
                     shopStock.setDescribe(shopStock.getDescribe() + "," + shopGoodsOrder.getOrderNo());
-                    shopStock.setCount(shopStock.getCount() + shopGoodsOrderDetail.getShopGoodsId());
+                    shopStock.setCount(shopStock.getCount() + stock.getCount());
                     stockFlag = shopStockService.update(shopStock, new EntityWrapper<ShopStock>()
                             .eq("user_info_id", id)
                             .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
@@ -288,26 +294,26 @@ public class PayNotifyController {
             myShopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_3);
         }
         // 余额更新
-        UserInfo userInfo = userInfoService.selectById(id);
-        if (shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_5)) {
-            boolean b = userInfoService.updateById(userInfo);
-            if (!b) {
-                logger.info("-----------------------updateUser  fail------------------------------");
-                notify.setResultFail("updateUser  fail");
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return notify.getBodyXML();
-            }
-            UserFund remain = new UserFund();
-            remain.setTradeUserId(id);
-            remain.setDecreaseMoney(shopGoodsOrder.getTotalPoint());
-            remain.setOrderNo(shopGoodsOrder.getOrderNo());
-            remain.setTradeType(BaseConstant.TRADE_TYPE_2);
-            remain.setTradeDescribe("余额支付");
-            remain.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
-            remain.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
-            remain.setPayType(BaseConstant.PAY_TYPE_4);
-            userFundList.add(remain);
-        }
+//        UserInfo userInfo = userInfoService.selectById(id);
+//        if (shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_5)) {
+//            boolean b = userInfoService.updateById(userInfo);
+//            if (!b) {
+//                logger.info("-----------------------updateUser  fail------------------------------");
+//                notify.setResultFail("updateUser  fail");
+//                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//                return notify.getBodyXML();
+//            }
+//            UserFund remain = new UserFund();
+//            remain.setTradeUserId(id);
+//            remain.setDecreaseMoney(shopGoodsOrder.getTotalPoint());
+//            remain.setOrderNo(shopGoodsOrder.getOrderNo());
+//            remain.setTradeType(BaseConstant.TRADE_TYPE_2);
+//            remain.setTradeDescribe("余额支付");
+//            remain.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
+//            remain.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
+//            remain.setPayType(BaseConstant.PAY_TYPE_4);
+//            userFundList.add(remain);
+//        }
         // 更新订单
         boolean updateOrder = shopGoodsOrderService.updateById(myShopGoodsOrder);
         if (!updateOrder) {
@@ -366,78 +372,119 @@ public class PayNotifyController {
             //插入品牌费流水
             UserFund userFund = new UserFund();
             userFund.setTradeUserId(id);
-            userFund.setDecreaseMoney(oriAmount);
+            userFund.setIncreaseMoney(oriAmount);
             userFund.setTradeDescribe("品牌费返还");
             userFund.setOrderNo(outTradeNo);
             userFund.setTradeTime(date);
             userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-            userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
-            userFund.setPayType(BaseConstant.PAY_TYPE_4);
+            userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_9);
+            userFund.setPayType(BaseConstant.PAY_TYPE_6);
             userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_5);
             userFundList.add(userFund);
         }
-        // TODO 合伙人佣金 合伙人股权
-        // 通过用户id获取该用户的佣金和股权
-        UserDistributionConstant myDistribution = userDistributionConstantService.selectMyDistributionById(id);
-        UserDistributionConstant parentDistribution = userDistributionConstantService.selectParentDistributionById(id);
-        if (myDistribution != null && parentDistribution.getStockRightDiscount().compareTo(zero) > 0) {
-            boolean updateDiscount = userInfoService.updateStockRightDiscount(id, commissionAmont.multiply(myDistribution.getStockRightDiscount()));
-            if (!updateDiscount) {
-                logger.info("-----------------------updateDiscount  fail------------------------------");
-                notify.setResultFail("updateDiscount  fail");
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return notify.getBodyXML();
+        if (!shopGoodsOrder.getOrderSource().equals(BaseConstant.ORDER_SOURCE_3)){
+            // 佣金股权金额
+            BigDecimal commissionAmount = (shopGoodsOrder.getAdvanceAmount() == null ? BigDecimal.ZERO : shopGoodsOrder.getAdvanceAmount())
+                    .add(shopGoodsOrder.getTotalPoint() == null ? BigDecimal.ZERO : shopGoodsOrder.getTotalPoint())
+                    .add(shopGoodsOrder.getTotalRealPayment() == null ? BigDecimal.ZERO : shopGoodsOrder.getTotalRealPayment());
+            // TODO 合伙人佣金 合伙人股权
+            // 通过用户id获取该用户的佣金和股权
+            UserDistributionConstant myDistribution = userDistributionConstantService.selectMyDistributionById(id);
+            UserDistributionConstant parentDistribution = userDistributionConstantService.selectParentDistributionById(id);
+            if (myDistribution != null && myDistribution.getStockRightDiscount().compareTo(zero) > 0) {
+                boolean updateDiscount = userInfoService.updateStockRightDiscount(id, commissionAmount.multiply(myDistribution.getStockRightDiscount()));
+                if (!updateDiscount) {
+                    logger.info("-----------------------updateDiscount  fail------------------------------");
+                    notify.setResultFail("updateDiscount  fail");
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    return notify.getBodyXML();
+                }
+                UserFund distributionUserFund = new UserFund();
+                distributionUserFund.setTradeUserId(id);
+                distributionUserFund.setIncreaseMoney(commissionAmount.multiply(myDistribution.getStockRightDiscount()));
+                distributionUserFund.setTradeDescribe("股权收益");
+                distributionUserFund.setOrderNo(outTradeNo);
+                distributionUserFund.setTradeTime(date);
+                distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_1);
+                distributionUserFund.setPayType(BaseConstant.PAY_TYPE_9);
+                distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_4);
+                userFundList.add(distributionUserFund);
             }
-            UserFund distributionUserFund = new UserFund();
-            distributionUserFund.setTradeUserId(id);
-            distributionUserFund.setIncreaseMoney(commissionAmont.multiply(myDistribution.getStockRightDiscount()));
-            distributionUserFund.setTradeDescribe("股权收益");
-            distributionUserFund.setOrderNo(outTradeNo);
-            distributionUserFund.setTradeTime(date);
-            distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-            distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_1);
-            distributionUserFund.setPayType(BaseConstant.PAY_TYPE_9);
-            distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_4);
-            userFundList.add(distributionUserFund);
+            if (parentDistribution != null && parentDistribution.getCommissionDiscount().compareTo(zero) > 0) {
+                boolean updateCommission = userInfoService.updateCommissionDiscount(parentDistribution.getId(), commissionAmount.multiply(parentDistribution.getCommissionDiscount()));
+                if (!updateCommission) {
+                    logger.info("-----------------------updateDistribute  fail------------------------------");
+                    notify.setResultFail("updateDistribute  fail");
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    return notify.getBodyXML();
+                }
+                //判断是否是合伙人
+                int i = originatorInfoService.selectCount(new EntityWrapper<OriginatorInfo>()
+                        .eq("user_id", id)
+                        .eq("status", 0));
+                //插入佣金和股权流水
+                UserFund commissionUserFund = new UserFund();
+                commissionUserFund.setTradeUserId(parentDistribution.getId());
+                commissionUserFund.setIncreaseMoney(commissionAmount.multiply(parentDistribution.getCommissionDiscount()));
+                commissionUserFund.setOrderNo(outTradeNo);
+                commissionUserFund.setTradeTime(date);
+                commissionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                commissionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
+                commissionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
+                UserInfo userInfo = userInfoService.selectById(id);
+                if (i == 0) {
+                    commissionUserFund.setTradeDescribe("消费者佣金收益，姓名：" + userInfo.getNickname());
+                    commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_8);
+                } else {
+                    commissionUserFund.setTradeDescribe("合伙人佣金收益，姓名：" + userInfo.getNickname());
+                    commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_7);
+                }
+                userFundList.add(commissionUserFund);
+            }
         }
-        if (parentDistribution != null && parentDistribution.getCommissionDiscount().compareTo(zero) > 0) {
-            boolean updateCommission = userInfoService.updateCommissionDiscount(parentDistribution.getId(), commissionAmont.multiply(parentDistribution.getCommissionDiscount()));
-            if (!updateCommission) {
-                logger.info("-----------------------updateDistribute  fail------------------------------");
-                notify.setResultFail("updateDistribute  fail");
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                return notify.getBodyXML();
+        else {
+            //普通消费者分销
+            //一级分销
+            UserDistribution userDistribution = userDistributionService.selectById(id);
+            if (userDistribution.getParentId() != null){
+                for (ShopGoodsOrderDetail shopGoodsOrderDetail:shopGoodsOrderDetailList){
+
+                }
+                // 查询商品分销额
+//                shopGoodsService.selectById()
+                // 查询供应商分销额
             }
-            //判断是否是合伙人
-            int i = originatorInfoService.selectCount(new EntityWrapper<OriginatorInfo>()
-                    .eq("user_id", id)
-                    .eq("status", 0));
-            //插入佣金和股权流水
-            UserFund commissionUserFund = new UserFund();
-            commissionUserFund.setTradeUserId(parentDistribution.getId());
-            commissionUserFund.setDecreaseMoney(commissionAmont.multiply(parentDistribution.getCommissionDiscount()));
-            commissionUserFund.setOrderNo(outTradeNo);
-            commissionUserFund.setTradeTime(date);
-            commissionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-            commissionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
-            commissionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-            if (i == 0) {
-                commissionUserFund.setTradeDescribe("消费者佣金收益，姓名：" + userInfo.getNickname());
-                commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_8);
-            } else {
-                commissionUserFund.setTradeDescribe("合伙人佣金收益，姓名：" + userInfo.getNickname());
-                commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_7);
-            }
-            userFundList.add(commissionUserFund);
+
+
+
         }
         // 插入流水
         for (UserFund fund : userFundList) {
-//            fund.setTradeUserId(id);
-//            fund.setOrderNo(outTradeNo);
-//            fund.setTradeType(BaseConstant.TRADE_TYPE_2);
-//            fund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
             userFundService.InsertUserFund(fund);
         }
+        // 更新商品库存
+//        if (shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_1)){
+//            // 更新商品库存
+//            for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
+//                // 更新商品库存
+//                ShopGoods shopGoods = shopGoodsService.selectById(shopGoodsOrder.getSubmitOrderUser());
+//                if (shopGoods == null){
+//                    logger.info("-----------------------shopGoodsStock fail------------------------------");
+//                    notify.setResultFail("shopGoodsStock fail");
+//                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//                    return notify.getBodyXML();
+//                }
+//                shopGoods.setStock(shopGoods.getStock()-shopGoodsOrderDetail.getBuyCount());
+//                boolean c = shopGoodsService.updateById(shopGoods);
+//                if (!c){
+//                    logger.info("-----------------------shopGoodsStockUpdate  fail------------------------------");
+//                    notify.setResultFail("shopGoodsStockUpdate  fail");
+//                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//                    return notify.getBodyXML();
+//                }
+//            }
+//        }
         logger.info("-----------------------微信回调接口结束------------------------------");
         notify.setResultSuccess();
         return notify.getBodyXML();

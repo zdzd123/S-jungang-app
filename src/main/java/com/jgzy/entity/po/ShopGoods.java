@@ -316,10 +316,20 @@ public class ShopGoods implements Serializable {
      */
     @ApiModelProperty(value = "0-非特定 ，1特定商品", example = "1")
     private Integer isSpecial;
+    @ApiModelProperty(value = "0-不打折 ，1打折", example = "1")
+    private Integer isDiscount;
     @ApiModelProperty(value = "reservedCoding1", example = "1")
     private String reservedCoding1;
     @ApiModelProperty(value = "barcodeReservation1", example = "1")
     private String barcodeReservation1;
+
+    public Integer getIsDiscount() {
+        return isDiscount;
+    }
+
+    public void setIsDiscount(Integer isDiscount) {
+        this.isDiscount = isDiscount;
+    }
 
     public Integer getGoodsUnitCount() {
         return goodsUnitCount;

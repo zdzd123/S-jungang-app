@@ -51,4 +51,9 @@ public class ShopGoodsServiceImpl extends ServiceImpl<ShopGoodsMapper, ShopGoods
         page.setRecords(shopGoodsVoList);
         return page;
     }
+
+    @Override
+    public boolean updateStockById(Integer buyCount, Integer shopGoodsId) {
+        return shopGoodsMapper.updateStockById(buyCount, shopGoodsId);
+    }
 }

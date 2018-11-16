@@ -43,7 +43,7 @@ public class UserGoodsFootprint implements Serializable {
     @ApiModelProperty(value = "添加时间", example = "2018-06-29 09:17:54")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date addTime;
-    @ApiModelProperty(value = "商品信息id", example = "1")
+    @ApiModelProperty(value = "删除 1-使用 0-删除", example = "1")
     private Integer userDel;
 
 

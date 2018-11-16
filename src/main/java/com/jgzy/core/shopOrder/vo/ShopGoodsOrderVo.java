@@ -1,23 +1,12 @@
 package com.jgzy.core.shopOrder.vo;
 
-import com.baomidou.mybatisplus.annotations.TableField;
 import com.baomidou.mybatisplus.annotations.TableId;
-import com.baomidou.mybatisplus.annotations.TableName;
 import com.baomidou.mybatisplus.enums.IdType;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.jgzy.entity.po.AdvanceRechargeInfo;
-import com.jgzy.entity.po.AdvertInfo;
-import com.jgzy.entity.po.ShopGoodsOrderDetail;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
-import org.springframework.beans.factory.annotation.Required;
 
-import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -31,7 +20,7 @@ import java.util.List;
  * @since 2018-10-19
  */
 @ApiModel("商品订单-vo")
-public class ShopGoodsOrderVo{
+public class ShopGoodsOrderVo {
     @ApiModelProperty(value = "商品id", example = "2")
     @NotNull
     private Integer shopGoodsId;
@@ -110,16 +99,16 @@ public class ShopGoodsOrderVo{
     @ApiModelProperty(value = "耗材费", example = "200")
     private BigDecimal materialAmount;
     @ApiModelProperty(value = "创建时间", example = "2018-06-29 09:17:54")
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
     @ApiModelProperty(value = "付款时间", example = "2018-06-29 09:17:54")
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date payTime;
     @ApiModelProperty(value = "发货时间", example = "2018-06-29 09:17:54")
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date sendOutTime;
     @ApiModelProperty(value = "订单有效期", example = "2018-06-29 09:17:54")
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date validOrderTime;
     @ApiModelProperty(value = "是否团购(否=1，是=2)", example = "1")
     private Integer isGroupbuy;
@@ -138,7 +127,7 @@ public class ShopGoodsOrderVo{
     @ApiModelProperty(value = "transactionNumber", example = "1")
     private String transactionNumber;
     @ApiModelProperty(value = "关闭时间", example = "2018-06-29 09:17:54")
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date closingTime;
     @ApiModelProperty(value = "订单来源（IOS=1|Android=2|Service(后台)=3|Live(直播)=4）", example = "1")
     private Integer orderSource;
@@ -165,7 +154,7 @@ public class ShopGoodsOrderVo{
     @ApiModelProperty(value = "总实际付款", example = "1")
     private BigDecimal totalRealPayment;
     @ApiModelProperty(value = "订单详情", example = "1")
-    private List<ShopGoodsOrderDetail> shopGoodsOrderDetailList;
+    private List<ShopgoodsOrderDetailVo> shopgoodsOrderDetailVoList;
 
     public Integer getShipperId() {
         return shipperId;
@@ -231,12 +220,12 @@ public class ShopGoodsOrderVo{
         this.materialAmount = materialAmount;
     }
 
-    public List<ShopGoodsOrderDetail> getShopGoodsOrderDetailList() {
-        return shopGoodsOrderDetailList;
+    public List<ShopgoodsOrderDetailVo> getShopgoodsOrderDetailVoList() {
+        return shopgoodsOrderDetailVoList;
     }
 
-    public void setShopGoodsOrderDetailList(List<ShopGoodsOrderDetail> shopGoodsOrderDetailList) {
-        this.shopGoodsOrderDetailList = shopGoodsOrderDetailList;
+    public void setShopgoodsOrderDetailVoList(List<ShopgoodsOrderDetailVo> shopgoodsOrderDetailVoList) {
+        this.shopgoodsOrderDetailVoList = shopgoodsOrderDetailVoList;
     }
 
     public Integer getShopGoodsId() {

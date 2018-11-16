@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jgzy.core.personalCenter.mapper.UserGoodsCartMapper">
-
+    <select id="selectMyUserCartPage" resultType="com.jgzy.core.personalCenter.vo.UserGoodsCartVo">
+        SELECT
+          cart.id,
+          cart.goods_id,
+          goods.shop_name,
+          goods.cost_price,
+          goods.pic,
+          goods.status,
+          goods.goods_unit,
+          goods.abstracts,
+		  goods.stock,
+		  cart.goods_cart_counts
+        FROM user_goods_cart cart
+        JOIN shop_goods goods ON cart.goods_id=goods.id
+        WHERE cart.cart_user_info_id = #{id}
+          AND cart.live_id = 1
+        ORDER BY cart.id desc
+    </select>
 </mapper>

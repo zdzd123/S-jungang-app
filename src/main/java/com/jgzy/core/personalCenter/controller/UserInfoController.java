@@ -60,11 +60,8 @@ public class UserInfoController {
     @ApiOperation(value = "更新用户信息", notes = "更新用户信息")
     public ResultWrapper<UserInfo> update(@RequestBody @Validated UserInfo po){
         ResultWrapper<UserInfo> resultWrapper = new ResultWrapper<>();
-        Integer id = po.getId();
-        boolean successful = false;
-        if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            successful = userInfoService.updateById(po);
-        }
+        po.setId(UserUuidThreadLocal.get().getId());
+        boolean successful = userInfoService.updateById(po);
         resultWrapper.setSuccessful(successful);
         return resultWrapper;
     }

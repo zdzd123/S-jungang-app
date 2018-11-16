@@ -1,27 +1,29 @@
 package com.jgzy.core.shopOrder.vo;
 
+import com.jgzy.entity.po.ShopGoodsAttribute;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @ApiModel("单个商品付款-vo")
 public class CalcSingleAmountVo {
     @ApiModelProperty(value = "商品id", example = "1")
     private Integer shopInfoId;
-    @ApiModelProperty(value = "商品总金额", example = "200")
-    private BigDecimal singleTotalAmount = new BigDecimal("0");
-    @ApiModelProperty(value = "商品折扣金额", example = "200")
-    private BigDecimal singleRateAmount = new BigDecimal("0");
-    @ApiModelProperty(value = "商品实际支付金额", example = "200")
-    private BigDecimal singleRealAmount = new BigDecimal("0");
-    @ApiModelProperty(value = "使用权额id", example = "200")
-    private String advanceIds;
-    @ApiModelProperty(value = "权额金额", example = "200")
-    private BigDecimal advanceAmount = new BigDecimal("0");
-    @ApiModelProperty(value = " 余额金额", example = "200")
-    private BigDecimal singleRemainAmount;
+//    @ApiModelProperty(value = "商品总金额", example = "200")
+//    private BigDecimal singleTotalAmount = new BigDecimal("0");
+//    @ApiModelProperty(value = "商品折扣金额", example = "200")
+//    private BigDecimal singleRateAmount = new BigDecimal("0");
+//    @ApiModelProperty(value = "商品实际支付金额", example = "200")
+//    private BigDecimal singleRealAmount = new BigDecimal("0");
+//    @ApiModelProperty(value = "使用权额id", example = "200")
+//    private String advanceIds;
+//    @ApiModelProperty(value = "权额金额", example = "200")
+//    private BigDecimal advanceAmount = new BigDecimal("0");
+//    @ApiModelProperty(value = " 余额金额", example = "200")
+//    private BigDecimal singleRemainAmount;
 
     @ApiModelProperty(value = "商品名", example = "巴朗波尔多干红葡萄酒")
     private String shopName;
@@ -35,13 +37,57 @@ public class CalcSingleAmountVo {
     //private String shopDescribe;
     @ApiModelProperty(value = "图片(多张以\",\"分隔)", example = "1.jpg")
     private String pic;
+    @ApiModelProperty(value = "商品单位", example = "5")
+    private String goodsUnit;
+    @ApiModelProperty(value = "箱量", example = "5")
+    private Integer goodsUnitCount;
+    @ApiModelProperty(value = "库存", example = "5")
+    private Integer stock;
+    @ApiModelProperty(value = "商品数量", example = "5")
+    private Integer count;
+    @ApiModelProperty(value = "商品简介", example = "5")
+    private String abstracts;
+//    private List<ShopGoodsAttribute> shopGoodsAttributeList;
 
-    public BigDecimal getSingleRemainAmount() {
-        return singleRemainAmount;
+    public String getAbstracts() {
+        return abstracts;
     }
 
-    public void setSingleRemainAmount(BigDecimal singleRemainAmount) {
-        this.singleRemainAmount = singleRemainAmount;
+    public void setAbstracts(String abstracts) {
+        this.abstracts = abstracts;
+    }
+
+    public Integer getCount() {
+        return count;
+    }
+
+    public void setCount(Integer count) {
+        this.count = count;
+    }
+
+    public Integer getStock() {
+        return stock;
+    }
+
+    public void setStock(Integer stock) {
+        this.stock = stock;
+    }
+
+
+    public Integer getGoodsUnitCount() {
+        return goodsUnitCount;
+    }
+
+    public void setGoodsUnitCount(Integer goodsUnitCount) {
+        this.goodsUnitCount = goodsUnitCount;
+    }
+
+    public String getGoodsUnit() {
+        return goodsUnit;
+    }
+
+    public void setGoodsUnit(String goodsUnit) {
+        this.goodsUnit = goodsUnit;
     }
 
     public String getShopName() {
@@ -84,22 +130,6 @@ public class CalcSingleAmountVo {
         this.pic = pic;
     }
 
-    public BigDecimal getSingleRealAmount() {
-        return singleRealAmount;
-    }
-
-    public void setSingleRealAmount(BigDecimal singleRealAmount) {
-        this.singleRealAmount = singleRealAmount;
-    }
-
-    public String getAdvanceIds() {
-        return advanceIds;
-    }
-
-    public void setAdvanceIds(String advanceIds) {
-        this.advanceIds = advanceIds;
-    }
-
     public Integer getShopInfoId() {
         return shopInfoId;
     }
@@ -108,40 +138,10 @@ public class CalcSingleAmountVo {
         this.shopInfoId = shopInfoId;
     }
 
-    public BigDecimal getSingleRateAmount() {
-        return singleRateAmount;
-    }
-
-    public void setSingleRateAmount(BigDecimal singleRateAmount) {
-        this.singleRateAmount = singleRateAmount;
-    }
-
-    public BigDecimal getSingleTotalAmount() {
-        return singleTotalAmount;
-    }
-
-    public void setSingleTotalAmount(BigDecimal singleTotalAmount) {
-        this.singleTotalAmount = singleTotalAmount;
-    }
-
-
-    public BigDecimal getAdvanceAmount() {
-        return advanceAmount;
-    }
-
-    public void setAdvanceAmount(BigDecimal advanceAmount) {
-        this.advanceAmount = advanceAmount;
-    }
-
     @Override
     public String toString() {
         return "CalcSingleAmountVo{" +
                 "shopInfoId=" + shopInfoId +
-                ", singleTotalAmount=" + singleTotalAmount +
-                ", singleRateAmount=" + singleRateAmount +
-                ", singleRealAmount=" + singleRealAmount +
-                ", advanceIds='" + advanceIds + '\'' +
-                ", advanceAmount=" + advanceAmount +
                 ", shopName='" + shopName + '\'' +
                 ", marketPrice=" + marketPrice +
                 ", costPrice=" + costPrice +

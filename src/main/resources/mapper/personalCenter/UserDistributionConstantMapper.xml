@@ -3,34 +3,38 @@
 <mapper namespace="com.jgzy.core.personalCenter.mapper.UserDistributionConstantMapper">
     <select id="selectMyDistributionById" resultType="com.jgzy.entity.po.UserDistributionConstant">
         SELECT
-        user.id,
-        constant.level_id,
-        constant.commission_discount,
-        constant.stock_right_discount,
-        constant.add_time,
-        constant.update_time
+            u.id,
+            ori.level_id,
+            constant.commission_discount,
+            constant.stock_right_discount,
+            constant.add_time,
+            constant.update_time
         FROM
-        user_distribution_constant constant
-        LEFT JOIN
-        user_info user ON constant.level_id = user.user_level_id
+          user_distribution_constant constant
+        JOIN
+          originator_info ori ON ori.level_id = constant.level_id
+        JOIN
+          user_info u ON ori.user_id = u.id
         <where>
-            user.id = #{id}
+            u.id = #{id}
         </where>
     </select>
     <select id="selectParentDistributionById" resultType="com.jgzy.entity.po.UserDistributionConstant">
         SELECT
-            user.id,
-            constant.level_id,
+            u.id,
+            ori.level_id,
             constant.commission_discount,
             constant.stock_right_discount,
             constant.add_time,
             constant.update_time
         FROM
             user_distribution_constant constant
-                LEFT JOIN
-            user_info user ON constant.level_id = user.user_level_id
-                LEFT JOIN
-            user_distribution dis ON dis.parent_id = user.id
+            JOIN
+              originator_info ori ON ori.level_id = constant.level_id
+            JOIN
+              user_info u ON ori.user_id = u.id
+            JOIN
+              user_distribution dis ON dis.parent_id = u.id
         WHERE
             dis.user_id = #{id}
     </select>

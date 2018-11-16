@@ -1,18 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jgzy.core.personalCenter.mapper.UserGoodsFootprintMapper">
-    <select id="selectUserGoodsFootprint" resultType="com.jgzy.entity.po.UserGoodsFootprint">
+    <select id="selectUserGoodsFootprint" resultType="com.jgzy.core.personalCenter.vo.UserGoodsFootprintVo">
         SELECT
-            id,
-            goods_id,
-            footprint_user_info_id,
-            add_time,
-            user_del
+          foot.id,
+          foot.goods_id,
+          goods.shop_name,
+          goods.cost_price,
+          goods.pic,
+          goods.status,
+          goods.goods_unit,
+          goods.abstracts,
+          goods.stock
         FROM
-            user_goods_footprint
+            user_goods_footprint foot
+            JOIN shop_goods goods ON foot.goods_id=goods.id
         WHERE
-            user_del = 1
-            AND footprint_user_info_id = #{id}
-        ORDER BY id DESC
+            foot.user_del = 1
+            AND foot.footprint_user_info_id = #{id}
+        ORDER BY foot.id DESC
     </select>
 </mapper>

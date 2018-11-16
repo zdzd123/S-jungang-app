@@ -2,6 +2,7 @@ package com.jgzy.core.personalCenter.service;
 
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
+import com.jgzy.core.personalCenter.vo.UserGoodsFootprintVo;
 import com.jgzy.entity.po.UserGoodsFootprint;
 
 /**
@@ -19,5 +20,13 @@ public interface IUserGoodsFootprintService extends IService<UserGoodsFootprint>
      *
      * @return
      */
-    Page<UserGoodsFootprint> getUserGoodsFootprint(Page<UserGoodsFootprint> page);
+    Page<UserGoodsFootprintVo> getUserGoodsFootprint(Page<UserGoodsFootprintVo> page);
+
+    /**
+     * 新增用户足迹
+     *
+     * @param po 足迹
+     * @return flag
+     */
+    boolean insertMyFoot(UserGoodsFootprint po);
 }

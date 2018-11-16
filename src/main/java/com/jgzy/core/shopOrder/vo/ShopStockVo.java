@@ -34,6 +34,36 @@ public class ShopStockVo {
     @NotNull
     @ApiModelProperty(value = "发货地址", example = "1")
     private Integer shipAddressId;
+    @ApiModelProperty(value = "总瓶数", example = "1")
+    private BigDecimal allCount;
+    @ApiModelProperty(value = "总资产", example = "1")
+    private BigDecimal allAmount;
+    @ApiModelProperty(value = "支付类型 2-微信 4-余额", example = "1")
+    private Integer payType;
+
+    public Integer getPayType() {
+        return payType;
+    }
+
+    public void setPayType(Integer payType) {
+        this.payType = payType;
+    }
+
+    public BigDecimal getAllCount() {
+        return allCount;
+    }
+
+    public void setAllCount(BigDecimal allCount) {
+        this.allCount = allCount;
+    }
+
+    public BigDecimal getAllAmount() {
+        return allAmount;
+    }
+
+    public void setAllAmount(BigDecimal allAmount) {
+        this.allAmount = allAmount;
+    }
 
     public Integer getShopGoodsId() {
         return shopGoodsId;

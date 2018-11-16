@@ -17,6 +17,40 @@ public class PersonalCenterVo implements Serializable {
     private Integer footprintCount;
     @ApiModelProperty(value = "优惠券数", example = "100")
     private Integer userActivityCoupon;
+    @ApiModelProperty(value = "用户姓名", example = "100")
+    private String nickName;
+    @ApiModelProperty(value = "用户头像", example = "100")
+    private String headPortrait;
+    @ApiModelProperty(value = "用户等级", example = "100")
+    private String levelId;
+
+    public static long getSerialVersionUID() {
+        return serialVersionUID;
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public String getHeadPortrait() {
+        return headPortrait;
+    }
+
+    public void setHeadPortrait(String headPortrait) {
+        this.headPortrait = headPortrait;
+    }
+
+    public String getLevelId() {
+        return levelId;
+    }
+
+    public void setLevelId(String levelId) {
+        this.levelId = levelId;
+    }
 
     public Integer getCollectionCount() {
         return collectionCount;

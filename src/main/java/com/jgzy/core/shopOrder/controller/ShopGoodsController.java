@@ -4,16 +4,17 @@ package com.jgzy.core.shopOrder.controller;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.constant.BaseConstant;
-import com.jgzy.core.personalCenter.service.IAdvanceRechargeInfoService;
 import com.jgzy.core.shopOrder.service.IOriginatorDiscountInfoService;
 import com.jgzy.core.shopOrder.service.IOriginatorInfoService;
 import com.jgzy.core.shopOrder.service.IShopGoodsService;
 import com.jgzy.core.shopOrder.vo.CalcRateAmountVo;
-import com.jgzy.core.shopOrder.vo.CalcSingleAmountVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
-import com.jgzy.entity.po.*;
+import com.jgzy.entity.po.OriginatorDiscountInfo;
+import com.jgzy.entity.po.OriginatorInfo;
+import com.jgzy.entity.po.ShopGoods;
+import com.jgzy.entity.po.UserInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -77,11 +78,22 @@ public class ShopGoodsController {
             entityWrapper.eq("status", po.getStatus());
         }
         // 商品名称
-        if (po.getShopName() != null){
+        if (po.getShopName() != null) {
             entityWrapper.like("shop_name", po.getShopName());
         }
         page = shopGoodsService.selectPageVo(page, entityWrapper);
         resultWrapper.setResult(page);
+        return resultWrapper;
+    }
+
+    @GetMapping(value = "/list")
+    @ApiOperation(value = "查询商品列表", notes = "查询商品列表")
+    public ResultWrapper<List<ShopGoods>> list(@ApiParam(value = "商品id，按逗号分隔") @RequestParam String shopGoodsIds) {
+        ResultWrapper<List<ShopGoods>> resultWrapper = new ResultWrapper<>();
+        String[] split = shopGoodsIds.split(",");
+        List<ShopGoods> shopGoodsList = shopGoodsService.selectList(new EntityWrapper<ShopGoods>()
+                .in("id", split));
+        resultWrapper.setResult(shopGoodsList);
         return resultWrapper;
     }
 
@@ -101,24 +113,22 @@ public class ShopGoodsController {
         for (int i = 0; i < advanceRechargeInfos.size(); i++) {
 
             if ((originatorInfo == null || originatorInfo.getDiscountStatus() != 1) && i > 2) {
-                size = i-1;
+                size = i - 1;
                 break;
             }
-            if (advanceRechargeInfos.get(i).getAmount().divide(
-                    advanceRechargeInfos.get(i).getDiscountRate(),2,BigDecimal.ROUND_HALF_UP).compareTo(amount) > 0) {
+            if (advanceRechargeInfos.get(i).getAmount().compareTo(amount) > 0) {
                 size = i;
                 break;
             }
         }
         // 需要折扣的金额
-        BigDecimal totalAmount = advanceRechargeInfos.get(size).getAmount().divide(
-                advanceRechargeInfos.get(size).getDiscountRate(), 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal totalAmount = advanceRechargeInfos.get(size).getAmount();
         // 剩余多少享受折扣
         BigDecimal remainAmount = totalAmount.subtract(amount);
         // 折扣
         BigDecimal discount = advanceRechargeInfos.get(size).getDiscountRate();
         CalcRateAmountVo singleCalcAmountVo = new CalcRateAmountVo();
-        singleCalcAmountVo.setRemainAmount((remainAmount.compareTo(new BigDecimal(0))<=0)?null:remainAmount);
+        singleCalcAmountVo.setRemainAmount((remainAmount.compareTo(new BigDecimal(0)) <= 0) ? null : remainAmount);
         singleCalcAmountVo.setDiscountRate(discount);
         ResultWrapper<CalcRateAmountVo> resultWrapper = new ResultWrapper<>();
         resultWrapper.setResult(singleCalcAmountVo);

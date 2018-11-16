@@ -4,6 +4,7 @@ package com.jgzy.core.personalCenter.controller;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.core.personalCenter.service.IUserGoodsCartService;
+import com.jgzy.core.personalCenter.vo.UserGoodsCartVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.UserGoodsCart;
@@ -17,9 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * <p>
@@ -43,6 +41,8 @@ public class UserGoodsCartController {
         ResultWrapper<UserGoodsCart> resultWrapper = new ResultWrapper<>();
         po.setCartUserInfoId(UserUuidThreadLocal.get().getId());
         po.setAddTime(DateUtil.getDate());
+        po.setLiveId(1);
+        po.setGoodsCartCounts(1);
 
         EntityWrapper<UserGoodsCart> entityWrapper = new EntityWrapper<UserGoodsCart>();
         entityWrapper.eq("cart_user_info_id", po.getCartUserInfoId());
@@ -62,24 +62,16 @@ public class UserGoodsCartController {
 
     @ApiOperation(value = "查询购物车信息（分页）", notes = "查询购物车信息（分页）")
     @GetMapping(value = "/page/list")
-    public ResultWrapper<Page<UserGoodsCart>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
-                                                       @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
-        ResultWrapper<Page<UserGoodsCart>> resultWrapper = new ResultWrapper<>();
-        Page<UserGoodsCart> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
-        Integer id = UserUuidThreadLocal.get().getId();
-
-        Set<String> orderByList = new HashSet<>();
-        orderByList.add("id");
-        page = userGoodsCartService.selectPage(page,
-                new EntityWrapper<UserGoodsCart>()
-                        .eq("cart_user_info_id", id)
-                        .orderDesc(orderByList));
-
+    public ResultWrapper<Page<UserGoodsCartVo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
+                                                         @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
+        ResultWrapper<Page<UserGoodsCartVo>> resultWrapper = new ResultWrapper<>();
+        Page<UserGoodsCartVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
+        page = userGoodsCartService.selectMyUserCartPage(page);
         resultWrapper.setResult(page);
         return resultWrapper;
     }
 
-    @ApiOperation(value = "更新指定ID的", notes = "更新指定ID的")
+    @ApiOperation(value = "更新指定ID的购物车", notes = "更新指定ID的购物车")
     @PutMapping("/update")
     public ResultWrapper<UserGoodsCart> update(@RequestBody @Validated UserGoodsCart po) {
         ResultWrapper<UserGoodsCart> resultWrapper = new ResultWrapper<>();
@@ -92,16 +84,26 @@ public class UserGoodsCartController {
         return resultWrapper;
     }
 
-    @ApiOperation(value = "删除指定ID的用户", notes = "删除指定ID的用户")
-    @ApiImplicitParam(name = "id",value = "用户ID",required = true,paramType = "path",dataType="Integer")
+    @ApiOperation(value = "删除指定ID的购物车", notes = "删除指定ID的购物车")
+    @ApiImplicitParam(name = "id",value = "购物车ID",required = true,paramType = "path",dataType="Integer")
     @DeleteMapping({"/{id:\\d+}"})
-    public ResultWrapper delete(@PathVariable("id") Integer id) {
-        ResultWrapper resultWrapper = new ResultWrapper<>();
-        boolean successful = false;
-        if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            successful = userGoodsCartService.deleteById(id);
-        }
+    public ResultWrapper<UserGoodsCart> delete(@PathVariable("id") Integer id) {
+        ResultWrapper<UserGoodsCart> resultWrapper = new ResultWrapper<>();
+        UserGoodsCart userGoodsCart = new UserGoodsCart();
+        userGoodsCart.setId(id);
+        userGoodsCart.setLiveId(2);
+        boolean successful = userGoodsCartService.updateById(userGoodsCart);
         resultWrapper.setSuccessful(successful);
+        return resultWrapper;
+    }
+
+    @ApiOperation(value = "获取购物车数量", notes = "获取购物车数量")
+    @GetMapping(value = "/getCount")
+    public ResultWrapper<Integer> getCount() {
+        ResultWrapper<Integer> resultWrapper = new ResultWrapper<>();
+        int count = userGoodsCartService.selectCount(new EntityWrapper<UserGoodsCart>()
+                .eq("cart_user_info_id", UserUuidThreadLocal.get().getId()));
+        resultWrapper.setResult(count);
         return resultWrapper;
     }
 }

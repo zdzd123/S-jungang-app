@@ -9,18 +9,21 @@
             goods.shop_describe,
             goods.pic,
             goods.menber_price,
-            goods.stock
+            goods.stock,
+            goods.id shopGoodsId
         FROM
             shop_stock stock
         JOIN shop_goods goods ON stock.shop_goods_id = goods.id
         <where>
+            stock.user_info_id = #{id}
             <if test="platformGoodsCategoryId!=null">
-                goods.platform_goods_category_id = #{platformGoodsCategoryId}
+                AND goods.platform_goods_category_id = #{platformGoodsCategoryId}
             </if>
             <if test="shopName!=null">
                 <bind name="myShopName" value="'%' + shopName + '%'"></bind>
                 AND goods.shop_name LIKE #{myShopName}
             </if>
+            AND stock.count <![CDATA[ > ]]> 0
         </where>
     </select>
 
@@ -43,4 +46,23 @@
             </if>
         </where>
     </select>
+
+    <select id="selectCountStock" resultType="com.jgzy.core.shopOrder.vo.ShopStockVo">
+        SELECT
+            sum( count ) allCount,
+            sum( goods.menber_price * stock.count ) allAmount,
+            goods.id shopGoodsId
+        FROM
+            shop_stock stock
+            JOIN shop_goods goods ON stock.shop_goods_id = goods.id
+        WHERE
+            user_info_id = #{id}
+    </select>
+
+    <update id="updateMyShopStockByGoodsId">
+        UPDATE shop_stock
+        SET
+          count = count - #{buyCount}
+        WHERE shop_goods_id = #{shopGoodsId}
+    </update>
 </mapper>

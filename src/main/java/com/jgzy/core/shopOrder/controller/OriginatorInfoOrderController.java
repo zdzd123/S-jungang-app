@@ -98,6 +98,8 @@ public class OriginatorInfoOrderController {
             // 订单号
             String out_trade_no = CommonUtil.getTradeNo();
             originatorInfoOrder.setOrderNo(out_trade_no);
+            // 预期时间
+            originatorInfoOrder.setValidOrderTime(DateUtil.getHoursLater(2));
             // 插入订单
             boolean orderInsert = originatorInfoOrderService.insert(originatorInfoOrder);
             if (!orderInsert) {
@@ -120,6 +122,8 @@ public class OriginatorInfoOrderController {
         String product_id = ""; // 产品id (非必填)
         String notify_url = "http://jgapi.china-mail.com.cn/api/originatorInfoOrder/constant/weixinNotifyUrl";
         // 检验订单状态以及订单的金额
+        // TODO 测试用付款
+        amount = new BigDecimal("0.01");
         WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
                 originatorInfoOrder.getOrderNo(), subject, amount.doubleValue(), ip, notify_url);
         // 订单失败
@@ -164,12 +168,18 @@ public class OriginatorInfoOrderController {
             notify.setResultFail("OutTradeNo fail" + outTradeNo);
             return notify.getBodyXML();
         }
-        if (originatorInfoOrder.getOrderAmount().multiply(new BigDecimal("100")).compareTo(totaAmount) != 0) {
-            logger.info("-----------------------TotalAmount fail------------------------------");
-            logger.info("-----------------------" + notify.toString() + "------------------------------");
-            notify.setResultFail("TotalAmount fail" + totaAmount);
+        if (!originatorInfoOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)){
+            logger.info("-----------------------OrderStatus fail------------------------------");
+            notify.setResultFail("OrderStatus fail" + originatorInfoOrder.getOrderStatus());
             return notify.getBodyXML();
         }
+        // TODO 测试用注释
+//        if (originatorInfoOrder.getOrderAmount().multiply(new BigDecimal("100")).compareTo(totaAmount) != 0) {
+//            logger.info("-----------------------TotalAmount fail------------------------------");
+//            logger.info("-----------------------" + notify.toString() + "------------------------------");
+//            notify.setResultFail("TotalAmount fail" + totaAmount);
+//            return notify.getBodyXML();
+//        }
         logger.info("-----------------------" + notify + "------------------------------");
         // 更新订单
         originatorInfoOrder.setOrderStatus(BaseConstant.ORDER_STATUS_11);
@@ -203,7 +213,7 @@ public class OriginatorInfoOrderController {
         userFund.setTradeTime(new Date());
         userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
         userFund.setTradeDescribe("微信支付");
-        userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
+        userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_9);
         userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
         userFund.setPayType(BaseConstant.PAY_TYPE_2);
         userFundService.InsertUserFund(userFund);

@@ -1,10 +1,13 @@
 package com.jgzy.core.personalCenter.serviceImpl;
 
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.jgzy.core.personalCenter.mapper.UserInfoMapper;
 import com.jgzy.core.personalCenter.service.IUserInfoService;
 import com.jgzy.core.personalCenter.vo.PersonalCenterVo;
+import com.jgzy.core.shopOrder.mapper.OriginatorInfoMapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
+import com.jgzy.entity.po.OriginatorInfo;
 import com.jgzy.entity.po.UserInfo;
 import com.jgzy.utils.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,12 +29,19 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
 
     @Autowired
     private UserInfoMapper userInfoMapper;
+    @Autowired
+    private OriginatorInfoMapper originatorInfoMapper;
 
     @Override
     public PersonalCenterVo statistics() {
-        Integer id = UserUuidThreadLocal.get().getId();
+        UserInfo userInfo = UserUuidThreadLocal.get();
         String now = DateUtil.getNow();
-        PersonalCenterVo personalCenterVo = userInfoMapper.statistics(id, now);
+        PersonalCenterVo personalCenterVo = userInfoMapper.statistics(userInfo.getId(), now);
+        List<OriginatorInfo> originatorInfoList = originatorInfoMapper.selectList(new EntityWrapper<OriginatorInfo>()
+                .eq("user_id", userInfo.getId()));
+        personalCenterVo.setLevelId(originatorInfoList.get(0).getLevelId().toString());
+        personalCenterVo.setNickName(userInfo.getNickname());
+        personalCenterVo.setHeadPortrait(userInfo.getHeadPortrait());
         return personalCenterVo;
     }
 

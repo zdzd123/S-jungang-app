@@ -3,7 +3,6 @@ package com.jgzy.utils;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.*;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -110,7 +109,7 @@ public class DateUtil {
         c.set(Calendar.HOUR, c.getActualMaximum(Calendar.HOUR));
         c.set(Calendar.MINUTE, c.getActualMaximum(Calendar.MINUTE));
         c.set(Calendar.SECOND, c.getActualMaximum(Calendar.SECOND));
-        return formatDate(c.getTime(),DATETIME_FORMAT);
+        return formatDate(c.getTime(), DATETIME_FORMAT);
     }
 
     /**
@@ -144,6 +143,7 @@ public class DateUtil {
     }
 
     //-----------------格式化字符串为日期--------------------------------------
+
     /**
      * 格式化字符串为日期
      *
@@ -160,14 +160,33 @@ public class DateUtil {
         return null;
     }
 
-    public static Date parseDate(String date) { return parseDate(date, DATE_FORMAT);}
+    public static Date parseDate(String date) {
+        return parseDate(date, DATE_FORMAT);
+    }
+
     public static Date parseChinaDate(String date) {
         return parseDate(date, CHINA_DATE_FORMAT);
     }
+
     public static Date parseDateTime(String date) {
         return parseDate(date, DATETIME_FORMAT);
     }
+
     public static Date parseTime(String date) {
         return parseDate(date, TIME_FORMAT);
+    }
+
+    /**
+     * 获取几小时后的时间
+     *
+     * @param hour 小时
+     * @return 时间
+     */
+    public static Date getHoursLater(int hour) {
+        Date date = new Date();
+        Calendar dar = Calendar.getInstance();
+        dar.setTime(date);
+        dar.add(java.util.Calendar.HOUR_OF_DAY, hour);
+        return dar.getTime();
     }
 }

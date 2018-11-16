@@ -1,4 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jgzy.core.personalCenter.mapper.UserDistributionMapper">
+    <select id="selectMyUserDistributionList" resultType="com.jgzy.core.personalCenter.vo.UserDistributionVo">
+        SELECT
+            ud.user_id,
+            -- ud.class_layer,
+            u.head_portrait member_head_portrait,
+            u.nickname member_name,
+            ori.phone,
+            ori.level_id,
+            ud.add_time
+        FROM
+            user_distribution ud
+            LEFT JOIN user_info u ON u.id = ud.user_id
+            LEFT JOIN originator_info ori ON u.id = ori.user_id
+        WHERE
+            1 = 1
+            AND ud.user_id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+        ORDER BY
+            add_time DESC
+    </select>
+    <select id="selectMyUserDistributionIdList" resultType="string">
+        select getDistributionList (#{id}, 1)
+    </select>
 </mapper>

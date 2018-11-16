@@ -7,7 +7,7 @@ import com.jgzy.entity.po.ShopStock;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author zou
@@ -18,4 +18,20 @@ public interface IShopStockService extends IService<ShopStock> {
     Page<ShopStockVo> selectMyStock(Page<ShopStockVo> page, Integer platformGoodsCategoryId, String shopName);
 
     ShopStockVo selectMyStockById(Integer id);
+
+    /**
+     * 获取库存统计
+     *
+     * @return 库存统计
+     */
+    ShopStockVo getCountStock();
+
+    /**
+     * 更新商品库存
+     *
+     * @param buyCount    购买数量
+     * @param shopGoodsId 商品id
+     * @return flag
+     */
+    boolean updateMyShopStockByGoodsId(Integer buyCount, Integer shopGoodsId);
 }
