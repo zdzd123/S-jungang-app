@@ -5,4 +5,129 @@
         CALL user_fund_procedure(#{tradeUserId}, #{increaseMoney}, #{decreaseMoney},#{orderNo},
         #{tradeType}, #{tradeDescribe}, #{accountType}, #{bussinessType}, #{payType})
     </insert>
+    <select id="selectSumIncreaseMoney" resultType="com.jgzy.core.personalCenter.vo.MyTeamVo">
+        SELECT
+          sum(if(a.`status` = 0,a.increase_money,0)) originatorIncreaseMoney,
+          sum(if(a.`status` <![CDATA[ <> ]]> 0 or a.`status` is NULL,a.increase_money,0)) increaseMoney
+        FROM
+        (
+          SELECT
+            fund.increase_money,
+            originator.`status`
+          FROM
+            user_fund fund
+          LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
+          LEFT JOIN originator_info originator ON shopOrder.submit_order_user = originator.user_id
+          WHERE originator.user_id = #{id}
+            AND fund.trade_type=1
+            AND fund.account_type=2
+            AND fund.pay_type=4
+            AND (bussiness_type=7 or bussiness_type=8)
+        ) a
+    </select>
+    <select id="selectUserSumIncreaseMoney" resultType="com.jgzy.core.personalCenter.vo.MyTeamDetailVo">
+        SELECT
+          a.id,a.nickname,a.head_portrait,
+          sum(if(a.`status`=0,a.increase_money,0)) originatorIncreaseMoney,
+          sum(if(a.`status` <![CDATA[ <> ]]> 0 or a.`status` is NULL,a.increase_money,0)) increaseMoney,
+	      a.`status`
+        FROM
+        (
+          SELECT
+            fund.increase_money,
+            userInfo.id,
+            userinfo.nickname,
+            userInfo.head_portrait,
+            originator.`status`
+          FROM
+          user_fund fund
+          LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
+          LEFT JOIN user_info userInfo ON userInfo.id = shopOrder.submit_order_user
+          LEFT JOIN originator_info originator ON userInfo.id = originator.user_id
+          WHERE
+            fund.trade_type=1
+            AND fund.account_type=2
+            AND fund.pay_type=4
+            AND (bussiness_type=7 or bussiness_type=8)
+            <if test="id != null">
+                AND FIND_IN_SET(fund.trade_user_id, getDistributionList(#{id}, 1))
+            </if>
+            <if test="status == 0">
+                AND originator.`status` <![CDATA[ = ]]> 0
+            </if>
+            <if test="status == 1">
+                AND (originator.`status` <![CDATA[ <> ]]> 0 OR originator.`status` is null)
+            </if>
+        ) a
+        GROUP BY a.id
+        ORDER BY originatorIncreaseMoney,increaseMoney DESC
+    </select>
+    <select id="selectUserSumIncreaseMoneyList" resultType="com.jgzy.core.personalCenter.vo.MyTeamDetailVo">
+        SELECT
+          a.id,a.nickname,a.head_portrait,
+          sum(if(a.`status`=0,a.increase_money,0)) originatorIncreaseMoney,
+          sum(if(a.`status` <![CDATA[ <> ]]> 0 or a.`status` is NULL,a.increase_money,0)) increaseMoney,
+          a.`status`
+        FROM
+        (
+            SELECT
+                fund.increase_money,
+                userInfo.id,
+                userinfo.nickname,
+                userInfo.head_portrait,
+                originator.`status`
+            FROM
+              user_fund fund
+            LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
+            LEFT JOIN user_info userInfo ON userInfo.id = shopOrder.submit_order_user
+            LEFT JOIN originator_info originator ON userInfo.id = originator.user_id
+            WHERE
+              fund.trade_type=1
+            AND fund.account_type=2
+            AND fund.pay_type=4
+            AND (bussiness_type=7 or bussiness_type=8)
+            <if test="id != null">
+                AND FIND_IN_SET(fund.trade_user_id, getDistributionList(#{id}, 1))
+            </if>
+            <if test="begin != null and end != null">
+                AND fund.trade_time <![CDATA[ >= ]]> #{begin}
+                AND fund.trade_time <![CDATA[ <= ]]> #{end}
+            </if>
+            <if test="status == 0">
+                AND originator.`status` <![CDATA[ = ]]> 0
+            </if>
+            <if test="status == 1">
+                AND (originator.`status` <![CDATA[ <> ]]> 0 OR originator.`status` is null)
+            </if>
+        ) a
+        GROUP BY a.id
+        ORDER BY originatorIncreaseMoney,increaseMoney DESC
+    </select>
+    <select id="selectStatisticsIncreaseMoney" resultType="com.jgzy.core.personalCenter.vo.MyTeamVo">
+        SELECT
+          sum( fund.increase_money ) totalIncreaseMoney
+        FROM
+          user_fund fund
+        LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
+        LEFT JOIN user_info userInfo ON userInfo.id = shopOrder.submit_order_user
+        LEFT JOIN originator_info originator ON userInfo.id = originator.user_id
+        WHERE
+        fund.trade_type=1
+        AND fund.account_type=2
+        AND fund.pay_type=4
+        AND (bussiness_type=7 or bussiness_type=8)
+        <if test="id != null">
+            AND FIND_IN_SET(fund.trade_user_id, getDistributionList(#{id}, 1))
+        </if>
+        <if test="begin != null and end != null">
+            AND fund.trade_time <![CDATA[ >= ]]> #{begin}
+            AND fund.trade_time <![CDATA[ <= ]]> #{end}
+        </if>
+        <if test="status == 0">
+            AND originator.`status` <![CDATA[ = ]]> 0
+        </if>
+        <if test="status == 1">
+            AND (originator.`status` <![CDATA[ <> ]]> 0 OR originator.`status` is null)
+        </if>
+    </select>
 </mapper>

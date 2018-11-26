@@ -139,7 +139,7 @@ public class LoginController {
                 resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
                 LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
                 resultWrapper.setResult(loginVo);
-                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
+                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model, RedisConstant.REDIS_LOGIN_TIME_OUT);
                 return resultWrapper;
             } else {
                 System.out.println("用户 不为空！");
@@ -151,7 +151,7 @@ public class LoginController {
                 }
                 LoginVo loginVo = initLoginVo(user.getToken(), oauth_openid);
                 resultWrapper.setResult(loginVo);
-                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, user.getToken(), user);
+                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, user.getToken(), user, RedisConstant.REDIS_LOGIN_TIME_OUT);
                 return resultWrapper;
             }
 
@@ -194,7 +194,7 @@ public class LoginController {
                 resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
                 LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
                 resultWrapper.setResult(loginVo);
-                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
+                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model, RedisConstant.REDIS_LOGIN_TIME_OUT);
                 return resultWrapper;
             } else {
                 user.setToken(CommonUtil.getUUID());
@@ -205,7 +205,7 @@ public class LoginController {
                 }
                 LoginVo loginVo = initLoginVo(user.getToken(), oauth_openid);
                 resultWrapper.setResult(loginVo);
-                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, user.getToken(), user);
+                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, user.getToken(), user, RedisConstant.REDIS_LOGIN_TIME_OUT);
                 return resultWrapper;
             }
 
@@ -240,7 +240,7 @@ public class LoginController {
             LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
             resultWrapper.setResult(loginVo);
             resultWrapper.setResult(loginVo);
-            RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model);
+            RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model, RedisConstant.REDIS_LOGIN_TIME_OUT);
             return resultWrapper;
         }
     }

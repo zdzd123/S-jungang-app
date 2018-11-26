@@ -44,7 +44,7 @@ public class UserAddressServiceImpl extends ServiceImpl<UserAddressMapper, UserA
     }
 
     @Override
-    public Page<UserAddress> getUserAddress(Page<UserAddress> page) {
+    public Page<UserAddressVo> getUserAddress(Page<UserAddressVo> page) {
         Integer id = UserUuidThreadLocal.get().getId();
         return page.setRecords(userAddressMapper.selectUserAddress(page, id));
     }

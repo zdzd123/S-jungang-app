@@ -151,7 +151,7 @@ public class TemplateMessageUtil {
      * @param url url
      * @return response
      */
-    private static String HttpGet(String url) {
+    public static String HttpGet(String url) {
         return HttpGet(url, "UTF-8");
     }
 
@@ -162,7 +162,7 @@ public class TemplateMessageUtil {
      * @param charsetName 字符
      * @return response
      */
-    private static String HttpGet(String url, String charsetName) {
+    public static String HttpGet(String url, String charsetName) {
         String result = "";
         BufferedReader in = null;
 

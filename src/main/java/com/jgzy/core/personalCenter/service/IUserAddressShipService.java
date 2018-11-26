@@ -22,7 +22,7 @@ public interface IUserAddressShipService extends IService<UserAddressShip> {
      * @param page
      * @return
      */
-    Page<UserAddressShip> getUserAddressShip(Page<UserAddressShip> page);
+    Page<UserAddressVo> getUserAddressShip(Page<UserAddressVo> page);
 
     UserAddressVo selectDetailById(Integer shipAddressId);
 

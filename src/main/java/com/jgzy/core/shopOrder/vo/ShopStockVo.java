@@ -22,6 +22,10 @@ public class ShopStockVo {
     private String pic;
     @ApiModelProperty(value = "会员价", example = "1")
     private BigDecimal menberPrice;
+    @ApiModelProperty(value = "成本价", example = "1")
+    private BigDecimal costPrice;
+    @ApiModelProperty(value = "市场价", example = "1")
+    private BigDecimal marketPrice;
     @NotNull
     @ApiModelProperty(value = "商品库存数量", example = "1")
     private Integer stock;
@@ -40,6 +44,52 @@ public class ShopStockVo {
     private BigDecimal allAmount;
     @ApiModelProperty(value = "支付类型 2-微信 4-余额", example = "1")
     private Integer payType;
+    @ApiModelProperty(value = "是否放入库存 1=不存入 2=存入 3=自提", example = "1")
+    private Integer isStock;
+    @ApiModelProperty(value = "收货人", example = "1")
+    private String receiveMan;
+    @ApiModelProperty(value = "联系电话", example = "18311111111")
+    private String contactPhone;
+
+    public String getReceiveMan() {
+        return receiveMan;
+    }
+
+    public void setReceiveMan(String receiveMan) {
+        this.receiveMan = receiveMan;
+    }
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public void setContactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
+    }
+
+    public Integer getIsStock() {
+        return isStock;
+    }
+
+    public void setIsStock(Integer isStock) {
+        this.isStock = isStock;
+    }
+
+    public BigDecimal getCostPrice() {
+        return costPrice;
+    }
+
+    public void setCostPrice(BigDecimal costPrice) {
+        this.costPrice = costPrice;
+    }
+
+    public BigDecimal getMarketPrice() {
+        return marketPrice;
+    }
+
+    public void setMarketPrice(BigDecimal marketPrice) {
+        this.marketPrice = marketPrice;
+    }
 
     public Integer getPayType() {
         return payType;

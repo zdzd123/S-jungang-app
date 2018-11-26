@@ -38,7 +38,8 @@ public class PlatformGoodsCategoryController {
     @ApiOperation(value = "获取平台商品的所有分类", notes = "获取平台商品的所有分类")
     public ResultWrapper<List<PlatformGoodsCategory>> list(){
         ResultWrapper<List<PlatformGoodsCategory>> resultWrapper = new ResultWrapper<>();
-        List<PlatformGoodsCategory> platformGoodsCategoryList = platformGoodsCategoryService.selectList(new EntityWrapper<PlatformGoodsCategory>());
+        List<PlatformGoodsCategory> platformGoodsCategoryList = platformGoodsCategoryService.selectList(
+                new EntityWrapper<>());
         resultWrapper.setResult(platformGoodsCategoryList);
         return resultWrapper;
     }

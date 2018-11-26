@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.core.personalCenter.mapper.UserGoodsCollectMapper;
 import com.jgzy.core.personalCenter.service.IUserGoodsCollectService;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.jgzy.core.personalCenter.vo.UserGoodsCollectionVo;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.UserGoodsCollect;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,7 @@ public class UserGoodsCollectServiceImpl extends ServiceImpl<UserGoodsCollectMap
     private UserGoodsCollectMapper userGoodsCollectMapper;
 
     @Override
-    public Page<UserGoodsCollect> getUserGoodsCollectByUserId(Page<UserGoodsCollect> page) {
+    public Page<UserGoodsCollectionVo> getUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page) {
         Integer id = UserUuidThreadLocal.get().getId();
         return page.setRecords(userGoodsCollectMapper.selectUserGoodsCollectByUserId(page, id));
     }

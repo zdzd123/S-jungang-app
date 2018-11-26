@@ -2,6 +2,7 @@ package com.jgzy.core.personalCenter.controller;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
+import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.service.IUserAddressShipService;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.entity.common.ResultWrapper;
@@ -49,10 +50,10 @@ public class UserAddressShipController {
 
     @ApiOperation(value = "发货地址（分页）", notes = "发货地址（分页）")
     @GetMapping(value = "/page/list")
-    public ResultWrapper<Page<UserAddressShip>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
+    public ResultWrapper<Page<UserAddressVo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
                                                          @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
-        ResultWrapper<Page<UserAddressShip>> resultWrapper = new ResultWrapper<>();
-        Page<UserAddressShip> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
+        ResultWrapper<Page<UserAddressVo>> resultWrapper = new ResultWrapper<>();
+        Page<UserAddressVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
         page = userAddressShipService.getUserAddressShip(page);
         resultWrapper.setResult(page);
         return resultWrapper;
@@ -65,7 +66,15 @@ public class UserAddressShipController {
         Integer id = po.getId();
         boolean successful = false;
         if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            successful = userAddressShipService.updateById(po);
+            if (po.getIsDefault().equals(2)){
+                UserAddressShip my = new UserAddressShip();
+                my.setIsDefault(1);
+                successful = userAddressShipService.update(my, new EntityWrapper<UserAddressShip>()
+                .eq("create_user", UserUuidThreadLocal.get().getId()));
+            }
+            if (successful) {
+                successful = userAddressShipService.updateById(po);
+            }
         }
         resultWrapper.setSuccessful(successful);
         return resultWrapper;

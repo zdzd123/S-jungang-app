@@ -78,25 +78,28 @@ public class OriginatorInfoController {
             return resultWrapper;
         }
         // 父级id
-        Integer parentUserId = po.getUserId();
+//        Integer parentUserId = po.getUserId();
         po.setStatus(BaseConstant.ORIGINATOR_STATUS_2);
         po.setAddTime(date);
         // 本身id
         Integer id = UserUuidThreadLocal.get().getId();
         po.setUserId(id);
         int user_id = originatorInfoService.selectCount(new EntityWrapper<OriginatorInfo>().eq("user_id", id));
-        // 判断是否存在父级
-        int count = userDistributionService.selectCount(new EntityWrapper<UserDistribution>().eq("user_id", id));
-        if (user_id != 0 || count != 0) {
+        if (user_id != 0) {
             throw new OptimisticLockingFailureException("已存在合伙人，不能重复绑定");
         }
         boolean successful = originatorInfoService.insert(po);
         // 合伙人绑定父级
         UserDistribution userDistribution = new UserDistribution();
-        userDistribution.setParentId(parentUserId);
+//        userDistribution.setParentId(parentUserId);
         userDistribution.setUserId(id);
         userDistribution.setAddTime(date);
-        boolean insert = userDistributionService.insert(userDistribution);
+        // 判断是否存在父级
+        int count = userDistributionService.selectCount(new EntityWrapper<UserDistribution>().eq("user_id", id));
+        boolean insert = false;
+        if (count == 0){
+            insert = userDistributionService.insert(userDistribution);
+        }
         if (!successful && !insert) {
             throw new OptimisticLockingFailureException("插入合伙人失败");
         }

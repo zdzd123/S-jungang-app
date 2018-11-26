@@ -95,29 +95,49 @@ public class AdvertInfoController {
     public ResultWrapper<HomePageVo> detail() {
         ResultWrapper<HomePageVo> resultWrapper = new ResultWrapper<>();
         HomePageVo homePageVo = new HomePageVo();
-        // 获取所有广告，当为商品广告是获取商品信息
+        // 获取所有广告，当为商品广告时获取商品信息
         List<AdvertInfoVo> allAdvert = advertInfoService.getAdvertInfo(null, null);
-        // 获取所有广告，当为商品广告是获取商品信息
         // 轮播图
         List<AdvertInfoVo> viewPage = new ArrayList<>();
+        List<AdvertInfoVo> viewPlatform = new ArrayList<>();
         List<AdvertInfoVo> viewPageShop = new ArrayList<>();
         List<AdvertInfoVo> viewPageMsg = new ArrayList<>();
         for (AdvertInfoVo advertInfo : allAdvert) {
-            if (advertInfo.getAdvertSite() == BaseConstant.ADVERT_SITE_7) {
+            if (advertInfo.getAdvertSite() == BaseConstant.ADVERT_SITE_6) {
+                if (advertInfo.getPicValueType().equals(BaseConstant.PIC_VALUE_TYPE_1)){
+                    // 大类
+                    advertInfo.setPlatformGoodsCategoryId(Integer.parseInt(advertInfo.getPicValueParameter()));
+                }else if (advertInfo.getPicValueType().equals(BaseConstant.PIC_VALUE_TYPE_2)){
+                    // 商品
+                    advertInfo.setShopGoodsId(Integer.parseInt(advertInfo.getPicValueParameter()));
+                }else if (advertInfo.getPicValueType().equals(BaseConstant.PIC_VALUE_TYPE_5)){
+                    // 单页
+                    advertInfo.setSinglePageId(Integer.parseInt(advertInfo.getPicValueParameter()));
+                }
                 viewPage.add(advertInfo);
-            } else if (advertInfo.getPlatformGoodsCategoryId() != null) {
-                // 包含大类,通过大类查找商品
-                List<ShopGoods> shopGoodsList = shopGoodsService.selectList(
-                        new EntityWrapper<ShopGoods>()
-                                .eq("platform_goods_category_id", advertInfo.getPlatformGoodsCategoryId())
-                                .last("limit 5"));
-                advertInfo.setShopGoods(shopGoodsList);
-                viewPageShop.add(advertInfo);
-            } else {
-                viewPageMsg.add(advertInfo);
+            } else if (advertInfo.getAdvertSite() == BaseConstant.ADVERT_SITE_8) {
+                if (advertInfo.getPicValueType().equals(BaseConstant.PIC_VALUE_TYPE_1)){
+                    // 包含大类,通过大类查找商品
+                    List<ShopGoods> shopGoodsList = shopGoodsService.selectList(
+                            new EntityWrapper<ShopGoods>()
+                                    .eq("platform_goods_category_id", advertInfo.getPicValueParameter())
+                                    .last("limit 5"));
+                    advertInfo.setShopGoods(shopGoodsList);
+                    advertInfo.setPlatformGoodsCategoryId(Integer.parseInt(advertInfo.getPicValueParameter()));
+                    viewPlatform.add(advertInfo);
+                }else if (advertInfo.getPicValueType().equals(BaseConstant.PIC_VALUE_TYPE_2)){
+                    // 商品
+                    advertInfo.setShopGoodsId(Integer.parseInt(advertInfo.getPicValueParameter()));
+                    viewPageShop.add(advertInfo);
+                }else if (advertInfo.getPicValueType().equals(BaseConstant.PIC_VALUE_TYPE_5)){
+                    // 单页
+                    advertInfo.setSinglePageId(Integer.parseInt(advertInfo.getPicValueParameter()));
+                    viewPageMsg.add(advertInfo);
+                }
             }
         }
         homePageVo.setViewPage(viewPage);
+        homePageVo.setViewPlatform(viewPlatform);
         homePageVo.setViewPageShop(viewPageShop);
         homePageVo.setViewPageMsg(viewPageMsg);
         resultWrapper.setResult(homePageVo);

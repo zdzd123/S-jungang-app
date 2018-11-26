@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * <p>
- *  前端控制器
+ * 前端控制器
  * </p>
  *
  * @author zou
@@ -37,7 +37,9 @@ public class PlatformVideoCategoryController {
     @ApiOperation(value = "查询平台视频分类", notes = "查询平台视频分类")
     public ResultWrapper<List<PlatformVideoCategory>> detail() {
         ResultWrapper<List<PlatformVideoCategory>> resultWrapper = new ResultWrapper<>();
-        List<PlatformVideoCategory> platformVideoCategoryList = platformVideoCategoryService.selectList(new EntityWrapper<>());
+        List<PlatformVideoCategory> platformVideoCategoryList = platformVideoCategoryService.selectList(
+                new EntityWrapper<PlatformVideoCategory>()
+                        .orderBy("sort ASC"));
         resultWrapper.setResult(platformVideoCategoryList);
         return resultWrapper;
     }

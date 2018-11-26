@@ -19,7 +19,7 @@ import java.util.List;
  */
 @Repository
 public interface UserAddressShipMapper extends BaseMapper<UserAddressShip> {
-    List<UserAddressShip> selectUserAddressShip(Page<UserAddressShip> page, @Param("id") Integer id);
+    List<UserAddressVo> selectUserAddressShip(Page<UserAddressVo> page, @Param("id") Integer id);
 
     UserAddressVo selectDetailById(@Param("shipAddressId") Integer shipAddressId);
 

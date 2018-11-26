@@ -2,7 +2,9 @@ package com.jgzy.core.personalCenter.mapper;
 
 import com.baomidou.mybatisplus.mapper.BaseMapper;
 import com.baomidou.mybatisplus.plugins.Page;
+import com.jgzy.core.personalCenter.vo.UserGoodsCollectionVo;
 import com.jgzy.entity.po.UserGoodsCollect;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,5 +20,5 @@ import java.util.List;
 @Repository
 public interface UserGoodsCollectMapper extends BaseMapper<UserGoodsCollect> {
 
-    List<UserGoodsCollect> selectUserGoodsCollectByUserId(Page<UserGoodsCollect> page, Integer id);
+    List<UserGoodsCollectionVo> selectUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page, @Param("id") Integer id);
 }

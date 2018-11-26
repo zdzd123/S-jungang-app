@@ -52,7 +52,7 @@ public interface IUserAddressService extends IService<UserAddress> {
      * @param page
      * @return
      */
-    Page<UserAddress> getUserAddress(Page<UserAddress> page);
+    Page<UserAddressVo> getUserAddress(Page<UserAddressVo> page);
 
     /**
      * 查询收货地址详细

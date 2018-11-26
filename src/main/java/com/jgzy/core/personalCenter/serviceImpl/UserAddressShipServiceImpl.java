@@ -26,7 +26,7 @@ public class UserAddressShipServiceImpl extends ServiceImpl<UserAddressShipMappe
     private UserAddressShipMapper userAddressShipMapper;
 
     @Override
-    public Page<UserAddressShip> getUserAddressShip(Page<UserAddressShip> page) {
+    public Page<UserAddressVo> getUserAddressShip(Page<UserAddressVo> page) {
         Integer id = UserUuidThreadLocal.get().getId();
         return page.setRecords(userAddressShipMapper.selectUserAddressShip(page, id));
     }

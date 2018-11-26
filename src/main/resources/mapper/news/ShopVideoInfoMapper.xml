@@ -1,10 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jgzy.core.news.mapper.ShopVideoInfoMapper">
+    <resultMap id="ShopVideoInfoResultMap" type="com.jgzy.core.news.vo.ShopVideoInfoVo">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="shop_info_id" jdbcType="INTEGER" property="shopInfoId"/>
+        <result column="platform_video_category_id" jdbcType="INTEGER" property="platformVideoCategoryId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="subtitle" jdbcType="VARCHAR" property="subtitle"/>
+        <result column="time_length" jdbcType="DOUBLE" property="timeLength"/>
+        <result column="play_url" jdbcType="VARCHAR" property="playUrl"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+        <result column="teacher" jdbcType="VARCHAR" property="teacher"/>
+        <result column="describe" jdbcType="VARCHAR" property="describe"/>
+        <result column="play_times" jdbcType="INTEGER" property="playTimes"/>
+        <result column="add_time" jdbcType="TIMESTAMP" property="addTime"/>
+        <collection property="shopVideoGoodsList" ofType="com.jgzy.entity.po.ShopVideoGoods"
+                    javaType="java.util.ArrayList">
+            <id column="id" jdbcType="INTEGER" property="id"/>
+            <result column="shop_video_info_id" jdbcType="INTEGER" property="shopVideoInfoId"/>
+            <result column="shop_goods_id" jdbcType="INTEGER" property="shopGoodsId"/>
+            <result column="sort" jdbcType="INTEGER" property="sort"/>
+            <result column="add_time" jdbcType="TIMESTAMP" property="addTime"/>
+        </collection>
+    </resultMap>
+
+    <sql id="ShopVideoGoodsColumnList">
+      shopVideoGoods.shop_video_info_id, shopVideoGoods.shop_goods_id, shopVideoGoods.sort
+    </sql>
+    <sql id="ShopVideoInfoColumnList">
+      shopVideInfo.id, shopVideInfo.shop_info_id, shopVideInfo.platform_video_category_id, shopVideInfo.title,
+      shopVideInfo.subtitle, shopVideInfo.time_length, shopVideInfo.play_url, shopVideInfo.remarks,
+      shopVideInfo.teacher, shopVideInfo.`describe`, shopVideInfo.play_times, shopVideInfo.add_time
+    </sql>
+
     <update id="updatePlayTimes">
         UPDATE shop_video_info
         SET
           play_times = IFNULL(play_times, 0) + 1
         WHERE id = #{id}
     </update>
+    <select id="selectMyShopVideo" resultMap="ShopVideoInfoResultMap">
+        SELECT<include refid="ShopVideoInfoColumnList"/>,
+        <include refid="ShopVideoGoodsColumnList"/>
+        FROM shop_video_info shopVideInfo LEFT JOIN shop_video_goods shopVideoGoods
+        ON shopVideInfo.id = shopVideoGoods.shop_video_info_id
+        WHERE shopVideInfo.id= #{id}
+    </select>
 </mapper>

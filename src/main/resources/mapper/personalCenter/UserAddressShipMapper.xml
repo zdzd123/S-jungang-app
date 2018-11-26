@@ -1,24 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jgzy.core.personalCenter.mapper.UserAddressShipMapper">
-    <select id="selectUserAddressShip" resultType="com.jgzy.entity.po.UserAddressShip">
+    <select id="selectUserAddressShip" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
         SELECT
             id,
-            NAME,
+            `name`,
             phone,
-            zip_code,
+            zip_code zipCode,
+            (select `name` from province_info where id = address.province_id) province,
             province_id,
+            (select `name` from city_info where id = address.city_id) city,
             city_id,
+            (select `name` from area_info where id = address.area_id) area,
             area_id,
-            address,
-            create_user,
             is_default,
-            add_time
+            address
         FROM
-        user_address_ship
+        user_address_ship address
         <where>
             create_user = #{id}
         </where>
+        ORDER BY is_default desc
     </select>
     <select id="selectDetailById" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
         SELECT

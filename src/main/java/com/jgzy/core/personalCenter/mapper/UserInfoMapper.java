@@ -2,12 +2,13 @@ package com.jgzy.core.personalCenter.mapper;
 
 import com.baomidou.mybatisplus.mapper.BaseMapper;
 import com.jgzy.core.personalCenter.vo.PersonalCenterVo;
+import com.jgzy.core.personalCenter.vo.UserInfoVo;
 import com.jgzy.entity.po.UserInfo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
+import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * <p>
@@ -38,4 +39,29 @@ public interface UserInfoMapper extends BaseMapper<UserInfo> {
      * @return
      */
     boolean updateCommissionDiscount(@Param("id") Integer id, @Param("commission") BigDecimal commission);
+
+    /**
+     * 查询用户信息和等级
+     *
+     * @param id 用户id
+     * @return 用户信息
+     */
+    UserInfo selectMyUserLevelById(@Param("id") Integer id);
+
+    /**
+     * 提现冻结
+     *
+     * @param id          用户id
+     * @param withdrawNum 提现金额
+     * @return flag
+     */
+    int withDrawAmount(@Param("id") Integer id, @Param("withdrawNum") BigDecimal withdrawNum);
+
+    /**
+     * 查询用户详细详细
+     *
+     * @param id 用户id
+     * @return 用户详细
+     */
+    UserInfoVo selectMyUserJoinOriginatorInfo(@Param("id") Integer id);
 }

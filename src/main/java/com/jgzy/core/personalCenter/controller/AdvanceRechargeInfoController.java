@@ -11,15 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 /**
  * <p>
- *  前端控制器
+ * 前端控制器
  * </p>
  *
  * @author zou
@@ -35,7 +33,7 @@ public class AdvanceRechargeInfoController {
 
     @GetMapping(value = "/detail")
     @ApiOperation(value = "查询权额折扣", notes = "查询权额折扣")
-    public ResultWrapper<List<AdvanceRechargeInfo>> detail(){
+    public ResultWrapper<List<AdvanceRechargeInfo>> detail() {
         ResultWrapper<List<AdvanceRechargeInfo>> resultWrapper = new ResultWrapper<>();
         List<AdvanceRechargeInfo> advanceRechargeInfos = advanceRechargeInfoService.selectList(new EntityWrapper<>());
         resultWrapper.setResult(advanceRechargeInfos);

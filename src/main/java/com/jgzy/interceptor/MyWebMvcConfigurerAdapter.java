@@ -50,23 +50,23 @@ public class MyWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
         public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
                 throws Exception {
             if (handler instanceof HandlerMethod) {
-//                String token = request.getHeader("token");
-//                // 没有传入token
-//                if (StringUtils.isEmpty(token)) {
-//                    setResponseMsg(response);
-//                    return false;
-//                }
-//                // token不存在
-//                boolean flag = RedisUtil.hHasKey(RedisConstant.REDIS_USER_KEY, token);
-//                if (!flag) {
-//                    setResponseMsg(response);
-//                    return false;
-//                }
-//                // 登录成功后将user对象放置在本地线程中，方便controller和service获取
-//                UserUuidThreadLocal.set((UserInfo) RedisUtil.hget(RedisConstant.REDIS_USER_KEY, token));
-                UserInfo userInfo = new UserInfo();
-                userInfo.setId(18);
-                UserUuidThreadLocal.set(userInfo);
+                String token = request.getHeader("token");
+                // 没有传入token
+                if (StringUtils.isEmpty(token)) {
+                    setResponseMsg(response);
+                    return false;
+                }
+                // token不存在
+                boolean flag = RedisUtil.hHasKey(RedisConstant.REDIS_USER_KEY, token);
+                if (!flag) {
+                    setResponseMsg(response);
+                    return false;
+                }
+                // 登录成功后将user对象放置在本地线程中，方便controller和service获取
+                UserUuidThreadLocal.set((UserInfo) RedisUtil.hget(RedisConstant.REDIS_USER_KEY, token));
+//                UserInfo userInfo = new UserInfo();
+//                userInfo.setId(18);
+//                UserUuidThreadLocal.set(userInfo);
             }
             return true;
         }

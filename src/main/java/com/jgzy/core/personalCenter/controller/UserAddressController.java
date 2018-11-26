@@ -7,7 +7,10 @@ import com.jgzy.core.personalCenter.service.IUserAddressService;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
-import com.jgzy.entity.po.*;
+import com.jgzy.entity.po.AreaInfo;
+import com.jgzy.entity.po.CityInfo;
+import com.jgzy.entity.po.ProvinceInfo;
+import com.jgzy.entity.po.UserAddress;
 import com.jgzy.utils.ValidatorUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -75,7 +78,7 @@ public class UserAddressController {
 
     @ApiOperation(value = "获取所有收获地址", notes = "获取所有收获地址")
     @GetMapping(value = "list")
-    public ResultWrapper<List<UserAddressVo>> listPage(){
+    public ResultWrapper<List<UserAddressVo>> listPage() {
         ResultWrapper<List<UserAddressVo>> resultWrapper = new ResultWrapper<>();
         List<UserAddressVo> userAddressList = userAddressService.selectMyList();
         resultWrapper.setResult(userAddressList);
@@ -84,10 +87,10 @@ public class UserAddressController {
 
     @ApiOperation(value = "收货地址（分页）", notes = "收货地址（分页）")
     @GetMapping(value = "/page/list")
-    public ResultWrapper<Page<UserAddress>> shipListPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
-                                                             @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
-        ResultWrapper<Page<UserAddress>> resultWrapper = new ResultWrapper<>();
-        Page<UserAddress> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
+    public ResultWrapper<Page<UserAddressVo>> shipListPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
+                                                           @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
+        ResultWrapper<Page<UserAddressVo>> resultWrapper = new ResultWrapper<>();
+        Page<UserAddressVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
         page = userAddressService.getUserAddress(page);
         resultWrapper.setResult(page);
         return resultWrapper;
@@ -100,7 +103,15 @@ public class UserAddressController {
         Integer id = po.getId();
         boolean successful = false;
         if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            successful = userAddressService.updateById(po);
+            if (po.getIsDefault().equals(2)) {
+                UserAddress my = new UserAddress();
+                my.setIsDefault(1);
+                successful = userAddressService.update(my, new EntityWrapper<UserAddress>()
+                        .eq("create_user", UserUuidThreadLocal.get().getId()));
+            }
+            if (successful) {
+                successful = userAddressService.updateById(po);
+            }
         }
         resultWrapper.setSuccessful(successful);
         return resultWrapper;
@@ -112,7 +123,7 @@ public class UserAddressController {
         ResultWrapper<UserAddress> resultWrapper = new ResultWrapper<>();
         po.setCreateUser(UserUuidThreadLocal.get().getId());
         po.setAddTime(new Date());
-        if (po.getIsDefault() == null){
+        if (po.getIsDefault() == null) {
             po.setIsDefault(2);
         }
         boolean successful = userAddressService.insert(po);

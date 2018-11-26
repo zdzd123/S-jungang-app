@@ -134,5 +134,16 @@ public class ShopGoodsController {
         resultWrapper.setResult(singleCalcAmountVo);
         return resultWrapper;
     }
+
+    @GetMapping(value = "/statistics")
+    @ApiOperation(value = "统计普通商城商品数量", notes = "统计普通商城商品数量")
+    public ResultWrapper<Integer> detail() {
+        ResultWrapper<Integer> resultWrapper = new ResultWrapper<>();
+        int count = shopGoodsService.selectCount(new EntityWrapper<ShopGoods>()
+                .eq("is_special", BaseConstant.NOT_SPECIAL)
+                .eq("status", 2));
+        resultWrapper.setResult(count);
+        return resultWrapper;
+    }
 }
 

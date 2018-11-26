@@ -4,10 +4,10 @@
     <select id="selectMyUserDistributionList" resultType="com.jgzy.core.personalCenter.vo.UserDistributionVo">
         SELECT
             ud.user_id,
-            -- ud.class_layer,
             u.head_portrait member_head_portrait,
             u.nickname member_name,
             ori.phone,
+
             ori.level_id,
             ud.add_time
         FROM

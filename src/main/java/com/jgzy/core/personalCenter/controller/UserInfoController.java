@@ -3,6 +3,7 @@ package com.jgzy.core.personalCenter.controller;
 
 import com.jgzy.core.personalCenter.service.IUserInfoService;
 import com.jgzy.core.personalCenter.vo.PersonalCenterVo;
+import com.jgzy.core.personalCenter.vo.UserInfoVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.UserInfo;
@@ -63,6 +64,15 @@ public class UserInfoController {
         po.setId(UserUuidThreadLocal.get().getId());
         boolean successful = userInfoService.updateById(po);
         resultWrapper.setSuccessful(successful);
+        return resultWrapper;
+    }
+
+    @GetMapping(value = "/getOriginatorUser")
+    @ApiOperation(value = "查询用户合伙人信息", notes = "查询用户合伙人信息")
+    public ResultWrapper<UserInfoVo> originatorUser() {
+        ResultWrapper<UserInfoVo> resultWrapper = new ResultWrapper<>();
+        UserInfoVo userInfoVo = userInfoService.selectMyUserJoinOriginatorInfo(UserUuidThreadLocal.get().getId());
+        resultWrapper.setResult(userInfoVo);
         return resultWrapper;
     }
 }

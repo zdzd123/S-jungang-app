@@ -4,6 +4,7 @@ package com.jgzy.core.personalCenter.controller;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.core.personalCenter.service.IUserGoodsCollectService;
+import com.jgzy.core.personalCenter.vo.UserGoodsCollectionVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.UserGoodsCollect;
@@ -63,10 +64,10 @@ public class UserGoodsCollectController {
 
     @ApiOperation(value = "查询个人收藏（分页）", notes = "查询个人收藏（分页）")
     @GetMapping(value = "/page/list")
-    public ResultWrapper<Page<UserGoodsCollect>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
+    public ResultWrapper<Page<UserGoodsCollectionVo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
                                                           @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
-        ResultWrapper<Page<UserGoodsCollect>> resultWrapper = new ResultWrapper<>();
-        Page<UserGoodsCollect> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
+        ResultWrapper<Page<UserGoodsCollectionVo>> resultWrapper = new ResultWrapper<>();
+        Page<UserGoodsCollectionVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
         page = userGoodsCollectService.getUserGoodsCollectByUserId(page);
         resultWrapper.setResult(page);
         return resultWrapper;
@@ -86,15 +87,13 @@ public class UserGoodsCollectController {
     }
 
     @ApiOperation(value = "删除指定ID的收藏", notes = "删除指定ID的收藏")
-    @ApiImplicitParam(name = "goodsId", value = "商品ID", required = true, paramType = "path", dataType = "Integer")
-    @DeleteMapping("/{goodsId:\\d+}")
-    public ResultWrapper<UserGoodsCollect> delete(@PathVariable("goodsId") Integer goodsId) {
+    @ApiImplicitParam(name = "id", value = "收藏ID", required = true, paramType = "path", dataType = "Integer")
+    @DeleteMapping("/{id:\\d+}")
+    public ResultWrapper<UserGoodsCollect> delete(@PathVariable("id") Integer id) {
         ResultWrapper<UserGoodsCollect> resultWrapper = new ResultWrapper<>();
         boolean successful = false;
-        if (ValidatorUtil.isNotNullOrEmpty(goodsId)) {
-            UserGoodsCollect userGoodsCollect = userGoodsCollectService.selectOne(new EntityWrapper<UserGoodsCollect>()
-                    .eq("goods_id", goodsId)
-                    .eq("collect_user_info_id", UserUuidThreadLocal.get().getId()));
+        if (ValidatorUtil.isNotNullOrEmpty(id)) {
+            UserGoodsCollect userGoodsCollect = userGoodsCollectService.selectById(id);
             if (userGoodsCollect == null) {
                 throw new OptimisticLockingFailureException("不存在该商品收藏");
             }

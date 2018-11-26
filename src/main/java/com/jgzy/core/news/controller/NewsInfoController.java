@@ -1,6 +1,7 @@
 package com.jgzy.core.news.controller;
 
 
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.core.news.service.INewsInfoService;
 import com.jgzy.entity.common.ResultWrapper;
@@ -9,15 +10,14 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.stereotype.Controller;
-
 /**
  * <p>
- *  前端控制器
+ * 前端控制器
  * </p>
  *
  * @author zou
@@ -34,10 +34,13 @@ public class NewsInfoController {
     @ApiOperation(value = "资讯信息(分页)", notes = "资讯信息(分页)")
     @GetMapping(value = "/page/list")
     public ResultWrapper<Page<NewsInfo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
-                                                  @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize){
+                                                  @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize,
+                                                  @ApiParam(value = "资讯分类") @RequestParam(required = false) String newsCategoryId) {
         ResultWrapper<Page<NewsInfo>> resultWrapper = new ResultWrapper<>();
         Page<NewsInfo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
-        page = newsInfoService.selectPage(page);
+        page = newsInfoService.selectPage(page, new EntityWrapper<NewsInfo>()
+                .eq("status", 2)
+                .eq(StringUtils.isNotEmpty(newsCategoryId), "news_category_id", newsCategoryId));
         resultWrapper.setResult(page);
         return resultWrapper;
     }
@@ -46,7 +49,7 @@ public class NewsInfoController {
     @ApiOperation(value = "通过id查询资讯信息", notes = "通过id查询资讯信息")
     @ApiImplicitParam(name = "id", value = "视频id", required = true, paramType = "path", dataType = "Integer")
     public ResultWrapper<NewsInfo> detail(@PathVariable("id") Integer id) {
-        ResultWrapper<NewsInfo> resultWrapper = new ResultWrapper();
+        ResultWrapper<NewsInfo> resultWrapper = new ResultWrapper<>();
         NewsInfo newsInfo = newsInfoService.selectById(id);
         resultWrapper.setResult(newsInfo);
         return resultWrapper;

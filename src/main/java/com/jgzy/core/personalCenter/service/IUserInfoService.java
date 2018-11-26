@@ -2,6 +2,7 @@ package com.jgzy.core.personalCenter.service;
 
 import com.baomidou.mybatisplus.service.IService;
 import com.jgzy.core.personalCenter.vo.PersonalCenterVo;
+import com.jgzy.core.personalCenter.vo.UserInfoVo;
 import com.jgzy.entity.po.UserInfo;
 
 import java.math.BigDecimal;
@@ -37,4 +38,29 @@ public interface IUserInfoService extends IService<UserInfo> {
      * @return
      */
     boolean updateCommissionDiscount(Integer id, BigDecimal commission);
+
+    /**
+     * 查询用户信息和用户等级
+     *
+     * @param id 用户id
+     * @return 用户信息
+     */
+    UserInfo selectMyUserLevelById(Integer id);
+
+    /**
+     * 提现冻结金额
+     *
+     * @param id          用户id
+     * @param withdrawNum 提现金额
+     * @return flag
+     */
+    boolean withDrawAmount(Integer id, BigDecimal withdrawNum);
+
+    /**
+     * 查询用户详细信息
+     *
+     * @param id 用户id
+     * @return 用户信息
+     */
+    UserInfoVo selectMyUserJoinOriginatorInfo(Integer id);
 }

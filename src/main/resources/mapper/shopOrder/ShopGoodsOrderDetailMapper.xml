@@ -1,5 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jgzy.core.shopOrder.mapper.ShopGoodsOrderDetailMapper">
-
+    <select id="selectMyShopGoodsDetailList" resultType="com.jgzy.core.shopOrder.vo.ShopgoodsOrderDetailVo">
+        SELECT
+            detail.id,
+            detail.order_id,
+            detail.shop_goods_id,
+            detail.sort_name,
+            detail.pic,
+            detail.market_price,
+            detail.cost_price,
+            detail.menber_price,
+            detail.buy_count,
+            detail.goods_unit_count,
+            detail.add_time,
+            detail.platform_goods_spec_names,
+            detail.platform_goods_spec_value_names,
+            detail.live_id,
+            detail.hide_hasPaid,
+            detail.hide_discountedPrice,
+            detail.hide_freight,
+            detail.hide_pointMoney,
+            detail.possible_point,
+            detail.is_evaluate,
+            detail.extract,
+            detail.extract_time,
+            shopGoods.platform_goods_category_id
+        FROM shop_goods_order_detail detail
+        JOIN shop_goods shopGoods ON detail.shop_goods_id = shopGoods.id
+        WHERE detail.order_id = #{orderId}
+    </select>
 </mapper>

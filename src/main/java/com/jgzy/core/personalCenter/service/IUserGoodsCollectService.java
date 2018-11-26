@@ -2,6 +2,7 @@ package com.jgzy.core.personalCenter.service;
 
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
+import com.jgzy.core.personalCenter.vo.UserGoodsCollectionVo;
 import com.jgzy.entity.po.UserGoodsCollect;
 
 /**
@@ -20,5 +21,5 @@ public interface IUserGoodsCollectService extends IService<UserGoodsCollect> {
      * @return
      * @param page
      */
-    Page<UserGoodsCollect> getUserGoodsCollectByUserId(Page<UserGoodsCollect> page);
+    Page<UserGoodsCollectionVo> getUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page);
 }

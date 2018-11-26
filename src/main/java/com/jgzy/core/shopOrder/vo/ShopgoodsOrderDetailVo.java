@@ -61,6 +61,16 @@ public class ShopgoodsOrderDetailVo {
     private List<ShopGoodsAttribute> shopGoodsAttributeList;
     @ApiModelProperty(value = "商品简介", example = "1")
     private String abstracts;
+    @ApiModelProperty(value = "平台商品分类id", example = "1")
+    private Integer platformGoodsCategoryId;
+
+    public Integer getPlatformGoodsCategoryId() {
+        return platformGoodsCategoryId;
+    }
+
+    public void setPlatformGoodsCategoryId(Integer platformGoodsCategoryId) {
+        this.platformGoodsCategoryId = platformGoodsCategoryId;
+    }
 
     public String getAbstracts() {
         return abstracts;

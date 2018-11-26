@@ -78,6 +78,27 @@ public class RedisUtil {
         }
 
     }
+
+    /**
+     * 普通缓存放入
+     *
+     * @param key   键
+     * @param value 值
+     * @return true成功 false失败
+     */
+    public static boolean set(String key, Object value, long time) {
+        try {
+            redisTemplate.opsForValue().set(key, value);
+            if (time > 0) {
+                expire(key, time);
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
     //================================Map=================================
 
     /**

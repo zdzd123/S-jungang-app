@@ -23,7 +23,7 @@
                 <bind name="myShopName" value="'%' + shopName + '%'"></bind>
                 AND goods.shop_name LIKE #{myShopName}
             </if>
-            AND stock.count <![CDATA[ > ]]> 0
+            AND stock.count <![CDATA[ <> ]]> 0
         </where>
     </select>
 
@@ -36,6 +36,8 @@
         goods.shop_describe,
         goods.pic,
         goods.menber_price,
+        goods.cost_price,
+        goods.market_price,
         goods.stock
         FROM
         shop_stock stock

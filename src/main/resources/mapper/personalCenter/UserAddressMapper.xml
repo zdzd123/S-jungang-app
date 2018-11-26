@@ -45,24 +45,28 @@
             </if>
         </where>
     </select>
-    <select id="selectUserAddress" resultType="com.jgzy.entity.po.UserAddress">
+    <select id="selectUserAddress" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
         SELECT
             id,
             NAME,
             phone,
             zip_code,
             (select `name` from province_info where id = address.province_id) province,
+            province_id,
             (select `name` from city_info where id = address.city_id) city,
+            city_id,
             (select `name` from area_info where id = address.area_id) area,
+            area_id,
             address,
             create_user,
             is_default,
             add_time
         FROM
-            user_address
+            user_address address
         <where>
             create_user = #{id}
         </where>
+        ORDER BY is_default desc
     </select>
 
     <select id="selectDetailById" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
@@ -100,6 +104,6 @@
           user_address address
         where
             create_user = #{id}
-        order by is_default,id asc
+        order by is_default desc
     </select>
 </mapper>

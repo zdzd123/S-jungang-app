@@ -10,10 +10,20 @@ import java.util.List;
 public class HomePageVo {
     @ApiModelProperty(value = "轮播图")
     private List<AdvertInfoVo> viewPage;
+    @ApiModelProperty(value = "商品大类图")
+    private List<AdvertInfoVo> viewPlatform;
     @ApiModelProperty(value = "商品图")
     private List<AdvertInfoVo> viewPageShop;
     @ApiModelProperty(value = "信息图")
     private List<AdvertInfoVo> viewPageMsg;
+
+    public List<AdvertInfoVo> getViewPlatform() {
+        return viewPlatform;
+    }
+
+    public void setViewPlatform(List<AdvertInfoVo> viewPlatform) {
+        this.viewPlatform = viewPlatform;
+    }
 
     public List<AdvertInfoVo> getViewPage() {
         return viewPage;

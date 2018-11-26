@@ -109,7 +109,7 @@ public class ShopStockController {
         List<CalcSingleAmountVo> calcSingleAmountVoList = new ArrayList<>();
         for (ShopGoodsOrderVo vo : voList) {
             ShopStock shopStock = shopStockService.selectById(vo.getId());
-            if (shopStock == null){
+            if (shopStock == null) {
                 throw new OptimisticLockingFailureException("该id库存有误" + vo.getId());
             }
             ShopGoods shopGoods = shopGoodsService.selectById(shopStock.getShopGoodsId());
@@ -156,7 +156,10 @@ public class ShopStockController {
             }
         }
         calcAmountVo.setCalcAmountVoList(calcSingleAmountVoList);
-        BigDecimal materialAmount = CommonUtil.calcMaterialCosts(allCount, new BigDecimal(0));
+        BigDecimal materialAmount = BigDecimal.ZERO;
+        if (!voList.get(0).getIsStock().equals(BaseConstant.IS_STOCK_3)) {
+            materialAmount = CommonUtil.calcMaterialCosts(allCount, BigDecimal.ZERO);
+        }
         calcAmountVo.setMaterialAmount(materialAmount);
         calcAmountVo.setTotalAmount(materialAmount);
         calcAmountVo.setActualAmount(materialAmount);
@@ -167,12 +170,12 @@ public class ShopStockController {
             // 查询用户余额
             userInfo = userInfoService.selectOne(new EntityWrapper<UserInfo>()
                     .eq("id", UserUuidThreadLocal.get().getId()));
-            BigDecimal balance = userInfo.getBalance1() == null? BigDecimal.ZERO :userInfo.getBalance1();
+            BigDecimal balance = userInfo.getBalance1() == null ? BigDecimal.ZERO : userInfo.getBalance1();
             if (balance.compareTo(materialAmount) >= 0) {
                 calcAmountVo.setRemainAmount(materialAmount);
                 userInfo.setBalance1(balance.subtract(materialAmount));
                 calcAmountVo.setActualAmount(BigDecimal.ZERO);
-            }else {
+            } else {
                 calcAmountVo.setRemainAmount(balance);
                 userInfo.setBalance1(BigDecimal.ZERO);
                 calcAmountVo.setActualAmount(materialAmount.subtract(balance));
@@ -203,22 +206,21 @@ public class ShopStockController {
         shopGoodsOrder.setSubmitOrderUser(UserUuidThreadLocal.get().getId());
         shopGoodsOrder.setCreateTime(date);
         shopGoodsOrder.setIsStock(BaseConstant.IS_STOCK_1);
+        if (voList.get(0).getIsStock().equals(BaseConstant.IS_STOCK_3)) {
+            shopGoodsOrder.setIsStock(BaseConstant.IS_STOCK_3);
+        }
         // 收货地址和发货地址
-        initAddress(shopGoodsOrder, voList.get(0).getAddressId(), voList.get(0).getShipAddressId());
+        initAddress(shopGoodsOrder, voList.get(0));
         int count = 0;
         List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = new ArrayList<>();
-        List<ShopStock> shopStockList = new ArrayList<>();
         for (ShopStockVo shopStockVo : voList) {
             ShopGoodsOrderDetail shopGoodsOrderDetail = new ShopGoodsOrderDetail();
             ShopStockVo shopStock = shopStockService.selectMyStockById(shopStockVo.getId());
             if (shopStock == null) {
-                throw new OptimisticLockingFailureException("不存在该库存！");
-            }
-            if (shopStock.getStock().compareTo(shopStockVo.getCount()) < 0) {
-                throw new OptimisticLockingFailureException("商品总库存不足！");
+                throw new OptimisticLockingFailureException("该库存不存在！");
             }
             if (shopStock.getCount().compareTo(shopStockVo.getCount()) < 0) {
-                throw new OptimisticLockingFailureException("库存不足！");
+                throw new OptimisticLockingFailureException("商品:" + shopStock.getShopName() + " 库存不足！");
             }
             shopGoodsOrderDetail.setShopGoodsId(shopStock.getShopGoodsId());
             shopGoodsOrderDetail.setBuyCount(shopStockVo.getCount());
@@ -226,6 +228,8 @@ public class ShopStockController {
             // 商品具体信息
             shopGoodsOrderDetail.setPic(shopStock.getPic());
             shopGoodsOrderDetail.setMenberPrice(shopStock.getMenberPrice());
+            shopGoodsOrderDetail.setCostPrice(shopStock.getCostPrice());
+            shopGoodsOrderDetail.setMarketPrice(shopStock.getMarketPrice());
             shopGoodsOrderDetail.setSortName(shopStock.getShopName());
             shopGoodsOrderDetailList.add(shopGoodsOrderDetail);
             count += shopStockVo.getCount();
@@ -234,9 +238,11 @@ public class ShopStockController {
             myShopStock.setId(shopStock.getId());
             myShopStock.setUpdateTime(date);
             myShopStock.setCount(shopStock.getCount() - shopStockVo.getCount());
-            shopStockList.add(myShopStock);
         }
-        BigDecimal materialCosts = CommonUtil.calcMaterialCosts(count, new BigDecimal(0));
+        BigDecimal materialCosts = BigDecimal.ZERO;
+        if (!shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_3)) {
+            materialCosts = CommonUtil.calcMaterialCosts(count, BigDecimal.ZERO);
+        }
         shopGoodsOrder.setMaterialAmount(materialCosts);
         shopGoodsOrder.setOrderAmountTotal(materialCosts);
         shopGoodsOrder.setTradeNo(tradeNo);
@@ -247,7 +253,7 @@ public class ShopStockController {
             // 查询用户余额
             UserInfo userInfo = userInfoService.selectOne(new EntityWrapper<UserInfo>()
                     .eq("id", UserUuidThreadLocal.get().getId()));
-            BigDecimal balance = userInfo.getBalance1() == null? zero :userInfo.getBalance1();
+            BigDecimal balance = userInfo.getBalance1() == null ? zero : userInfo.getBalance1();
             if (balance.compareTo(materialCosts) >= 0) {
                 shopGoodsOrder.setTotalRealPayment(zero);
                 shopGoodsOrder.setTotalPoint(materialCosts);
@@ -264,7 +270,7 @@ public class ShopStockController {
             boolean b = userInfoService.update(userInfo, new EntityWrapper<UserInfo>()
                     .eq(updateTime != null, "update_time", updateTime)
                     .eq("id", userInfo.getId()));
-            if (!b){
+            if (!b) {
                 throw new OptimisticLockingFailureException("用户余额更新失败！");
             }
         } else if (payType.equals(BaseConstant.PAY_TYPE_2)) {
@@ -301,16 +307,16 @@ public class ShopStockController {
             throw new OptimisticLockingFailureException("订单详情插入失败！");
         }
         // 下单扣除商品库存
-        for (ShopGoodsOrderDetail shopGoodsOrderDetail:shopGoodsOrderDetailList){
-            boolean a = shopGoodsService.updateStockById(shopGoodsOrderDetail.getBuyCount(),
-                    shopGoodsOrderDetail.getShopGoodsId());
-            if (!a){
-                throw new OptimisticLockingFailureException("商品库存扣除失败");
-            }
+        for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
+//            boolean a = shopGoodsService.updateStockById(shopGoodsOrderDetail.getBuyCount(),
+//                    shopGoodsOrderDetail.getShopGoodsId());
+//            if (!a){
+//                throw new OptimisticLockingFailureException("商品库存扣除失败");
+//            }
             // 下单扣除库存
             boolean c = shopStockService.updateMyShopStockByGoodsId(shopGoodsOrderDetail.getBuyCount(),
                     shopGoodsOrderDetail.getShopGoodsId());
-            if (!c){
+            if (!c) {
                 throw new OptimisticLockingFailureException("库存扣除失败");
             }
         }
@@ -324,16 +330,20 @@ public class ShopStockController {
      * 拼接地址
      *
      * @param shopGoodsOrder 商品订单
-     * @param addressId      发货地址
-     * @param shipAddressId  收货地址
+     * @param vo             参数
      * @return 商品订单
      */
-    private boolean initAddress(ShopGoodsOrder shopGoodsOrder, Integer addressId, Integer shipAddressId) {
-        UserAddressVo userAddressVo = userAddressService.selectDetailById(addressId);
+    private boolean initAddress(ShopGoodsOrder shopGoodsOrder, ShopStockVo vo) {
+        if (shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_3)) {
+            shopGoodsOrder.setReceiveMan(vo.getReceiveMan());
+            shopGoodsOrder.setContactPhone(vo.getContactPhone());
+            return true;
+        }
+        UserAddressVo userAddressVo = userAddressService.selectDetailById(vo.getAddressId());
         if (userAddressVo == null) {
             return false;
         }
-        UserAddressVo userAddressShip = userAddressShipService.selectDetailById(shipAddressId);
+        UserAddressVo userAddressShip = userAddressShipService.selectDetailById(vo.getShipAddressId());
         if (userAddressShip == null) {
             return false;
         }
@@ -382,7 +392,6 @@ public class ShopStockController {
         String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
         String product_id = ""; // 产品id (非必填)
         String notify_url = "http://jgapi.china-mail.com.cn/api/shopStock/constant/weixinNotifyUrl";
-//        String notify_url = "http://jgapi.china-mail.com.cn/api/constant/payNotify/weixinNotifyUrl";
         // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
         // 检验订单状态以及订单的金额
         // TODO 测试用支付

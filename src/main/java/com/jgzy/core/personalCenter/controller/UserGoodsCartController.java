@@ -50,9 +50,9 @@ public class UserGoodsCartController {
         // 查询商品是否存在
         int count = userGoodsCartService.selectCount(entityWrapper);
         boolean successful;
-        if (count == 0){
-            successful= userGoodsCartService.insert(po);
-        }else {
+        if (count == 0) {
+            successful = userGoodsCartService.insert(po);
+        } else {
             successful = userGoodsCartService.update(po, entityWrapper);
         }
 
@@ -85,7 +85,7 @@ public class UserGoodsCartController {
     }
 
     @ApiOperation(value = "删除指定ID的购物车", notes = "删除指定ID的购物车")
-    @ApiImplicitParam(name = "id",value = "购物车ID",required = true,paramType = "path",dataType="Integer")
+    @ApiImplicitParam(name = "id", value = "购物车ID", required = true, paramType = "path", dataType = "Integer")
     @DeleteMapping({"/{id:\\d+}"})
     public ResultWrapper<UserGoodsCart> delete(@PathVariable("id") Integer id) {
         ResultWrapper<UserGoodsCart> resultWrapper = new ResultWrapper<>();
@@ -102,7 +102,8 @@ public class UserGoodsCartController {
     public ResultWrapper<Integer> getCount() {
         ResultWrapper<Integer> resultWrapper = new ResultWrapper<>();
         int count = userGoodsCartService.selectCount(new EntityWrapper<UserGoodsCart>()
-                .eq("cart_user_info_id", UserUuidThreadLocal.get().getId()));
+                .eq("cart_user_info_id", UserUuidThreadLocal.get().getId())
+                .eq("live_id", 1));
         resultWrapper.setResult(count);
         return resultWrapper;
     }

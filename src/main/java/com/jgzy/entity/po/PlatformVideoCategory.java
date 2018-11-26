@@ -32,12 +32,21 @@ public class PlatformVideoCategory implements Serializable {
     private String remarks;
     //@ApiModelProperty(value = "针对店铺是否显示(否=1|是=2)", example = "1")
     //private Integer forShopIsShow;
+    @ApiModelProperty(value = "图片", example = "1")
+    private String pic;
     @ApiModelProperty(value = "排序", example = "1")
     private Integer sort;
     @ApiModelProperty(value = "添加时间", example = "2018-06-29 09:17:54")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date addTime;
 
+    public String getPic() {
+        return pic;
+    }
+
+    public void setPic(String pic) {
+        this.pic = pic;
+    }
 
     public Integer getId() {
         return id;

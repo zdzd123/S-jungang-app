@@ -14,9 +14,7 @@ import com.jgzy.constant.BaseConstant;
 import com.jgzy.constant.ErrorCodeEnum;
 import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
-import com.jgzy.core.shopOrder.service.IShopGoodsOrderDetailService;
-import com.jgzy.core.shopOrder.service.IShopGoodsOrderService;
-import com.jgzy.core.shopOrder.service.IShopGoodsService;
+import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
@@ -28,10 +26,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -75,9 +71,15 @@ public class ShopGoodsOrderController {
     @Autowired
     private AlipayConfig alipayConfig;
     @Autowired
-    private IAdvanceRechargeRecordService advanceRechargeRecordService;
-    @Autowired
     private IUserInfoService userInfoService;
+    @Autowired
+    private IUserGoodsCartService userGoodsCartService;
+    @Autowired
+    private IUserDistributionService userDistributionService;
+    @Autowired
+    private IDistributionCommissionSetService distributionCommissionSetService;
+    @Autowired
+    private IUserFundService userFundService;
 
     @ApiOperation(value = "添加订单唤起支付宝支付", notes = "添加订单唤起支付宝支付")
     @PostMapping(value = "/ali/save")
@@ -160,8 +162,8 @@ public class ShopGoodsOrderController {
         if (result.hasErrors()) {
             return resultWrapper;
         }
-        // 总金额  付款金额 (必填)
-        BigDecimal total_fee = new BigDecimal(0);
+        // 支付类型
+        Integer payType = voList.get(0).getPayType();
         // 总订单信息
         ShopGoodsOrder shopGoodsOrder = new ShopGoodsOrder();
         // 订单详情
@@ -177,8 +179,7 @@ public class ShopGoodsOrderController {
             ShopGoodsOrderDetail shopGoodsOrderDetail = new ShopGoodsOrderDetail();
             // 优惠券信息
             UserActivityCoupon userActivityCoupon = new UserActivityCoupon();
-            Integer payType = vo.getPayType();
-            if (payType != BaseConstant.PAY_TYPE_2) {
+            if (payType != BaseConstant.PAY_TYPE_2 && payType != BaseConstant.PAY_TYPE_4) {
                 resultWrapper.setErrorMsg("支付类型错误");
                 return resultWrapper;
             }
@@ -199,47 +200,123 @@ public class ShopGoodsOrderController {
             // 微信订单
             shopGoodsOrder.setTradeNo(out_trade_no);
             // 订单ID
-            shopGoodsOrder.setOrderNo(CommonUtil.getTradeNo());
-            // 总金额
-            total_fee = total_fee.add(shopGoodsOrder.getTotalRealPayment());
+            shopGoodsOrder.setOrderNo(out_trade_no);
+            // 包邮
+            shopGoodsOrder.setCarriageType(BaseConstant.CARRIAGE_TYPE_3);
             // 订单id
             shopGoodsOrderDetailList.add(shopGoodsOrderDetail);
         }
         // 返回参数
-        HashMap<String, String> resultMap = new HashMap<String, String>();
-        //唤起第三方支付 weixin
-        // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-        String subject = "军港之业消费者订单"; // 订单名称 (必填)
-        // 获取服务器ip
-        String ip = InetAddress.getLocalHost().getHostAddress();
-        UserOauth userOauth = userOauthService.selectOne(
-                new EntityWrapper<UserOauth>()
-                        .eq("user_id", UserUuidThreadLocal.get().getId()));
-        if (userOauth == null || userOauth.getOauthOpenid() == null) {
-            resultMap.put("return_code", "FAIL");
-            resultMap.put("err_code_des", "openid is null");
-            resultWrapper.setResult(resultMap);
-            return resultWrapper;
-        }
-        String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
-        String product_id = ""; // 产品id (非必填)
-        String notify_url = "http://jgapi.china-mail.com.cn/api/constant/payNotify/weixinNotifyUrl";
-        // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-        // 检验订单状态以及订单的金额
-        // TODO 测试用
-        total_fee = new BigDecimal("0.01");
-        WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
-                out_trade_no, subject, total_fee.doubleValue(), ip, notify_url);
-        // 订单失败
-        if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
-            resultMap.put("return_code", wxData.get("return_code"));
-            if (wxData.get("return_msg") != null) {
-                resultMap.put("return_msg", wxData.get("return_msg"));
-            } else if (wxData.get("err_code_des") != null) {
-                resultMap.put("err_code_des", wxData.get("err_code_des"));
+        HashMap<String, String> resultMap = new HashMap<>();
+        // 查询用户
+        UserInfo userInfo = userInfoService.selectById(UserUuidThreadLocal.get().getId());
+        if (payType.equals(BaseConstant.PAY_TYPE_4)) {
+            //  余额支付
+            if (userInfo.getBalance1() != null && userInfo.getBalance1().compareTo(shopGoodsOrder.getTotalRealPayment()) < 0) {
+                // 余额不足
+                shopGoodsOrder.setTotalPoint(userInfo.getBalance1());
+                shopGoodsOrder.setTotalRealPayment(shopGoodsOrder.getTotalRealPayment().subtract(userInfo.getBalance1()));
+            } else {
+                shopGoodsOrder.setTotalPoint(shopGoodsOrder.getTotalRealPayment());
+                shopGoodsOrder.setTotalRealPayment(BigDecimal.ZERO);
             }
-            resultWrapper.setResult(resultMap);
-            return resultWrapper;
+        }
+        if (shopGoodsOrder.getTotalRealPayment() != null && shopGoodsOrder.getTotalRealPayment().compareTo(BigDecimal.ZERO) > 0) {
+            //唤起第三方支付 weixin
+            // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+            String subject = "军港之业消费者订单"; // 订单名称 (必填)
+            // 获取服务器ip
+            String ip = InetAddress.getLocalHost().getHostAddress();
+            UserOauth userOauth = userOauthService.selectOne(
+                    new EntityWrapper<UserOauth>()
+                            .eq("user_id", UserUuidThreadLocal.get().getId()));
+            if (userOauth == null || userOauth.getOauthOpenid() == null) {
+                resultMap.put("return_code", "FAIL");
+                resultMap.put("err_code_des", "openid is null");
+                resultWrapper.setResult(resultMap);
+                return resultWrapper;
+            }
+            String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
+            String product_id = ""; // 产品id (非必填)
+            String notify_url = "http://jgapi.china-mail.com.cn/api/constant/payNotify/weixinNotifyUrl";
+            // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+            // 检验订单状态以及订单的金额
+            // TODO 测试用
+            WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
+                    out_trade_no, subject, /*shopGoodsOrder.getTotalRealPayment()*/0.01d, ip, notify_url);
+            // 订单失败
+            if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
+                resultMap.put("return_code", wxData.get("return_code"));
+                if (wxData.get("return_msg") != null) {
+                    resultMap.put("return_msg", wxData.get("return_msg"));
+                } else if (wxData.get("err_code_des") != null) {
+                    resultMap.put("err_code_des", wxData.get("err_code_des"));
+                }
+                resultWrapper.setResult(resultMap);
+                return resultWrapper;
+            }
+            resultMap.put("appId", wxData.get("appId"));
+            resultMap.put("nonceStr", wxData.get("nonceStr"));
+            resultMap.put("timeStamp", wxData.get("timeStamp"));
+            resultMap.put("signType", wxData.get("signType"));
+            resultMap.put("packageValue", wxData.get("package"));
+            resultMap.put("sign", wxData.get("sign"));
+            resultMap.put("order_ids", order_ids);
+        } else {
+            //普通消费者分销
+            UserDistribution userDistribution = userDistributionService.selectOne(
+                    new EntityWrapper<UserDistribution>()
+                            .eq("user_id", userInfo.getId()));
+            BigDecimal commissionAmount = shopGoodsOrder.getOrderAmountTotal().subtract(
+                    shopGoodsOrder.getCouponAmount() == null ? BigDecimal.ZERO : shopGoodsOrder.getCouponAmount());
+            if (userDistribution != null && userDistribution.getParentId() != null && userDistribution.getParentId() != null) {
+                // 查询供应商分销额
+                DistributionCommissionSet distributionCommissionSet = distributionCommissionSetService.selectOne(
+                        new EntityWrapper<>());
+                if (distributionCommissionSet != null && distributionCommissionSet.getOneLevelAgents() != null) {
+                    BigDecimal amount = commissionAmount.multiply(distributionCommissionSet.getOneLevelAgents())
+                            .divide(new BigDecimal("100"), BigDecimal.ROUND_HALF_UP);
+                    //一级分销
+                    userInfoService.updateCommissionDiscount(userDistribution.getParentId(), amount);
+                    // 插入一级分销流水
+                    UserFund distributionUserFund = new UserFund();
+                    distributionUserFund.setTradeUserId(userDistribution.getParentId());
+                    distributionUserFund.setIncreaseMoney(amount);
+                    distributionUserFund.setTradeDescribe("消费者分销收益，姓名：" + userInfo.getNickname());
+                    distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                    distributionUserFund.setTradeTime(new Date());
+                    distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                    distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
+                    distributionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
+                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_8);
+                    userFundService.InsertUserFund(distributionUserFund);
+                }
+                // 二级分销
+                UserDistribution parentDistribution = userDistributionService.selectOne(
+                        new EntityWrapper<UserDistribution>()
+                                .eq("user_id", userDistribution.getParentId()));
+                if (parentDistribution != null && parentDistribution.getParentId() != null && distributionCommissionSet != null
+                        && distributionCommissionSet.getTwoLevelAgents() != null) {
+                    BigDecimal amount = commissionAmount.multiply(distributionCommissionSet.getTwoLevelAgents()
+                            .divide(new BigDecimal("100"), BigDecimal.ROUND_HALF_UP));
+                    userInfoService.updateCommissionDiscount(parentDistribution.getParentId(), amount);
+                    // 插入二级分销流水
+                    UserFund distributionUserFund = new UserFund();
+                    distributionUserFund.setTradeUserId(parentDistribution.getParentId());
+                    distributionUserFund.setIncreaseMoney(amount);
+                    distributionUserFund.setTradeDescribe("消费者分销收益，姓名：" + userInfo.getNickname());
+                    distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                    distributionUserFund.setTradeTime(new Date());
+                    distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                    distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
+                    distributionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
+                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_8);
+                    userFundService.InsertUserFund(distributionUserFund);
+                }
+            }
+            // 待发货订单
+            shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_3);
+            shopGoodsOrder.setPayTime(new Date());
         }
         // 插入预订单
         boolean successful = shopGoodsOrderService.insert(shopGoodsOrder);
@@ -259,14 +336,41 @@ public class ShopGoodsOrderController {
                 throw new OptimisticLockingFailureException("优惠券更新失败");
             }
         }
-        resultMap.put("appId", wxData.get("appId"));
-        resultMap.put("nonceStr", wxData.get("nonceStr"));
-        resultMap.put("timeStamp", wxData.get("timeStamp"));
-        resultMap.put("signType", wxData.get("signType"));
-        resultMap.put("packageValue", wxData.get("package"));
-        resultMap.put("sign", wxData.get("sign"));
-        resultMap.put("order_no", out_trade_no);
-        resultMap.put("order_ids", order_ids);
+        // 删除购物车
+        if (voList.get(0).getCartId() != null) {
+            UserGoodsCart userGoodsCart = new UserGoodsCart();
+            userGoodsCart.setId(voList.get(0).getCartId());
+            userGoodsCart.setLiveId(2);
+            userGoodsCartService.updateById(userGoodsCart);
+        }
+        // 用户扣除余额
+        if (shopGoodsOrder.getTotalPoint() != null) {
+            boolean b = userInfoService.updateCommissionDiscount(userInfo.getId(), shopGoodsOrder.getTotalPoint());
+            if (!b) {
+                throw new OptimisticLockingFailureException("用户余额更新失败");
+            }
+            UserFund remain = new UserFund();
+            remain.setTradeUserId(userInfo.getId());
+            remain.setDecreaseMoney(shopGoodsOrder.getTotalPoint());
+            remain.setOrderNo(shopGoodsOrder.getOrderNo());
+            remain.setTradeType(BaseConstant.TRADE_TYPE_2);
+            remain.setTradeDescribe("余额支付");
+            remain.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
+            remain.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
+            remain.setPayType(BaseConstant.PAY_TYPE_4);
+            remain.setTradeTime(new Date());
+            userFundService.InsertUserFund(remain);
+        }
+        // 扣除商品库存
+        for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
+            // 下单扣除商品库存库存
+            boolean a = shopGoodsService.updateStockById(shopGoodsOrderDetail.getBuyCount(),
+                    shopGoodsOrderDetail.getShopGoodsId());
+            if (!a) {
+                throw new OptimisticLockingFailureException("库存扣除失败");
+            }
+        }
+        resultMap.put("orderNo", out_trade_no);
         resultWrapper.setResult(resultMap);
         return resultWrapper;
     }
@@ -298,16 +402,19 @@ public class ShopGoodsOrderController {
         // 计算订单金额
         double count = vo.getCount();
         ShopGoods shopGoods = shopGoodsService.selectById(vo.getShopGoodsId());
-        if (count > shopGoods.getStock()) {
-            resultWrapper.setErrorCode(ErrorCodeEnum.ERROR_ARGS.getKey());
-            resultWrapper.setErrorMsg("库存不够！");
-            return false;
+        if (!shopGoods.getStockType().equals(1)) {
+            // 1-无库存可销售
+            if (count > shopGoods.getStock()) {
+                resultWrapper.setErrorCode(ErrorCodeEnum.ERROR_ARGS.getKey());
+                resultWrapper.setErrorMsg("商品:" + shopGoods.getShopName() + " 库存不足！");
+                return false;
+            }
         }
         // TODO init订单详情信息
         shopGoodsOrderDetail.setBuyCount(vo.getCount());
         initShopOrderDetail(shopGoods, shopGoodsOrderDetail);
         // 总金额
-        shopGoodsOrder.setOrderAmountTotal(BigDecimalUtil.mul(shopGoods.getSalePrice(), count));
+        shopGoodsOrder.setOrderAmountTotal(BigDecimalUtil.mul(shopGoods.getCostPrice(), count));
         // 验证优惠券
         Integer userActivityCouponId = vo.getUserActivityCouponId();
         shopGoodsOrder.setCouponAmount(BigDecimal.ZERO);

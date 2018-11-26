@@ -26,7 +26,7 @@ public interface UserAddressMapper extends BaseMapper<UserAddress> {
 
     List<AreaInfo> selectArea(@Param("id") Integer id, @Param("cityId") Integer cityId);
 
-    List<UserAddress> selectUserAddress(Page<UserAddress> page, @Param("id") Integer id);
+    List<UserAddressVo> selectUserAddress(Page<UserAddressVo> page, @Param("id") Integer id);
 
     UserAddressVo selectDetailById(@Param("userAddressId") Integer userAddressId);
 

@@ -39,13 +39,15 @@ public class ShopGoodsOrderVo {
     private BigDecimal amount;
     @ApiModelProperty(value = "优惠券单笔订单满(元)使用", example = "1000")
     private BigDecimal meetAmount;
-    @ApiModelProperty(value = "是否放入库存 1=不存入 2=存入", example = "1")
+    @ApiModelProperty(value = "是否放入库存 1=不存入 2=存入 3=自提", example = "1")
     @NotNull
     private Integer isStock;
     @ApiModelProperty(value = "权额IDs 逗号分割", example = "1")
     private String advanceRechargeIds;
     @ApiModelProperty(value = "运费标识 1-到付 2-等待计算", example = "1")
     private Integer carriageType;
+    @ApiModelProperty(value = "购物车id", example = "1")
+    private Integer cartId;
 
     @ApiModelProperty(value = "订单id", example = "1")
     private String orderNo;
@@ -155,6 +157,14 @@ public class ShopGoodsOrderVo {
     private BigDecimal totalRealPayment;
     @ApiModelProperty(value = "订单详情", example = "1")
     private List<ShopgoodsOrderDetailVo> shopgoodsOrderDetailVoList;
+
+    public Integer getCartId() {
+        return cartId;
+    }
+
+    public void setCartId(Integer cartId) {
+        this.cartId = cartId;
+    }
 
     public Integer getShipperId() {
         return shipperId;

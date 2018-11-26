@@ -40,4 +40,75 @@
     <update id="updateCommissionDiscount">
       update user_info set balance1 = IFNULL(balance1, 0) + #{commission} where id = #{id}
     </update>
+    <select id="selectMyUserLevelById" resultType="com.jgzy.entity.po.UserInfo">
+        SELECT
+            info.id,
+            account_number,
+            pass_word,
+            token,
+            code,
+            valid_status,
+            ori.level_id user_level_id,
+            user_tag_ids,
+            nickname,
+            head_portrait,
+            point,
+            balance1,
+            balance2,
+            balance3,
+            balance4,
+            info.phone,
+            email,
+            register_time,
+            effective_time,
+            gender,
+            birthday,
+            occupation,
+            earning,
+            info.user_name,
+            tel_exten,
+            accumulated_consumption,
+            accumulated_point,
+            commission,
+            from_source,
+            is_robot,
+            is_get_coupon,
+            is_remind,
+            charitable,
+            update_time
+        FROM
+            user_info info LEFT JOIN originator_info ori ON info.id=ori.user_id
+        WHERE info.id=#{id}
+    </select>
+    <update id="withDrawAmount">
+        UPDATE user_info
+        SET balance1 = IFNULL( balance1, 0 ) - #{withdrawNum},
+          balance4 = IFNULL( balance4, 0 ) + #{withdrawNum}
+        WHERE
+            id = #{id}
+    </update>
+    <select id="selectMyUserJoinOriginatorInfo" resultType="com.jgzy.core.personalCenter.vo.UserInfoVo">
+        SELECT
+            userInfo.id,
+            userInfo.nickname,
+            userInfo.head_portrait,
+            userInfo.point,
+            userInfo.balance1,
+            userInfo.balance4,
+            userInfo.gender,
+            userInfo.update_time,
+            originatorInfo.user_name,
+            originatorInfo.level_id,
+            originatorInfo.identify_no,
+            originatorInfo.phone,
+            originatorInfo.weixin,
+            originatorInfo.status,
+            originatorInfo.discount,
+            originatorInfo.discount_status
+        FROM
+            user_info userInfo
+                LEFT JOIN
+            originator_info originatorInfo ON userInfo.id = originatorInfo.user_id
+        WHERE userInfo.id = #{id}
+    </select>
 </mapper>

@@ -19,12 +19,10 @@ import com.jgzy.utils.DateUtil;
 import com.jgzy.utils.WeiXinPayUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -85,18 +83,13 @@ public class ShopGoodsOriginatorOrderController {
             resultWrapper.setErrorMsg(result.getFieldError().toString());
             return resultWrapper;
         }
-        boolean validateFlag = validateOrderParam(voList);
-        if (!validateFlag) {
-            resultWrapper.setErrorMsg("参数校验失败！");
-            return resultWrapper;
-        }
         // 运费方式
         Integer carriageType = voList.get(0).getCarriageType();
         // 是否存入库存
         Integer isStock = voList.get(0).getIsStock();
         // 获取用户权额
         List<AdvanceRechargeRecord> advanceRechargeRecordList = new ArrayList<>();
-        if (voList.get(0).getPayType().equals(BaseConstant.PAY_TYPE_3) || voList.get(0).getPayType().equals(BaseConstant.PAY_TYPE_5)){
+        if (voList.get(0).getPayType().equals(BaseConstant.PAY_TYPE_3) || voList.get(0).getPayType().equals(BaseConstant.PAY_TYPE_5)) {
             advanceRechargeRecordList = advanceRechargeRecordService.selectList(
                     new EntityWrapper<AdvanceRechargeRecord>()
                             .eq("user_id", id)
@@ -110,6 +103,10 @@ public class ShopGoodsOriginatorOrderController {
                 new EntityWrapper<ShopGoods>().in("id", shopGoodsIds));
         if (shopGoodsList == null || shopGoodsList.size() != voList.size()) {
             throw new OptimisticLockingFailureException("商品id有误");
+        }
+        boolean validateFlag = validateOrderParam(resultWrapper, voList, shopGoodsList);
+        if (!validateFlag) {
+            return resultWrapper;
         }
         // 微信认证 openid (必填)
         UserOauth userOauth = userOauthService.selectOne(
@@ -152,6 +149,8 @@ public class ShopGoodsOriginatorOrderController {
             shopGoodsOrder = initShopGoodsOrder(BaseConstant.ORDER_STATUS_3, calcAmountVo, voList.get(0));
             if (isStock.equals(BaseConstant.IS_STOCK_2)) {
                 shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_11);
+            } else if (isStock.equals(BaseConstant.IS_STOCK_3)) {
+                shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_4);
             }
             boolean successful = shopGoodsOrderService.insert(shopGoodsOrder);
             if (!successful) {
@@ -166,37 +165,6 @@ public class ShopGoodsOriginatorOrderController {
             }
             // 权额支付信息
             //List<AdvanceRechargeRecord> myAdvanceRechargeRecordList = initAdvanceRechargeRecordByAmount(calcAmountVo, advanceRechargeRecordList);
-            // 存入库存
-            if (isStock.equals(BaseConstant.IS_STOCK_2)) {
-                for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
-                    ShopStock shopStock = new ShopStock();
-                    shopStock.setUserInfoId(id);
-                    shopStock.setShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
-                    shopStock.setCount(shopGoodsOrderDetail.getBuyCount());
-                    shopStock.setDescribe(shopGoodsOrderDetail.getOrderId().toString());
-                    ShopStock stock = shopStockService.selectOne(
-                            new EntityWrapper<ShopStock>()
-                                    .eq("user_info_id", id)
-                                    .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
-                    boolean insert;
-                    if (stock == null) {
-                        shopStock.setCreateTime(date);
-                        insert = shopStockService.insert(shopStock);
-                    } else {
-                        shopStock.setUpdateTime(date);
-                        if (stock.getDescribe() != null && stock.getDescribe().length() > 650) {
-                            shopStock.setDescribe(stock.getDescribe().substring(stock.getDescribe().length() - 300) + "," + shopStock.getDescribe());
-                        }
-                        shopStock.setCount(shopStock.getCount()+stock.getCount());
-                        insert = shopStockService.update(shopStock, new EntityWrapper<ShopStock>()
-                                .eq("user_info_id", id)
-                                .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
-                    }
-                    if (!insert) {
-                        throw new OptimisticLockingFailureException("库存插入失败");
-                    }
-                }
-            }
             // 使用总金额，用于计算股权和佣金
             BigDecimal commissionAmont = new BigDecimal("0");
             commissionAmont = commissionAmont.add(shopGoodsOrder.getAdvanceAmount() == null ? new BigDecimal("0") : shopGoodsOrder.getAdvanceAmount());
@@ -253,7 +221,7 @@ public class ShopGoodsOriginatorOrderController {
                 distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_4);
                 userFundService.InsertUserFund(distributionUserFund);
             }
-            if (parentDistribution != null && parentDistribution.getCommissionDiscount()!=null &&
+            if (parentDistribution != null && parentDistribution.getCommissionDiscount() != null &&
                     parentDistribution.getCommissionDiscount().compareTo(new BigDecimal("0")) > 0) {
                 boolean updateCommission = userInfoService.updateCommissionDiscount(parentDistribution.getId(), commissionAmont.multiply(parentDistribution.getCommissionDiscount()));
                 if (!updateCommission) {
@@ -336,7 +304,7 @@ public class ShopGoodsOriginatorOrderController {
             Date updateTime = userInfo.getUpdateTime();
             userInfo.setUpdateTime(date);
             boolean b = userInfoService.update(userInfo, new EntityWrapper<UserInfo>()
-                    .eq(updateTime != null,"update_time", updateTime)
+                    .eq(updateTime != null, "update_time", updateTime)
                     .eq("id", userInfo.getId()));
 //            boolean b = userInfoService.updateById(userInfo);
             if (!b) {
@@ -355,14 +323,43 @@ public class ShopGoodsOriginatorOrderController {
             remain.setTradeTime(date);
             userFundService.InsertUserFund(remain);
         }
-        // 直接下单扣除库存
-        if (isStock.equals(BaseConstant.IS_STOCK_1)) {
-            for (ShopGoodsOrderDetail shopGoodsOrderDetail:shopGoodsOrderDetailList){
-                boolean a = shopGoodsService.updateStockById(shopGoodsOrderDetail.getBuyCount(),
-                        shopGoodsOrderDetail.getShopGoodsId());
-                if (!a){
-                    throw new OptimisticLockingFailureException("库存扣除失败");
+        // 存入库存
+        for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
+            if (isStock.equals(BaseConstant.IS_STOCK_2)) {
+                ShopStock shopStock = new ShopStock();
+                shopStock.setUserInfoId(id);
+                shopStock.setShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
+                shopStock.setCount(shopGoodsOrderDetail.getBuyCount());
+                shopStock.setDescribe(shopGoodsOrder.getOrderNo());
+                ShopStock stock = shopStockService.selectOne(
+                        new EntityWrapper<ShopStock>()
+                                .eq("user_info_id", id)
+                                .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
+                boolean insert;
+                if (stock == null) {
+                    shopStock.setCreateTime(date);
+                    insert = shopStockService.insert(shopStock);
+                } else {
+                    shopStock.setUpdateTime(date);
+                    if (stock.getDescribe() != null && stock.getDescribe().length() > 650) {
+                        shopStock.setDescribe(stock.getDescribe().substring(stock.getDescribe().length() - 300) + "," + shopStock.getDescribe());
+                    } else {
+                        shopStock.setDescribe(stock.getDescribe() + "," + shopStock.getDescribe());
+                    }
+                    shopStock.setCount(shopStock.getCount() + stock.getCount());
+                    insert = shopStockService.update(shopStock, new EntityWrapper<ShopStock>()
+                            .eq("user_info_id", id)
+                            .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
                 }
+                if (!insert) {
+                    throw new OptimisticLockingFailureException("库存插入失败");
+                }
+            }
+            // 下单扣除商品库存库存
+            boolean a = shopGoodsService.updateStockById(shopGoodsOrderDetail.getBuyCount(),
+                    shopGoodsOrderDetail.getShopGoodsId());
+            if (!a) {
+                throw new OptimisticLockingFailureException("库存扣除失败");
             }
         }
         return resultWrapper;
@@ -374,21 +371,46 @@ public class ShopGoodsOriginatorOrderController {
      * @param voList 参数
      * @return flag
      */
-    private boolean validateOrderParam(List<ShopGoodsOrderVo> voList) {
+    private boolean validateOrderParam(ResultWrapper<Map<String, String>> resultWrapper, List<ShopGoodsOrderVo> voList, List<ShopGoods> shopGoodsList) {
         for (ShopGoodsOrderVo shopGoodsOrderVo : voList) {
+            ShopGoods shopGoods = null;
+            for (ShopGoods goods : shopGoodsList)
+                if (shopGoodsOrderVo.getShopGoodsId().equals(goods.getId())) {
+                    shopGoods = goods;
+                    break;
+                }
+            if (shopGoods == null) {
+                resultWrapper.setErrorMsg("不存在该商品！");
+                resultWrapper.setSuccessful(false);
+                return false;
+            }
+            if (!shopGoods.getStockType().equals(1)) {
+                // 1-无库存可销售
+                if (shopGoods.getStock() < shopGoodsOrderVo.getCount()) {
+                    resultWrapper.setErrorMsg("商品:" + shopGoods.getShopName() + " 库存不足！");
+                    resultWrapper.setSuccessful(false);
+                    return false;
+                }
+            }
             // 权额支付
             if (shopGoodsOrderVo.getPayType().equals(BaseConstant.PAY_TYPE_3)) {
                 if (shopGoodsOrderVo.getAdvanceRechargeIds() == null) {
+                    resultWrapper.setErrorMsg("权额ID为空！");
+                    resultWrapper.setSuccessful(false);
                     return false;
                 }
             }
             // 实时发货
             if (shopGoodsOrderVo.getIsStock().equals(BaseConstant.IS_STOCK_1)) {
                 if (shopGoodsOrderVo.getShipperId() == null || shopGoodsOrderVo.getUserAddressId() == null) {
+                    resultWrapper.setErrorMsg("地址为空！");
+                    resultWrapper.setSuccessful(false);
                     return false;
                 }
                 // 运费标识
                 if (shopGoodsOrderVo.getCarriageType() == null) {
+                    resultWrapper.setErrorMsg("运费标识为空！");
+                    resultWrapper.setSuccessful(false);
                     return false;
                 }
             }
@@ -493,7 +515,7 @@ public class ShopGoodsOriginatorOrderController {
     private ShopGoodsOrder initShopGoodsOrder(Integer type, CalcAmountVo calcAmountVo, ShopGoodsOrderVo shopGoodsOrderVo) {
         // 支付类型
         int payType = shopGoodsOrderVo.getPayType();
-        // 是否放入库存 1=不存入 2=存入
+        // 是否放入库存 1=不存入 2=存入 3=自提
         Integer isStock = shopGoodsOrderVo.getIsStock();
         //运费标识 1-到付 2-等待计算
         Integer carriageType = shopGoodsOrderVo.getCarriageType();
@@ -505,6 +527,9 @@ public class ShopGoodsOriginatorOrderController {
         shopGoodsOrder.setIsStock(isStock);
         if (isStock.equals(BaseConstant.IS_STOCK_2)) {
             shopGoodsOrder.setReceiveAddress("库存单");
+        } else if (isStock.equals(BaseConstant.IS_STOCK_3)) {
+            shopGoodsOrder.setReceiveMan(shopGoodsOrderVo.getReceiveMan());
+            shopGoodsOrder.setContactPhone(shopGoodsOrderVo.getContactPhone());
         } else {
             // 地址 不是库存单则拼接地址
             UserAddressVo userAddressVo = userAddressService.selectDetailById(shopGoodsOrderVo.getUserAddressId());
@@ -933,8 +958,8 @@ public class ShopGoodsOriginatorOrderController {
         }
         // 2:合伙人本身折扣
         // 本身折扣
-        BigDecimal discountRate = originatorInfo.getDiscount()==null || (originatorInfo.getDiscount().compareTo(BigDecimal.ZERO) == 0) ?
-                BigDecimal.ONE:originatorInfo.getDiscount();
+        BigDecimal discountRate = originatorInfo.getDiscount() == null || (originatorInfo.getDiscount().compareTo(BigDecimal.ZERO) == 0) ?
+                BigDecimal.ONE : originatorInfo.getDiscount();
         // 3:满减折扣
         int size = 0;
         for (int i = 0; i < originatorDiscountInfoList.size(); i++) {
