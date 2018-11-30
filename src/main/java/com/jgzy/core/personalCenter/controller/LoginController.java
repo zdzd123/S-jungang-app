@@ -40,8 +40,6 @@ import java.util.HashMap;
 @RequestMapping(value = "/api/login")
 public class LoginController {
     @Autowired
-    private ILoginService loginService;
-    @Autowired
     private IUserInfoService userInfoService;
     @Autowired
     private IUserOauthService userOauthService;
@@ -77,7 +75,7 @@ public class LoginController {
 //                    "  \"country\": \"中国\",\n" +
 //                    "  \"province\": \"江苏\",\n" +
 //                    "  \"city\": \"无锡\",\n" +
-//                    "  \"openid\": \"oRwM80wilL_xQI2zO_o_JjNZOT2A\",\n" +
+//                    "  \"openid\": \"oRwM80xcOq2KkGwq-lU6ZWlik0ZA\",\n" +
 //                    "  \"sex\": 1,\n" +
 //                    "  \"nickname\": \"Rainbow_Chen\",\n" +
 //                    "  \"headimgurl\": \"http://thirdwx.qlogo.cn/mmopen/vi_32/DYAIOgq83epoucTYIjUiasjIkHfUsXuGHA9uicTdFMRFQmlIrgtpkAVhl8E5IokW8d1icF04bVEEfzmL7SD3eHdYg/132\",\n" +
@@ -90,11 +88,7 @@ public class LoginController {
         openid = userInfoJsonObject.getString("openid");
         String nickname = EmojiFilterUtil.filterEmoji2(userInfoJsonObject.getString("nickname"));
         int sex = userInfoJsonObject.getInt("sex");
-//            String province = userInfoJsonObject.getString("province");
-//            String city = userInfoJsonObject.getString("city");
-//            String country = userInfoJsonObject.getString("country");
         String headimgurl = userInfoJsonObject.getString("headimgurl");
-        //String unionid = userInfoJsonObject.getString("unionid");
 
         String oauth_name = "weixinh5";
         String oauth_openid = openid;
@@ -109,8 +103,6 @@ public class LoginController {
             return resultWrapper;
         }
 
-        UserOauth user_oauth = userOauthService.selectOne(new EntityWrapper<UserOauth>()
-                .eq("oauth_openid", oauth_openid).eq("oauth_name", "weixin"));
         UserOauth user_oauth_h5 = userOauthService.selectOne(new EntityWrapper<UserOauth>()
                 .eq("oauth_openid", oauth_openid));
 
@@ -135,6 +127,8 @@ public class LoginController {
                     setLoginFail(resultWrapper);
                     return resultWrapper;
                 }
+                user_oauth_h5.setUserId(model.getId());
+                userOauthService.updateById(user_oauth_h5);
                 resultWrapper.setErrorMsg("登录成功");
                 resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
                 LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
@@ -154,62 +148,7 @@ public class LoginController {
                 RedisUtil.hset(RedisConstant.REDIS_USER_KEY, user.getToken(), user, RedisConstant.REDIS_LOGIN_TIME_OUT);
                 return resultWrapper;
             }
-
-        } else if (user_oauth_h5 == null && user_oauth != null) {
-            UserInfo user = userInfoService.selectById(user_oauth.getUserId());
-            System.out.println("用户认证   user_oauth不为空！user_oauth_h5为空 ");
-
-            // 用户认证
-            UserOauth newuoModel = new UserOauth();
-            newuoModel.setOauthName(oauth_name);
-            newuoModel.setOauthOpenid(oauth_openid);
-            newuoModel.setAddTime(new Date());
-            newuoModel.setUserName(nickname);
-            newuoModel.setUserId(user_oauth.getUserId());
-            System.out.println("插入user_oauth_h5 ");
-            boolean insert = userOauthService.insert(newuoModel);
-            if (!insert) {
-                setLoginFail(resultWrapper);
-                return resultWrapper;
-            }
-            if (user == null) {
-                System.out.println("用户 为空！");
-                // 创建新用户
-                UserInfo model = new UserInfo();
-                model.setId(user_oauth.getUserId());
-                model.setNickname(nickname);
-                model.setGender(sex);
-                model.setHeadPortrait(head_portrait);
-                model.setRegisterTime(new Date());
-                model.setFromSource(platform);
-                model.setValidStatus(1);
-                model.setUserLevelId(1);
-                model.setToken(CommonUtil.getUUID());
-                boolean insertUser = userInfoService.insert(model);
-                if (!insertUser) {
-                    setLoginFail(resultWrapper);
-                    return resultWrapper;
-                }
-                resultWrapper.setErrorMsg("登录成功");
-                resultWrapper.setErrorCode(ErrorCodeEnum.SUCCESS.getKey());
-                LoginVo loginVo = initLoginVo(model.getToken(), oauth_openid);
-                resultWrapper.setResult(loginVo);
-                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, model.getToken(), model, RedisConstant.REDIS_LOGIN_TIME_OUT);
-                return resultWrapper;
-            } else {
-                user.setToken(CommonUtil.getUUID());
-                boolean updateById = userInfoService.updateById(user);
-                if (!updateById) {
-                    setLoginFail(resultWrapper);
-                    return resultWrapper;
-                }
-                LoginVo loginVo = initLoginVo(user.getToken(), oauth_openid);
-                resultWrapper.setResult(loginVo);
-                RedisUtil.hset(RedisConstant.REDIS_USER_KEY, user.getToken(), user, RedisConstant.REDIS_LOGIN_TIME_OUT);
-                return resultWrapper;
-            }
-
-        } else {
+        }else {
             System.out.println("用户认证 为空！ user_oauth is null; user_oauth_h5 is null");
             // 用户信息
             UserInfo model = new UserInfo();

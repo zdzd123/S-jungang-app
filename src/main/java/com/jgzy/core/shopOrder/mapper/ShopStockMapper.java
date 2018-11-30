@@ -32,7 +32,9 @@ public interface ShopStockMapper extends BaseMapper<ShopStock> {
      *
      * @param buyCount    购买数量
      * @param shopGoodsId 商品id
+     * @param userId
      * @return flag
      */
-    boolean updateMyShopStockByGoodsId(@Param("buyCount") Integer buyCount, @Param("shopGoodsId") Integer shopGoodsId);
+    boolean updateMyShopStockByGoodsId(@Param("buyCount") Integer buyCount, @Param("shopGoodsId") Integer shopGoodsId,
+                                       @Param("userId") Integer userId);
 }

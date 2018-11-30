@@ -63,4 +63,12 @@ public interface IUserInfoService extends IService<UserInfo> {
      * @return 用户信息
      */
     UserInfoVo selectMyUserJoinOriginatorInfo(Integer id);
+
+    /**
+     * 更新用户金额
+     *
+     * @param myUser user
+     * @return flag
+     */
+    boolean updateMyBalance(UserInfo myUser);
 }

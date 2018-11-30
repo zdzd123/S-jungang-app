@@ -7,7 +7,6 @@ import com.jgzy.entity.po.UserInfo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
-import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 /**
@@ -64,4 +63,12 @@ public interface UserInfoMapper extends BaseMapper<UserInfo> {
      * @return 用户详细
      */
     UserInfoVo selectMyUserJoinOriginatorInfo(@Param("id") Integer id);
+
+    /**
+     * 更新用户金额
+     *
+     * @param myUser 用户
+     * @return flag
+     */
+    boolean updateMyBalance(UserInfo myUser);
 }

@@ -315,7 +315,7 @@ public class ShopStockController {
 //            }
             // 下单扣除库存
             boolean c = shopStockService.updateMyShopStockByGoodsId(shopGoodsOrderDetail.getBuyCount(),
-                    shopGoodsOrderDetail.getShopGoodsId());
+                    shopGoodsOrderDetail.getShopGoodsId(), shopGoodsOrder.getSubmitOrderUser());
             if (!c) {
                 throw new OptimisticLockingFailureException("库存扣除失败");
             }

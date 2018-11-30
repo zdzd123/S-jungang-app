@@ -121,13 +121,13 @@ public class ShopGoodsOrder implements Serializable {
     private Integer groupbuyOrderId;
     @ApiModelProperty(value = "tradeNo", example = "1")
     private String tradeNo;
-    @ApiModelProperty(value = "userDel", example = "1")
+    @ApiModelProperty(value = "用户删除 0-删除", example = "1")
     private Integer userDel;
-    @ApiModelProperty(value = "isStock", example = "1")
+    @ApiModelProperty(value = "判断是否入库 1-下单直邮 2-放入库存 3-库存自提", example = "1")
     private Integer isStock;
     @ApiModelProperty(value = "isPoint", example = "1")
     private Integer isPoint;
-    @ApiModelProperty(value = "isRead", example = "1")
+    @ApiModelProperty(value = "返点标识 0-未返点 1-已返点", example = "1")
     private Integer isRead;
     @ApiModelProperty(value = "unionId", example = "1")
     private String unionId;

@@ -2,6 +2,7 @@ package com.jgzy.core.shopOrder.mapper;
 
 import com.baomidou.mybatisplus.mapper.BaseMapper;
 import com.baomidou.mybatisplus.plugins.Page;
+import com.jgzy.core.shopOrder.vo.ShopGoodsOrderStatisticVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
 import com.jgzy.core.shopOrder.vo.ShopgoodsOrderDetailVo;
 import com.jgzy.entity.po.ShopGoodsOrder;
@@ -20,15 +21,6 @@ import java.util.List;
  */
 @Repository
 public interface ShopGoodsOrderMapper extends BaseMapper<ShopGoodsOrder> {
-    /**
-     * 查询商品订单，包含详情和属性
-     *
-     * @param orderStatus 订单状态
-     * @param split1      订单来源
-     * @return 订单
-     */
-    List<ShopGoodsOrderVo> selectMyOrderPage(Page<ShopGoodsOrderVo> page, @Param("orderStatus") Integer orderStatus, @Param("list") String[] split1);
-
     /**
      * 查询商品订单，包含详情和属性
      *
@@ -67,4 +59,12 @@ public interface ShopGoodsOrderMapper extends BaseMapper<ShopGoodsOrder> {
      * @return 商品信息
      */
     ShopGoodsOrderVo selectOneOrder(@Param("id") Integer id, @Param("orderNo") String orderNo);
+
+    /**
+     * 统计订单个数
+     *
+     * @param id 用户ID
+     * @return 个数
+     */
+    List<ShopGoodsOrderStatisticVo> statistics(@Param("id") Integer id);
 }

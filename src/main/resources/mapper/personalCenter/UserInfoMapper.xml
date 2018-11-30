@@ -38,7 +38,7 @@
         update user_info set point = IFNULL(point, 0) + #{stockRight} where id =#{id}
     </update>
     <update id="updateCommissionDiscount">
-      update user_info set balance1 = IFNULL(balance1, 0) + #{commission} where id = #{id}
+      update user_info set balance3 = IFNULL(balance3, 0) + #{commission} where id = #{id}
     </update>
     <select id="selectMyUserLevelById" resultType="com.jgzy.entity.po.UserInfo">
         SELECT
@@ -77,8 +77,11 @@
             charitable,
             update_time
         FROM
-            user_info info LEFT JOIN originator_info ori ON info.id=ori.user_id
-        WHERE info.id=#{id}
+            user_info info
+                LEFT JOIN
+            originator_info ori ON info.id = ori.user_id AND ori.status = 0
+        WHERE
+          info.id = #{id}
     </select>
     <update id="withDrawAmount">
         UPDATE user_info
@@ -111,4 +114,26 @@
             originator_info originatorInfo ON userInfo.id = originatorInfo.user_id
         WHERE userInfo.id = #{id}
     </select>
+    <update id="updateMyBalance" parameterType="com.jgzy.entity.po.UserInfo">
+        UPDATE user_info
+        <set>
+            <if test="balance1 != null">
+                balance1 = IFNULL( balance1, 0 ) + #{balance1},
+            </if>
+            <if test="balance2 != null">
+                balance2 = IFNULL( balance2, 0 ) + #{balance2},
+            </if>
+            <if test="balance3 != null">
+                balance3 = IFNULL( balance3, 0 ) + #{balance3},
+            </if>
+            <if test="balance4 != null">
+                balance4 = IFNULL( balance4, 0 ) + #{balance4},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime}
+            </if>
+        </set>
+        WHERE
+          id = #{id}
+    </update>
 </mapper>

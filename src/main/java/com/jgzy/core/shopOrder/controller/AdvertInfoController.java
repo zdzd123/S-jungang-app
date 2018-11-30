@@ -121,6 +121,7 @@ public class AdvertInfoController {
                     List<ShopGoods> shopGoodsList = shopGoodsService.selectList(
                             new EntityWrapper<ShopGoods>()
                                     .eq("platform_goods_category_id", advertInfo.getPicValueParameter())
+                                    .eq("is_special", BaseConstant.IS_SPECIAL_0)
                                     .last("limit 5"));
                     advertInfo.setShopGoods(shopGoodsList);
                     advertInfo.setPlatformGoodsCategoryId(Integer.parseInt(advertInfo.getPicValueParameter()));

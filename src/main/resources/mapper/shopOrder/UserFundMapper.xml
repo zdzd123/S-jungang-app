@@ -27,87 +27,93 @@
     </select>
     <select id="selectUserSumIncreaseMoney" resultType="com.jgzy.core.personalCenter.vo.MyTeamDetailVo">
         SELECT
-          a.id,a.nickname,a.head_portrait,
-          sum(if(a.`status`=0,a.increase_money,0)) originatorIncreaseMoney,
-          sum(if(a.`status` <![CDATA[ <> ]]> 0 or a.`status` is NULL,a.increase_money,0)) increaseMoney,
-	      a.`status`
+            a.id,
+            a.nickname,
+            a.head_portrait,
+            SUM(IF(a.bussiness_type = 7,
+                a.increase_money,
+                0)) originatorIncreaseMoney,
+            SUM(IF(a.bussiness_type = 8,
+                a.increase_money,
+                0)) increaseMoney
         FROM
-        (
-          SELECT
-            fund.increase_money,
-            userInfo.id,
-            userinfo.nickname,
-            userInfo.head_portrait,
-            originator.`status`
-          FROM
-          user_fund fund
-          LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
-          LEFT JOIN user_info userInfo ON userInfo.id = shopOrder.submit_order_user
-          LEFT JOIN originator_info originator ON userInfo.id = originator.user_id
-          WHERE
-            fund.trade_type=1
-            AND fund.account_type=2
-            AND fund.pay_type=4
-            AND (bussiness_type=7 or bussiness_type=8)
-            <if test="id != null">
-                AND FIND_IN_SET(fund.trade_user_id, getDistributionList(#{id}, 1))
-            </if>
-            <if test="status == 0">
-                AND originator.`status` <![CDATA[ = ]]> 0
-            </if>
-            <if test="status == 1">
-                AND (originator.`status` <![CDATA[ <> ]]> 0 OR originator.`status` is null)
-            </if>
-        ) a
+            (SELECT
+                fund.increase_money,
+                    fund.bussiness_type,
+                    userInfo.id,
+                    userinfo.nickname,
+                    userInfo.head_portrait
+            FROM
+                user_info userInfo
+            LEFT JOIN shop_goods_order shopOrder ON userInfo.id = shopOrder.submit_order_user
+            LEFT JOIN user_fund fund ON fund.order_no = shopOrder.trade_no
+                AND fund.trade_type = 1
+                AND fund.account_type = 2
+                AND fund.pay_type = 4
+                AND (bussiness_type = 7 OR bussiness_type = 8)
+            WHERE
+                userInfo.id IN
+                <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            ) a
         GROUP BY a.id
-        ORDER BY originatorIncreaseMoney,increaseMoney DESC
+        <if test="status == 0">
+            ORDER BY originatorIncreaseMoney ASC
+        </if>
+        <if test="status == 1">
+            ORDER BY increaseMoney ASC
+        </if>
     </select>
     <select id="selectUserSumIncreaseMoneyList" resultType="com.jgzy.core.personalCenter.vo.MyTeamDetailVo">
         SELECT
-          a.id,a.nickname,a.head_portrait,
-          sum(if(a.`status`=0,a.increase_money,0)) originatorIncreaseMoney,
-          sum(if(a.`status` <![CDATA[ <> ]]> 0 or a.`status` is NULL,a.increase_money,0)) increaseMoney,
-          a.`status`
+            a.id,
+            a.nickname,
+            a.head_portrait,
+            SUM(IF(a.bussiness_type = 7,
+              a.increase_money,
+              0)) originatorIncreaseMoney,
+            SUM(IF(a.bussiness_type = 8,
+              a.increase_money,
+              0)) increaseMoney
         FROM
-        (
-            SELECT
+            (SELECT
                 fund.increase_money,
+                fund.bussiness_type,
                 userInfo.id,
                 userinfo.nickname,
-                userInfo.head_portrait,
-                originator.`status`
+                userInfo.head_portrait
             FROM
-              user_fund fund
-            LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
-            LEFT JOIN user_info userInfo ON userInfo.id = shopOrder.submit_order_user
-            LEFT JOIN originator_info originator ON userInfo.id = originator.user_id
+              user_info userInfo
+            LEFT JOIN shop_goods_order shopOrder ON userInfo.id = shopOrder.submit_order_user
+            LEFT JOIN user_fund fund ON fund.order_no = shopOrder.trade_no
+                AND fund.trade_type = 1
+                AND fund.account_type = 2
+                AND fund.pay_type = 4
+                AND (fund.bussiness_type = 7 OR fund.bussiness_type = 8)
+                <if test="begin != null and end != null">
+                    AND fund.trade_time <![CDATA[ >= ]]> #{begin}
+                    AND fund.trade_time <![CDATA[ <= ]]> #{end}
+                </if>
             WHERE
-              fund.trade_type=1
-            AND fund.account_type=2
-            AND fund.pay_type=4
-            AND (bussiness_type=7 or bussiness_type=8)
-            <if test="id != null">
-                AND FIND_IN_SET(fund.trade_user_id, getDistributionList(#{id}, 1))
-            </if>
-            <if test="begin != null and end != null">
-                AND fund.trade_time <![CDATA[ >= ]]> #{begin}
-                AND fund.trade_time <![CDATA[ <= ]]> #{end}
-            </if>
-            <if test="status == 0">
-                AND originator.`status` <![CDATA[ = ]]> 0
-            </if>
-            <if test="status == 1">
-                AND (originator.`status` <![CDATA[ <> ]]> 0 OR originator.`status` is null)
-            </if>
-        ) a
-        GROUP BY a.id
-        ORDER BY originatorIncreaseMoney,increaseMoney DESC
+              userInfo.id IN
+                <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            ) a
+            GROUP BY a.id
+        <if test="status == 0">
+            ORDER BY originatorIncreaseMoney ASC
+        </if>
+        <if test="status == 1">
+            ORDER BY increaseMoney ASC
+        </if>
     </select>
     <select id="selectStatisticsIncreaseMoney" resultType="com.jgzy.core.personalCenter.vo.MyTeamVo">
         SELECT
-          sum( fund.increase_money ) totalIncreaseMoney
+        sum( fund.increase_money ) totalIncreaseMoney
         FROM
-          user_fund fund
+        user_fund fund
         LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
         LEFT JOIN user_info userInfo ON userInfo.id = shopOrder.submit_order_user
         LEFT JOIN originator_info originator ON userInfo.id = originator.user_id
@@ -129,5 +135,38 @@
         <if test="status == 1">
             AND (originator.`status` <![CDATA[ <> ]]> 0 OR originator.`status` is null)
         </if>
+    </select>
+    <select id="getDistributionList" resultType="string">
+        select getDistributionList(#{id}, 1)
+    </select>
+    <select id="selectMySumIncreaseMoneyList" resultType="com.jgzy.core.personalCenter.vo.MyTeamDetailVo">
+        SELECT
+            a.nickname,
+            a.head_portrait,
+            a.balance1,
+            a.balance4,
+            SUM(IF(a.bussiness_type = 7,
+                a.increase_money,
+                0)) originatorIncreaseMoney,
+            SUM(IF(a.bussiness_type = 8,
+                a.increase_money,
+                0)) increaseMoney
+        FROM
+            (SELECT
+                userInfo.id,
+                    userinfo.nickname,
+                    userInfo.head_portrait,
+                    userInfo.balance1,
+                    userInfo.balance4,
+                    fund.increase_money,
+                    fund.bussiness_type
+            FROM
+                user_info userInfo
+            LEFT JOIN user_fund fund ON userInfo.id = fund.trade_user_id
+                AND fund.trade_type = 1
+                    AND fund.account_type = 2
+                    AND fund.pay_type = 4
+                    AND (bussiness_type = 7 OR bussiness_type = 8)
+            WHERE userInfo.id = #{id}) a
     </select>
 </mapper>

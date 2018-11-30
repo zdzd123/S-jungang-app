@@ -88,6 +88,7 @@
         <where>
             id = #{userAddressId}
         </where>
+        ORDER BY is_default desc
     </select>
     <select id="selectUserAddressList" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
         SELECT
@@ -104,6 +105,6 @@
           user_address address
         where
             create_user = #{id}
-        order by is_default desc
+        ORDER BY is_default desc
     </select>
 </mapper>

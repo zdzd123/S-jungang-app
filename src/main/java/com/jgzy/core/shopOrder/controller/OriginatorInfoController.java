@@ -8,16 +8,11 @@ import com.jgzy.core.personalCenter.service.IUserDistributionService;
 import com.jgzy.core.shopOrder.service.IOriginatorInfoService;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
-import com.jgzy.entity.common.WeiXinData;
-import com.jgzy.entity.common.WeiXinTradeType;
 import com.jgzy.entity.po.OriginatorInfo;
 import com.jgzy.entity.po.UserDistribution;
-import com.jgzy.utils.CommonUtil;
 import com.jgzy.utils.DateUtil;
 import com.jgzy.utils.ValidatorUtil;
-import com.jgzy.utils.WeiXinPayUtil;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.stereotype.Controller;
-
 import java.math.BigDecimal;
-import java.net.InetAddress;
 import java.util.Date;
-import java.util.HashMap;
 
 /**
  * <p>
@@ -67,12 +58,12 @@ public class OriginatorInfoController {
         boolean identifyNoMatches = po.getIdentifyNo().matches("(^\\d{15}$)|(^\\d{18}$)|(^\\d{17}(\\d|X|x)$)");
         // 手机号验证
         boolean phoneMatches = po.getPhone().matches("1[34578]\\d{9}");
-        if (!identifyNoMatches){
+        if (!identifyNoMatches) {
             resultWrapper.setResult("身份证不正确");
             resultWrapper.setSuccessful(false);
             return resultWrapper;
         }
-        if (!phoneMatches){
+        if (!phoneMatches) {
             resultWrapper.setResult("手机号不正确");
             resultWrapper.setSuccessful(false);
             return resultWrapper;
@@ -94,17 +85,10 @@ public class OriginatorInfoController {
 //        userDistribution.setParentId(parentUserId);
         userDistribution.setUserId(id);
         userDistribution.setAddTime(date);
-        // 判断是否存在父级
-        int count = userDistributionService.selectCount(new EntityWrapper<UserDistribution>().eq("user_id", id));
-        boolean insert = false;
-        if (count == 0){
-            insert = userDistributionService.insert(userDistribution);
-        }
-        if (!successful && !insert) {
+        if (!successful) {
             throw new OptimisticLockingFailureException("插入合伙人失败");
         }
         resultWrapper.setResult(DateUtil.formatDate(date, DateUtil.DATETIME_FORMAT));
-        resultWrapper.setSuccessful(successful);
         return resultWrapper;
     }
 

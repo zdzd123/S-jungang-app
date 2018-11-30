@@ -8,7 +8,7 @@
     <!-- 以下的大概意思是：1.先按日期存日志，日期变了，将前一天的日志文件名重命名为XXX%日期%索引，新的日志仍然是info.log -->
     <!--             2.如果日期没有发生变化，但是当前日志的文件大小超过10KB时，对当前日志进行分割 重命名-->
     <appender name="INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>../logs/ahomet/info/info.log</File>
+        <File>../logs/jgzy/info/info.log</File>
         <encoder>
             <pattern>${FILE_LOG_PATTERN}</pattern>
             <!-- 控制台也要使用UTF-8，不要使用GBK，否则会中文乱码 -->
@@ -18,10 +18,10 @@
         <!-- 最常用的滚动策略，它根据时间来制定滚动策略，既负责滚动也负责出发滚动 -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!--日志文件的名称-->
-            <fileNamePattern>../logs/ahomet/info/info-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+            <fileNamePattern>../logs/jgzy/info/info-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy  class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <!-- maxFileSize:这是活动文件的大小，默认值是10KB，测试时可改成1KB看效果 -->
-                <maxFileSize>2MB</maxFileSize>
+                <maxFileSize>100MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
             <!--日志文件保留天数-->
             <maxHistory>30</maxHistory>
@@ -35,15 +35,15 @@
     </appender>
 
     <appender name="ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>../logs/ahomet/error/error.log</File>
+        <File>../logs/jgzy/error/error.log</File>
         <encoder>
             <pattern>${FILE_LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>../logs/ahomet/error/error-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+            <fileNamePattern>../logs/jgzy/error/error-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy  class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>2MB</maxFileSize>
+                <maxFileSize>10MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
@@ -94,7 +94,6 @@
             <!--</dataSource>-->
         <!--</connectionSource>-->
     <!--</appender>-->
-
 
     <!-- 级别依次为【从高到低】：FATAL > ERROR > WARN > INFO > DEBUG > TRACE  -->
     <root level="INFO">

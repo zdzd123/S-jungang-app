@@ -72,4 +72,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     public UserInfoVo selectMyUserJoinOriginatorInfo(Integer id) {
         return userInfoMapper.selectMyUserJoinOriginatorInfo(id);
     }
+
+    @Override
+    public boolean updateMyBalance(UserInfo myUser) {
+        return userInfoMapper.updateMyBalance(myUser);
+    }
 }

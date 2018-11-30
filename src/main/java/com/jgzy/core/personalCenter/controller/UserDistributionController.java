@@ -12,6 +12,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.web.bind.annotation.*;
@@ -47,18 +48,24 @@ public class UserDistributionController {
         return resultWrapper;
     }
 
-    @GetMapping(value = "/save/{parentId:\\d+}")
+    @GetMapping(value = "/save/{parentId}")
     @ApiOperation(value = "绑定用户关系", notes = "绑定用户关系")
-    @ApiImplicitParam(name = "parentId",value = "父级ID",required = true, paramType = "path",dataType = "Integer")
-    public ResultWrapper<UserDistribution> save(@PathVariable("parentId") Integer parentId) {
+    @ApiImplicitParam(name = "parentId",value = "父级ID", paramType = "path",dataType = "String")
+    public ResultWrapper<UserDistribution> save(@PathVariable("parentId") String parentId) {
         ResultWrapper<UserDistribution> resultWrapper = new ResultWrapper<>();
 
         UserDistribution userDistribution = userDistributionService.selectOne(new EntityWrapper<UserDistribution>()
                 .eq("user_id", UserUuidThreadLocal.get().getId()));
+        Integer myParentId;
+        if (parentId.equals("null")){
+            myParentId = null;
+        }else {
+            myParentId = Integer.valueOf(parentId);
+        }
         if (userDistribution == null){
             // 绑定成为下级
             userDistribution = new UserDistribution();
-            userDistribution.setParentId(parentId);
+            userDistribution.setParentId(myParentId);
             userDistribution.setUserId(UserUuidThreadLocal.get().getId());
             userDistribution.setAddTime(new Date());
             boolean insert = userDistributionService.insert(userDistribution);

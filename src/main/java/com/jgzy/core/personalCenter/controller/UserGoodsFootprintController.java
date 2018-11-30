@@ -54,7 +54,7 @@ public class UserGoodsFootprintController {
     }
 
     @ApiOperation(value = "删除指定ID的足迹", notes = "删除指定ID的足迹")
-    @ApiImplicitParam(name = "id",value = "用户ID",required = true, paramType = "path",dataType = "Integer")
+    @ApiImplicitParam(name = "id",value = "足迹ID",required = true, paramType = "path",dataType = "Integer")
     @DeleteMapping("/{id:\\d+}")
     public ResultWrapper<UserGoodsFootprint> delete(@PathVariable("id") Integer id){
         ResultWrapper<UserGoodsFootprint> resultWrapper = new ResultWrapper<>();

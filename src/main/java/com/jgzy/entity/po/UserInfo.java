@@ -85,14 +85,14 @@ public class UserInfo implements Serializable {
     @ApiModelProperty(value = "余额1(可提现)", example = "11")
     private BigDecimal balance1;
     /**
-     * 我麾下——合伙人——消费
+     * 待使用股权
      */
-    @ApiModelProperty(value = "我麾下——合伙人——消费", example = "11")
+    @ApiModelProperty(value = "待使用股权", example = "11")
     private BigDecimal balance2;
     /**
-     * 我麾下——消费者——消费
+     * 待使用佣金
      */
-    @ApiModelProperty(value = "我麾下——消费者——消费", example = "11")
+    @ApiModelProperty(value = "待使用佣金", example = "11")
     private BigDecimal balance3;
     /**
      * 冻结金额

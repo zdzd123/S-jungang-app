@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jgzy.core.shopOrder.mapper.ShopGoodsCommentMapper">
-
+    <select id="selectMyGoodsCommentPage" resultType="com.jgzy.core.shopOrder.vo.ShopGoodsCommentVo">
+        SELECT
+            goodsComment.description_score,
+            goodsComment.appraise_content,
+            goodsComment.appraise_time,
+            userInfo.nickname,
+            userInfo.head_portrait
+        FROM
+            shop_goods_comment goodsComment
+            INNER JOIN user_info userInfo ON goodsComment.user_id = userInfo.id
+        WHERE
+            goodsComment.shop_goods_id = #{shopGoodsId}
+        ORDER BY goodsComment.id DESC
+    </select>
 </mapper>

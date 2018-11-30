@@ -14,19 +14,22 @@
         <result column="describe" jdbcType="VARCHAR" property="describe"/>
         <result column="play_times" jdbcType="INTEGER" property="playTimes"/>
         <result column="add_time" jdbcType="TIMESTAMP" property="addTime"/>
-        <collection property="shopVideoGoodsList" ofType="com.jgzy.entity.po.ShopVideoGoods"
+        <collection property="shopVideoGoodsList" ofType="com.jgzy.core.news.vo.ShopVideoGoodsVo"
                     javaType="java.util.ArrayList">
-            <id column="id" jdbcType="INTEGER" property="id"/>
-            <result column="shop_video_info_id" jdbcType="INTEGER" property="shopVideoInfoId"/>
             <result column="shop_goods_id" jdbcType="INTEGER" property="shopGoodsId"/>
-            <result column="sort" jdbcType="INTEGER" property="sort"/>
-            <result column="add_time" jdbcType="TIMESTAMP" property="addTime"/>
+            <result column="shop_name" jdbcType="VARCHAR" property="shopName"/>
+            <result column="market_price" jdbcType="DECIMAL" property="marketPrice"/>
+            <result column="stock" jdbcType="INTEGER" property="stock"/>
+            <result column="stock_type" jdbcType="INTEGER" property="stockType"/>
+            <result column="pic" jdbcType="VARCHAR" property="pic"/>
+            <result column="cost_price" jdbcType="DECIMAL" property="costPrice"/>
+            <result column="menber_price" jdbcType="DECIMAL" property="menberPrice"/>
+            <result column="goods_unit" jdbcType="VARCHAR" property="goodsUnit"/>
+            <result column="goods_unit_count" jdbcType="INTEGER" property="goodsUnitCount"/>
+            <result column="abstracts" jdbcType="VARCHAR" property="abstracts"/>
         </collection>
     </resultMap>
 
-    <sql id="ShopVideoGoodsColumnList">
-      shopVideoGoods.shop_video_info_id, shopVideoGoods.shop_goods_id, shopVideoGoods.sort
-    </sql>
     <sql id="ShopVideoInfoColumnList">
       shopVideInfo.id, shopVideInfo.shop_info_id, shopVideInfo.platform_video_category_id, shopVideInfo.title,
       shopVideInfo.subtitle, shopVideInfo.time_length, shopVideInfo.play_url, shopVideInfo.remarks,
@@ -40,10 +43,15 @@
         WHERE id = #{id}
     </update>
     <select id="selectMyShopVideo" resultMap="ShopVideoInfoResultMap">
-        SELECT<include refid="ShopVideoInfoColumnList"/>,
-        <include refid="ShopVideoGoodsColumnList"/>
-        FROM shop_video_info shopVideInfo LEFT JOIN shop_video_goods shopVideoGoods
-        ON shopVideInfo.id = shopVideoGoods.shop_video_info_id
-        WHERE shopVideInfo.id= #{id}
+        SELECT<include refid="ShopVideoInfoColumnList"/>,shopVideoGoods.shop_goods_id,shopGoods.shop_name,
+          shopGoods.market_price,shopGoods.stock,shopGoods.stock_type,shopGoods.pic,shopGoods.cost_price,
+          shopGoods.menber_price,shopGoods.goods_unit,shopGoods.goods_unit_count,shopGoods.abstracts
+        FROM
+            shop_video_info shopVideInfo
+            LEFT JOIN shop_video_goods shopVideoGoods ON shopVideInfo.id = shopVideoGoods.shop_video_info_id
+            LEFT JOIN shop_goods shopGoods ON shopVideoGoods.shop_goods_id = shopGoods.id
+            AND shopGoods.STATUS = 2
+        WHERE
+          shopVideInfo.id = #{id}
     </select>
 </mapper>

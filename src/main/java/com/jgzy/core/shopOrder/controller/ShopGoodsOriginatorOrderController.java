@@ -8,6 +8,7 @@ import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.core.shopOrder.vo.CalcAmountVo;
 import com.jgzy.core.shopOrder.vo.CalcSingleAmountVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
+import com.jgzy.core.shopOrder.vo.ShopgoodsOrderDetailVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.common.WeiXinData;
@@ -69,8 +70,6 @@ public class ShopGoodsOriginatorOrderController {
     private IOriginatorInfoOrderService originatorInfoOrderService;
     @Autowired
     private IUserDistributionConstantService userDistributionConstantService;
-    @Autowired
-    private IShopGoodsAttributeService shopGoodsAttributeService;
 
     @ApiOperation(value = "添加订单唤起微信支付", notes = "添加订单唤起微信支付")
     @PostMapping(value = "/weixin/save")
@@ -143,12 +142,16 @@ public class ShopGoodsOriginatorOrderController {
         ShopGoodsOrder shopGoodsOrder;
         // 订单详情
         List<ShopGoodsOrderDetail> shopGoodsOrderDetailList;
+        // 待使用股权
+        BigDecimal balance2 = BigDecimal.ZERO;
+        // 待使用佣金
+        BigDecimal balance3 = BigDecimal.ZERO;
         // 生成权额信息
         if (calcAmountVo.getActualAmount() == null || calcAmountVo.getActualAmount().compareTo(BigDecimal.ZERO) == 0) {
             // 插入订单
             shopGoodsOrder = initShopGoodsOrder(BaseConstant.ORDER_STATUS_3, calcAmountVo, voList.get(0));
             if (isStock.equals(BaseConstant.IS_STOCK_2)) {
-                shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_11);
+                shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_5);
             } else if (isStock.equals(BaseConstant.IS_STOCK_3)) {
                 shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_4);
             }
@@ -163,18 +166,17 @@ public class ShopGoodsOriginatorOrderController {
             if (!batch) {
                 throw new OptimisticLockingFailureException("订单详情插入失败");
             }
-            // 权额支付信息
-            //List<AdvanceRechargeRecord> myAdvanceRechargeRecordList = initAdvanceRechargeRecordByAmount(calcAmountVo, advanceRechargeRecordList);
             // 使用总金额，用于计算股权和佣金
             BigDecimal commissionAmont = new BigDecimal("0");
-            commissionAmont = commissionAmont.add(shopGoodsOrder.getAdvanceAmount() == null ? new BigDecimal("0") : shopGoodsOrder.getAdvanceAmount());
-            commissionAmont = commissionAmont.add(shopGoodsOrder.getTotalPoint() == null ? new BigDecimal("0") : shopGoodsOrder.getTotalPoint());
-            // TODO 品牌费返现
+            commissionAmont = commissionAmont.add(shopGoodsOrder.getAdvanceAmount() == null ? BigDecimal.ZERO : shopGoodsOrder.getAdvanceAmount());
+            commissionAmont = commissionAmont.add(shopGoodsOrder.getTotalPoint() == null ? BigDecimal.ZERO : shopGoodsOrder.getTotalPoint());
+            // 品牌费返现
             OriginatorInfoOrder originatorInfoOrder = originatorInfoOrderService.selectOne(
                     new EntityWrapper<OriginatorInfoOrder>()
                             .eq("order_status", BaseConstant.ORDER_STATUS_11)
                             .eq("submit_order_user", id));
-            if (originatorInfoOrder.getRemianAmount() != null && originatorInfoOrder.getRemianAmount().compareTo(new BigDecimal("0")) > 0) {
+            if (originatorInfoOrder != null && originatorInfoOrder.getRemianAmount() != null &&
+                    originatorInfoOrder.getRemianAmount().compareTo(new BigDecimal("0")) > 0) {
                 //返回2%剩余品牌费
                 BigDecimal oriAmount = originatorInfoOrder.getOrderAmount().multiply(BaseConstant.ORIGINATOR_RATE);
                 if (originatorInfoOrder.getRemianAmount().compareTo(oriAmount) < 0) {
@@ -196,34 +198,40 @@ public class ShopGoodsOriginatorOrderController {
                 uu.setTradeType(BaseConstant.TRADE_TYPE_1);
                 uu.setAccountType(BaseConstant.ACCOUNT_TYPE_9);
                 uu.setPayType(BaseConstant.PAY_TYPE_6);
-                uu.setBussinessType(BaseConstant.BUSSINESS_TYPE_5);
+                uu.setBussinessType(BaseConstant.BUSSINESS_TYPE_51);
                 userFundService.InsertUserFund(uu);
+                // 品牌费加入待使用佣金
+                balance3 = balance3.add(oriAmount);
             }
-            // TODO 合伙人佣金 合伙人股权
             // 通过用户id获取该用户的佣金和股权
             UserDistributionConstant myDistribution = userDistributionConstantService.selectMyDistributionById(id);
             UserDistributionConstant parentDistribution = userDistributionConstantService.selectParentDistributionById(id);
             if (myDistribution != null && myDistribution.getStockRightDiscount() != null &&
                     myDistribution.getStockRightDiscount().compareTo(new BigDecimal("0")) > 0) {
-                boolean updateDiscount = userInfoService.updateStockRightDiscount(id, commissionAmont.multiply(myDistribution.getStockRightDiscount()));
-                if (!updateDiscount) {
-                    throw new OptimisticLockingFailureException("合伙人股权更新失败");
-                }
+                BigDecimal stockRight = commissionAmont.multiply(myDistribution.getStockRightDiscount());
+//                boolean updateDiscount = userInfoService.updateStockRightDiscount(id, stockRight);
+//                if (!updateDiscount) {
+//                    throw new OptimisticLockingFailureException("合伙人股权更新失败");
+//                }
                 UserFund distributionUserFund = new UserFund();
                 distributionUserFund.setTradeUserId(id);
-                distributionUserFund.setIncreaseMoney(commissionAmont.multiply(myDistribution.getStockRightDiscount()));
+                distributionUserFund.setIncreaseMoney(stockRight);
                 distributionUserFund.setTradeDescribe("股权收益");
                 distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
                 distributionUserFund.setTradeTime(date);
                 distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
                 distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_1);
                 distributionUserFund.setPayType(BaseConstant.PAY_TYPE_9);
-                distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_4);
+                distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_41);
                 userFundService.InsertUserFund(distributionUserFund);
+                // 待使用股权
+                balance2 = balance2.add(stockRight);
             }
             if (parentDistribution != null && parentDistribution.getCommissionDiscount() != null &&
                     parentDistribution.getCommissionDiscount().compareTo(new BigDecimal("0")) > 0) {
-                boolean updateCommission = userInfoService.updateCommissionDiscount(parentDistribution.getId(), commissionAmont.multiply(parentDistribution.getCommissionDiscount()));
+                // 佣金
+                BigDecimal commission = commissionAmont.multiply(parentDistribution.getCommissionDiscount());
+                boolean updateCommission = userInfoService.updateCommissionDiscount(parentDistribution.getId(), commission);
                 if (!updateCommission) {
                     throw new OptimisticLockingFailureException("佣金更新失败");
                 }
@@ -234,7 +242,7 @@ public class ShopGoodsOriginatorOrderController {
                 //插入佣金和股权流水
                 UserFund commissionUserFund = new UserFund();
                 commissionUserFund.setTradeUserId(parentDistribution.getId());
-                commissionUserFund.setIncreaseMoney(commissionAmont.multiply(parentDistribution.getCommissionDiscount()));
+                commissionUserFund.setIncreaseMoney(commission);
                 commissionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
                 commissionUserFund.setTradeTime(date);
                 commissionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
@@ -242,19 +250,49 @@ public class ShopGoodsOriginatorOrderController {
                 commissionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
                 if (i == 0) {
                     commissionUserFund.setTradeDescribe("消费者佣金收益，姓名：" + userInfo.getNickname());
-                    commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_8);
+                    commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
                 } else {
                     commissionUserFund.setTradeDescribe("合伙人佣金收益，姓名：" + userInfo.getNickname());
-                    commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_7);
+                    commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_71);
                 }
                 userFundService.InsertUserFund(commissionUserFund);
+            }
+            // 入库单存入库存
+            if (shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)){
+                for (ShopGoodsOrderDetail shopGoodsOrderDetail:shopGoodsOrderDetailList){
+                    ShopStock shopStock = new ShopStock();
+                    shopStock.setUserInfoId(id);
+                    shopStock.setShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
+                    shopStock.setCount(shopGoodsOrderDetail.getBuyCount());
+                    shopStock.setDescribe(shopGoodsOrder.getOrderNo());
+                    ShopStock stock = shopStockService.selectOne(
+                            new EntityWrapper<ShopStock>()
+                                    .eq("user_info_id", id)
+                                    .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
+                    boolean insert;
+                    if (stock == null) {
+                        shopStock.setCreateTime(date);
+                        insert = shopStockService.insert(shopStock);
+                    } else {
+                        shopStock.setUpdateTime(date);
+                        if (stock.getDescribe() != null && stock.getDescribe().length() > 650) {
+                            shopStock.setDescribe(stock.getDescribe().substring(stock.getDescribe().length() - 300) + "," + shopStock.getDescribe());
+                        } else {
+                            shopStock.setDescribe(stock.getDescribe() + "," + shopStock.getDescribe());
+                        }
+                        shopStock.setCount(shopStock.getCount() + stock.getCount());
+                        insert = shopStockService.update(shopStock, new EntityWrapper<ShopStock>()
+                                .eq("user_info_id", id)
+                                .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
+                    }
+                    if (!insert) {
+                        throw new OptimisticLockingFailureException("库存插入失败");
+                    }
+                }
             }
             Map<String, String> resultMap = new HashMap<>();
             resultMap.put("orderNo", shopGoodsOrder.getOrderNo());
             resultWrapper.setResult(resultMap);
-            // 推送模版消息
-//            TemplateMessageUtil.initPaySuccessTemplate(userOauth.getOauthOpenid(), shopGoodsOrder.getOrderNo(), shopGoodsOrder.getOrderAmountTotal().toString(),
-//                    shopGoodsOrder.getCouponAmount().toString(), shopGoodsOrder.getTotalRealPayment().toString());
         } else {
             // 插入预付单
             shopGoodsOrder = initShopGoodsOrder(BaseConstant.ORDER_STATUS_1, calcAmountVo, voList.get(0));
@@ -301,12 +339,16 @@ public class ShopGoodsOriginatorOrderController {
         // 如果有余额
         if (userInfo != null && userInfo.getBalance1() != null &&
                 (voList.get(0).getPayType().equals(BaseConstant.PAY_TYPE_4) || voList.get(0).getPayType().equals(BaseConstant.PAY_TYPE_5))) {
-            Date updateTime = userInfo.getUpdateTime();
+            UserInfo myUser = new UserInfo();
+            myUser.setId(userInfo.getId());
+            // 扣除余额
+            myUser.setBalance1(calcAmountVo.getRemainAmount().multiply(new BigDecimal("-1")));
+            // 增加待使用股权
+            myUser.setBalance2(balance2);
+            // 增加待使用余额
+            myUser.setBalance3(balance3);
             userInfo.setUpdateTime(date);
-            boolean b = userInfoService.update(userInfo, new EntityWrapper<UserInfo>()
-                    .eq(updateTime != null, "update_time", updateTime)
-                    .eq("id", userInfo.getId()));
-//            boolean b = userInfoService.updateById(userInfo);
+            boolean b = userInfoService.updateMyBalance(myUser);
             if (!b) {
                 throw new OptimisticLockingFailureException("用户余额更新失败");
             }
@@ -325,36 +367,6 @@ public class ShopGoodsOriginatorOrderController {
         }
         // 存入库存
         for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
-            if (isStock.equals(BaseConstant.IS_STOCK_2)) {
-                ShopStock shopStock = new ShopStock();
-                shopStock.setUserInfoId(id);
-                shopStock.setShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
-                shopStock.setCount(shopGoodsOrderDetail.getBuyCount());
-                shopStock.setDescribe(shopGoodsOrder.getOrderNo());
-                ShopStock stock = shopStockService.selectOne(
-                        new EntityWrapper<ShopStock>()
-                                .eq("user_info_id", id)
-                                .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
-                boolean insert;
-                if (stock == null) {
-                    shopStock.setCreateTime(date);
-                    insert = shopStockService.insert(shopStock);
-                } else {
-                    shopStock.setUpdateTime(date);
-                    if (stock.getDescribe() != null && stock.getDescribe().length() > 650) {
-                        shopStock.setDescribe(stock.getDescribe().substring(stock.getDescribe().length() - 300) + "," + shopStock.getDescribe());
-                    } else {
-                        shopStock.setDescribe(stock.getDescribe() + "," + shopStock.getDescribe());
-                    }
-                    shopStock.setCount(shopStock.getCount() + stock.getCount());
-                    insert = shopStockService.update(shopStock, new EntityWrapper<ShopStock>()
-                            .eq("user_info_id", id)
-                            .eq("shop_goods_id", shopGoodsOrderDetail.getShopGoodsId()));
-                }
-                if (!insert) {
-                    throw new OptimisticLockingFailureException("库存插入失败");
-                }
-            }
             // 下单扣除商品库存库存
             boolean a = shopGoodsService.updateStockById(shopGoodsOrderDetail.getBuyCount(),
                     shopGoodsOrderDetail.getShopGoodsId());
@@ -460,54 +472,11 @@ public class ShopGoodsOriginatorOrderController {
         return resultMap;
     }
 
-    /**
-     * 通过金额得出权额支付信息
-     *
-     * @param calcAmountVo              商品金额
-     * @param advanceRechargeRecordList 权额
-     * @return 待更新权额
-     */
-//    private List<AdvanceRechargeRecord> initAdvanceRechargeRecordByAmount(CalcAmountVo calcAmountVo, List<AdvanceRechargeRecord> advanceRechargeRecordList) {
-//        List<AdvanceRechargeRecord> myAdvanceRechargeRecordList = new ArrayList<>();
-//        for (CalcSingleAmountVo calcSingleAmountVo : calcAmountVo.getCalcAmountVoList()) {
-//            if (StringUtils.isEmpty(calcSingleAmountVo.getAdvanceIds())) {
-//                continue;
-//            }
-//            String[] split = calcSingleAmountVo.getAdvanceIds().split(",");
-//            for (String id : split) {
-//                AdvanceRechargeRecord myRecord = new AdvanceRechargeRecord();
-//                for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
-//                    if (myRecord.getAmount().compareTo(calcSingleAmountVo.getAdvanceAmount()) == 0) {
-//                        break;
-//                    }
-//                    if (!id.equals(advanceRechargeRecord.getId().toString())) {
-//                        continue;
-//                    }
-//                    myRecord.setId(Integer.valueOf(id));
-//                    if (calcSingleAmountVo.getAdvanceAmount().compareTo(advanceRechargeRecord.getAmount()) > 0) {
-//                        // 更新金额
-//                        myRecord.setAmount(new BigDecimal(0));
-//                        BigDecimal subtract = calcSingleAmountVo.getAdvanceAmount().subtract(advanceRechargeRecord.getAmount());
-//                        // 更新余额
-//                        advanceRechargeRecord.setAmount(subtract);
-//                    } else {
-//                        BigDecimal subtract = advanceRechargeRecord.getAmount().subtract(calcSingleAmountVo.getAdvanceAmount());
-//                        // 更新金额
-//                        myRecord.setAmount(subtract);
-//                        // 更新余额
-//                        advanceRechargeRecord.setAmount(new BigDecimal(0));
-//                    }
-//                }
-//                myAdvanceRechargeRecordList.add(myRecord);
-//            }
-//        }
-//        return myAdvanceRechargeRecordList;
-//    }
 
     /**
      * 初始化订单数据
      *
-     * @param type             0-待审核 1-待支付  3-待收货  11-交易关闭
+     * @param type             0-待审核 1-待支付  3-待收货  5-待评价 11-交易关闭
      * @param calcAmountVo     商品价格
      * @param shopGoodsOrderVo 参数
      * @return 商品信息
@@ -527,50 +496,30 @@ public class ShopGoodsOriginatorOrderController {
         shopGoodsOrder.setIsStock(isStock);
         if (isStock.equals(BaseConstant.IS_STOCK_2)) {
             shopGoodsOrder.setReceiveAddress("库存单");
-        } else if (isStock.equals(BaseConstant.IS_STOCK_3)) {
-            shopGoodsOrder.setReceiveMan(shopGoodsOrderVo.getReceiveMan());
-            shopGoodsOrder.setContactPhone(shopGoodsOrderVo.getContactPhone());
         } else {
             // 地址 不是库存单则拼接地址
             UserAddressVo userAddressVo = userAddressService.selectDetailById(shopGoodsOrderVo.getUserAddressId());
             // 收货地址
             shopGoodsOrder.setReceiveMan(userAddressVo.getName());
             shopGoodsOrder.setContactPhone(userAddressVo.getPhone());
-            String address = userAddressVo.getProvince() +
-                    userAddressVo.getCity() +
-                    userAddressVo.getArea() +
-                    userAddressVo.getAddress();
-            shopGoodsOrder.setReceiveAddress(address);
-            // 发货地址
-            UserAddressVo userShipperAddress = userAddressShipService.selectDetailById(shopGoodsOrderVo.getShipperId());
-            shopGoodsOrder.setShipper(userShipperAddress.getName());
-            shopGoodsOrder.setShipperPhone(userShipperAddress.getPhone());
-            String shipperAddress = userShipperAddress.getProvince() +
-                    userShipperAddress.getCity() +
-                    userShipperAddress.getArea() +
-                    userShipperAddress.getAddress();
-            shopGoodsOrder.setShipperAddress(shipperAddress);
+            // 自提不需要地址和发货地址
+            if (!isStock.equals(BaseConstant.IS_STOCK_3)) {
+                String address = userAddressVo.getProvince() +
+                        userAddressVo.getCity() +
+                        userAddressVo.getArea() +
+                        userAddressVo.getAddress();
+                shopGoodsOrder.setReceiveAddress(address);
+                // 发货地址
+                UserAddressVo userShipperAddress = userAddressShipService.selectDetailById(shopGoodsOrderVo.getShipperId());
+                shopGoodsOrder.setShipper(userShipperAddress.getName());
+                shopGoodsOrder.setShipperPhone(userShipperAddress.getPhone());
+                String shipperAddress = userShipperAddress.getProvince() +
+                        userShipperAddress.getCity() +
+                        userShipperAddress.getArea() +
+                        userShipperAddress.getAddress();
+                shopGoodsOrder.setShipperAddress(shipperAddress);
+            }
         }
-
-        // 金额
-//        for (CalcSingleAmountVo calcSingleAmountVo : calcAmountVo.getCalcAmountVoList()) {
-//            // 权额支付金额
-//            shopGoodsOrder.setAdvanceAmount(shopGoodsOrder.getAdvanceAmount() == null ?
-//                    calcSingleAmountVo.getAdvanceAmount() :
-//                    shopGoodsOrder.getAdvanceAmount().add(calcSingleAmountVo.getAdvanceAmount()));
-//            // 实际付款
-//            shopGoodsOrder.setTotalRealPayment(shopGoodsOrder.getTotalRealPayment() == null ?
-//                    calcSingleAmountVo.getSingleRealAmount() :
-//                    shopGoodsOrder.getTotalRealPayment().add(calcSingleAmountVo.getSingleRealAmount()));
-//            // 优惠金额
-//            shopGoodsOrder.setCouponAmount(shopGoodsOrder.getCouponAmount() == null ?
-//                    calcSingleAmountVo.getSingleRateAmount() :
-//                    shopGoodsOrder.getCouponAmount().add(calcSingleAmountVo.getSingleRateAmount()));
-//            // 余额
-//            shopGoodsOrder.setTotalPoint(shopGoodsOrder.getTotalPoint() == null ?
-//                    calcSingleAmountVo.getSingleRemainAmount() :
-//                    shopGoodsOrder.getTotalPoint().add(calcSingleAmountVo.getSingleRemainAmount()));
-//        }
         // 订单总额
         shopGoodsOrder.setOrderAmountTotal(calcAmountVo.getTotalAmount());
         // 权额支付金额
@@ -603,6 +552,10 @@ public class ShopGoodsOriginatorOrderController {
                 break;
             case 3:
                 shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_3);
+                shopGoodsOrder.setPayTime(date);
+                break;
+            case 5:
+                shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_5);
                 shopGoodsOrder.setPayTime(date);
                 break;
             case 11:
@@ -772,14 +725,6 @@ public class ShopGoodsOriginatorOrderController {
             calcSingleAmountVo.setCount(vo.getCount());
             calcSingleAmountVo.setStock(shopGoods.getStock());
             singleCalcAmountVoList.add(calcSingleAmountVo);
-            // 商品属性
-//            List<ShopGoodsAttribute> shopGoodsAttributeList = shopGoodsAttributeService.selectList(
-//                    new EntityWrapper<ShopGoodsAttribute>()
-//                            .eq("shop_goods_id", shopGoods.getId())
-//                            .ne("attribute_value_name", "")
-//                            .ne("attribute_value_name", "下拉选择")
-//                            .isNotNull("attribute_value_name"));
-//            calcSingleAmountVo.setShopGoodsAttributeList(shopGoodsAttributeList);
             // 计算订单金额
             double singleCount = vo.getCount();
             Integer goodsUnitCount = shopGoods.getGoodsUnitCount();
@@ -812,107 +757,6 @@ public class ShopGoodsOriginatorOrderController {
             } else {
                 noDisountAmount = noDisountAmount.add(amount);
             }
-//            BigDecimal discountRate = new BigDecimal(1);
-//            // TODO 写死了id，当商品为礼盒和酒具的时候不打折
-//            if (shopGoods.getPlatformGoodsCategoryId() != 4 || shopGoods.getPlatformGoodsCategoryId() != 5 ||
-//                    shopGoods.getIsDiscount() != 0) {
-//                // 所有商品的数量不包含礼盒酒具
-//                totalCount = totalCount.add(bigDecimalCount);
-//                // 权额折扣  判断权额能否购买
-//                if (vo.getPayType().equals(BaseConstant.PAY_TYPE_3) || vo.getPayType().equals(BaseConstant.PAY_TYPE_5)) {
-//                    // 权额id
-//                    String advanceRechargeIds = vo.getAdvanceRechargeIds();
-//                    for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
-////                        if (advanceRechargeRecord.getDiscountRate().compareTo(discountRate) > 0) {
-////                            continue;
-////                        }
-//                        if (advanceRechargeIds == null || !advanceRechargeIds.contains(advanceRechargeRecord.getId().toString())) {
-//                            continue;
-//                        }
-//                        // 权额折扣
-////                        BigDecimal advanceRate = advanceRechargeRecord.getDiscountRate();
-//                        // 权额的折扣更大
-////                        if (advanceRate.compareTo(discountRate) <= 0) {
-//                        // 权额金额
-//                        BigDecimal advanceAmount = advanceRechargeRecord.getAmount();
-//                        if (advanceAmount.compareTo(singleTotalAmount) >= 0) {
-//                            // 权额充足
-//                            calcSingleAmountVo.setAdvanceAmount(calcSingleAmountVo.getAdvanceAmount().add(singleTotalAmount));
-//                            advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(singleTotalAmount));
-//                            singleTotalAmount = new BigDecimal("0");
-//                            calcSingleAmountVo.setAdvanceIds(advanceRechargeRecord.getId().toString());
-//                            // 实付金额
-////                            calcSingleAmountVo.setSingleRealAmount(calcSingleAmountVo.getSingleRealAmount().add(singleTotalAmount));
-//                            break;
-//                        } else {
-//                            // 权额不足
-//                            calcSingleAmountVo.setAdvanceAmount(calcSingleAmountVo.getAdvanceAmount().add(advanceAmount));
-//                            singleTotalAmount = singleTotalAmount.subtract(advanceRechargeRecord.getAmount());
-//                            advanceRechargeRecord.setAmount(new BigDecimal("0"));
-//                            calcSingleAmountVo.setAdvanceIds(calcSingleAmountVo.getAdvanceIds() == null ?
-//                                    advanceRechargeRecord.getId().toString() :
-//                                    calcSingleAmountVo.getAdvanceIds() + "," + advanceRechargeRecord.getId().toString());
-//                            // 实付金额
-////                            calcSingleAmountVo.setSingleRealAmount(calcSingleAmountVo.getSingleRealAmount().add(advanceAmount));
-//                        }
-////                        }
-//                    }
-//                    // 处理余额
-//                    if (vo.getPayType().equals(BaseConstant.PAY_TYPE_5)) {
-//                        // 判断金额是否充足
-//                        if (userInfo.getBalance1().compareTo(singleTotalAmount) >= 0) {
-//                            calcSingleAmountVo.setSingleRemainAmount(singleTotalAmount);
-//                            singleTotalAmount = new BigDecimal("0");
-//                        } else {
-//                            calcSingleAmountVo.setSingleRemainAmount(userInfo.getBalance1());
-//                            singleTotalAmount = singleTotalAmount.subtract(userInfo.getBalance1());
-//                            userInfo.setBalance1(new BigDecimal("0"));
-//                        }
-//                    }
-//                } else if (vo.getPayType().equals(BaseConstant.PAY_TYPE_4)) {
-//                    // 判断金额是否充足
-//                    if (userInfo.getBalance1().compareTo(singleTotalAmount) >= 0) {
-//                        calcSingleAmountVo.setSingleRemainAmount(singleTotalAmount);
-//                        singleTotalAmount = new BigDecimal("0");
-//                    } else {
-//                        singleTotalAmount = singleTotalAmount.subtract(userInfo.getBalance1());
-//                        calcSingleAmountVo.setSingleRemainAmount(userInfo.getBalance1());
-//                        userInfo.setBalance1(new BigDecimal("0"));
-//                    }
-//                } else {
-//                    // 本身折扣
-//                    discountRate = discountRate.compareTo(originatorInfo.getDiscount()) >= 0 ?
-//                            originatorInfo.getDiscount() : discountRate;
-//                }
-//                // 满减折扣
-//                int size = 0;
-//                for (int i = 0; i < originatorDiscountInfoList.size(); i++) {
-//                    // 权限不够只能使用三级折扣
-//                    if (originatorInfo.getDiscountStatus() != 1 && i > 2) {
-//                        size = i - 1;
-//                        break;
-//                    }
-//                    if (originatorDiscountInfoList.get(i).getAmount().compareTo(singleTotalAmount) > 0) {
-//                        size = i - 1;
-//                        break;
-//                    }
-//                }
-//                // 满减折扣
-//                if (size >= 0 && discountRate.compareTo(originatorDiscountInfoList.get(size).getDiscountRate()) > 0) {
-//                    discountRate = originatorDiscountInfoList.get(size).getDiscountRate();
-//                }
-//            }
-//            // 剩余总金额打折
-//            calcSingleAmountVo.setSingleRateAmount(singleTotalAmount.subtract(singleTotalAmount.multiply(discountRate)));
-//            // 累加上剩余总金额
-//            calcSingleAmountVo.setSingleRealAmount(calcSingleAmountVo.getSingleRealAmount().add(singleTotalAmount.multiply(discountRate)));
-//            // 实付金额
-//            calcAmountVo.setActualAmount(calcAmountVo.getActualAmount().add(calcSingleAmountVo.getSingleRealAmount()));
-//            // 支付权额id
-//            calcAmountVo.setAdvanceIds(calcAmountVo.getAdvanceIds() == null ?
-//                    calcSingleAmountVo.getAdvanceIds() :
-//                    calcAmountVo.getAdvanceIds() + "," + calcSingleAmountVo.getAdvanceIds());
-//            singleCalcAmountVoList.add(calcSingleAmountVo);
         }
         // 计算折扣：1：权额折扣  3：合伙人本身折扣 4：满减折扣 5：余额折扣 依次计算折扣
         // 1：权额折扣
@@ -930,26 +774,12 @@ public class ShopGoodsOriginatorOrderController {
                 BigDecimal myAdvanceAmount = advanceRechargeRecord.getAmount();
                 if (myAdvanceAmount.compareTo(discountAmount) >= 0) {
                     // 权额充足
-//                    calcSingleAmountVo.setAdvanceAmount(calcSingleAmountVo.getAdvanceAmount().add(singleTotalAmount));
-//                    advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(singleTotalAmount));
-//                    singleTotalAmount = new BigDecimal("0");
-//                    calcSingleAmountVo.setAdvanceIds(advanceRechargeRecord.getId().toString());
-                    // 实付金额
-//                            calcSingleAmountVo.setSingleRealAmount(calcSingleAmountVo.getSingleRealAmount().add(singleTotalAmount));
                     advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(discountAmount));
                     advanceAmount = advanceAmount.add(discountAmount);
                     discountAmount = BigDecimal.ZERO;
                     break;
                 } else {
                     // 权额不足
-//                    calcSingleAmountVo.setAdvanceAmount(calcSingleAmountVo.getAdvanceAmount().add(advanceAmount));
-//                    singleTotalAmount = singleTotalAmount.subtract(advanceRechargeRecord.getAmount());
-//                    advanceRechargeRecord.setAmount(new BigDecimal("0"));
-//                    calcSingleAmountVo.setAdvanceIds(calcSingleAmountVo.getAdvanceIds() == null ?
-//                            advanceRechargeRecord.getId().toString() :
-//                            calcSingleAmountVo.getAdvanceIds() + "," + advanceRechargeRecord.getId().toString());
-                    // 实付金额
-//                            calcSingleAmountVo.setSingleRealAmount(calcSingleAmountVo.getSingleRealAmount().add(advanceAmount));
                     advanceRechargeRecord.setAmount(BigDecimal.ZERO);
                     advanceAmount = advanceAmount.add(myAdvanceAmount);
                     discountAmount = discountAmount.subtract(myAdvanceAmount);
@@ -964,7 +794,7 @@ public class ShopGoodsOriginatorOrderController {
         int size = 0;
         for (int i = 0; i < originatorDiscountInfoList.size(); i++) {
             // 权限不够只能使用三级折扣
-            if (originatorInfo.getDiscountStatus() != 1 && i > 2) {
+            if (originatorInfo.getDiscountStatus() != 1 && i > 1) {
                 size = i - 1;
                 break;
             }
@@ -997,15 +827,10 @@ public class ShopGoodsOriginatorOrderController {
             // 判断折扣金额是否充足
             if (userInfo.getBalance1().compareTo(realPayAmount) >= 0) {
                 // 余额充足
-//                calcSingleAmountVo.setSingleRemainAmount(singleTotalAmount);
-//                singleTotalAmount = new BigDecimal("0");
                 remainAmount = realPayAmount;
                 realPayAmount = BigDecimal.ZERO;
                 userInfo.setBalance1(userInfo.getBalance1().subtract(realPayAmount));
             } else {
-//                calcSingleAmountVo.setSingleRemainAmount(userInfo.getBalance1());
-//                singleTotalAmount = singleTotalAmount.subtract(userInfo.getBalance1());
-//                userInfo.setBalance1(new BigDecimal("0"));
                 // 余额不足
                 remainAmount = userInfo.getBalance1();
                 realPayAmount = realPayAmount.subtract(userInfo.getBalance1());

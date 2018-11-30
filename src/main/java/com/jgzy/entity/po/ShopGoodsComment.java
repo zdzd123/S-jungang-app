@@ -28,6 +28,14 @@ public class ShopGoodsComment implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
     /**
+     * 用户id
+     */
+    private Integer userId;
+    /**
+     * 订单id
+     */
+    private String shopGoodsOrderId;
+    /**
      * 商品信息id
      */
     @ApiModelProperty(value = "商品信息id", example = "1")
@@ -73,19 +81,22 @@ public class ShopGoodsComment implements Serializable {
      */
     @ApiModelProperty(value = "状态(待审核=1|已审核=2)", example = "1")
     private Integer status;
-    /**
-     * 规格
-     */
-    @ApiModelProperty(value = "规格", example = "1")
-    private String platformGoodsSpecNames;
-    /**
-     * 规格值
-     */
-    @ApiModelProperty(value = "规格值", example = "1")
-    private String platformGoodsSpecValueNames;
-    @ApiModelProperty(value = "shopGoodsDetailId", example = "1")
-    private Integer shopGoodsDetailId;
 
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    public String getShopGoodsOrderId() {
+        return shopGoodsOrderId;
+    }
+
+    public void setShopGoodsOrderId(String shopGoodsOrderId) {
+        this.shopGoodsOrderId = shopGoodsOrderId;
+    }
 
     public Integer getId() {
         return id;
@@ -167,30 +178,6 @@ public class ShopGoodsComment implements Serializable {
         this.status = status;
     }
 
-    public String getPlatformGoodsSpecNames() {
-        return platformGoodsSpecNames;
-    }
-
-    public void setPlatformGoodsSpecNames(String platformGoodsSpecNames) {
-        this.platformGoodsSpecNames = platformGoodsSpecNames;
-    }
-
-    public String getPlatformGoodsSpecValueNames() {
-        return platformGoodsSpecValueNames;
-    }
-
-    public void setPlatformGoodsSpecValueNames(String platformGoodsSpecValueNames) {
-        this.platformGoodsSpecValueNames = platformGoodsSpecValueNames;
-    }
-
-    public Integer getShopGoodsDetailId() {
-        return shopGoodsDetailId;
-    }
-
-    public void setShopGoodsDetailId(Integer shopGoodsDetailId) {
-        this.shopGoodsDetailId = shopGoodsDetailId;
-    }
-
     @Override
     public String toString() {
         return "ShopGoodsComment{" +
@@ -204,9 +191,6 @@ public class ShopGoodsComment implements Serializable {
                 ", appraisePic=" + appraisePic +
                 ", appraiseTime=" + appraiseTime +
                 ", status=" + status +
-                ", platformGoodsSpecNames=" + platformGoodsSpecNames +
-                ", platformGoodsSpecValueNames=" + platformGoodsSpecValueNames +
-                ", shopGoodsDetailId=" + shopGoodsDetailId +
                 "}";
     }
 }

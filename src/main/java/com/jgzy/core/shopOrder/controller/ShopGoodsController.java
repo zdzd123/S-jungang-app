@@ -62,16 +62,9 @@ public class ShopGoodsController {
         if (po.getPlatformGoodsCategoryId() != null) {
             entityWrapper.eq("platform_goods_category_id", po.getPlatformGoodsCategoryId());
         }
-        UserInfo userInfo = UserUuidThreadLocal.get();
-        // 判断是否是合伙人
-        int count = originatorInfoService.selectCount(
-                new EntityWrapper<OriginatorInfo>()
-                        .eq("user_id", userInfo.getId())
-                        .eq("status", BaseConstant.ORIGINATOR_INFO_STATUS_0));
         // 特定商品-只有合伙人才能看到
-        if (count == 0) {
-            entityWrapper.eq("is_special", BaseConstant.NOT_SPECIAL);
-            po.setIsSpecial(BaseConstant.NOT_SPECIAL);
+        if (po.getIsSpecial() != null) {
+            entityWrapper.eq("is_special", po.getIsSpecial());
         }
         // 状态(待上架=1|已上架=2|已下架=3)
         if (po.getStatus() != null) {
@@ -112,7 +105,7 @@ public class ShopGoodsController {
         int size = 0;
         for (int i = 0; i < advanceRechargeInfos.size(); i++) {
 
-            if ((originatorInfo == null || originatorInfo.getDiscountStatus() != 1) && i > 2) {
+            if ((originatorInfo == null || originatorInfo.getDiscountStatus() != 1) && i > 1) {
                 size = i - 1;
                 break;
             }

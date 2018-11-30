@@ -31,7 +31,8 @@ public interface IShopStockService extends IService<ShopStock> {
      *
      * @param buyCount    购买数量
      * @param shopGoodsId 商品id
+     * @param userId
      * @return flag
      */
-    boolean updateMyShopStockByGoodsId(Integer buyCount, Integer shopGoodsId);
+    boolean updateMyShopStockByGoodsId(Integer buyCount, Integer shopGoodsId, Integer userId);
 }

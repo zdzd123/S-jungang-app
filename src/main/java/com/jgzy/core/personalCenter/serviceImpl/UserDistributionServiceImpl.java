@@ -8,7 +8,9 @@ import com.jgzy.core.personalCenter.vo.UserDistributionVo;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.UserDistribution;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 

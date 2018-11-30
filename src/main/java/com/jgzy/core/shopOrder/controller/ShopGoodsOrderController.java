@@ -15,13 +15,17 @@ import com.jgzy.constant.ErrorCodeEnum;
 import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.core.shopOrder.service.*;
+import com.jgzy.core.shopOrder.vo.ShopGoodsOrderStatisticVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.common.WeiXinData;
 import com.jgzy.entity.common.WeiXinTradeType;
 import com.jgzy.entity.po.*;
-import com.jgzy.utils.*;
+import com.jgzy.utils.BigDecimalUtil;
+import com.jgzy.utils.CommonUtil;
+import com.jgzy.utils.DateUtil;
+import com.jgzy.utils.WeiXinPayUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
@@ -129,12 +133,6 @@ public class ShopGoodsOrderController {
             logger.info("-----------------操作结束-------------------");
             // 插入订单
             boolean successful = shopGoodsOrderService.insert(shopGoodsOrder);
-            // 插入流水
-//        UserFund userFund = new UserFund();
-//        boolean myUserFund = userFundService.InsertUserFund(userFund);
-//        if (!myUserFund){
-//            System.out.println("插入流水失败");
-//        }
             if (!successful) {
                 throw new OptimisticLockingFailureException("订单插入失败");
             }
@@ -203,6 +201,8 @@ public class ShopGoodsOrderController {
             shopGoodsOrder.setOrderNo(out_trade_no);
             // 包邮
             shopGoodsOrder.setCarriageType(BaseConstant.CARRIAGE_TYPE_3);
+            // 出库方式 1-下单邮寄
+            shopGoodsOrder.setIsStock(BaseConstant.IS_STOCK_1);
             // 订单id
             shopGoodsOrderDetailList.add(shopGoodsOrderDetail);
         }
@@ -288,7 +288,7 @@ public class ShopGoodsOrderController {
                     distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
                     distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
                     distributionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_8);
+                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
                     userFundService.InsertUserFund(distributionUserFund);
                 }
                 // 二级分销
@@ -310,7 +310,7 @@ public class ShopGoodsOrderController {
                     distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
                     distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
                     distributionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_8);
+                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
                     userFundService.InsertUserFund(distributionUserFund);
                 }
             }
@@ -337,11 +337,13 @@ public class ShopGoodsOrderController {
             }
         }
         // 删除购物车
-        if (voList.get(0).getCartId() != null) {
-            UserGoodsCart userGoodsCart = new UserGoodsCart();
-            userGoodsCart.setId(voList.get(0).getCartId());
-            userGoodsCart.setLiveId(2);
-            userGoodsCartService.updateById(userGoodsCart);
+        for (ShopGoodsOrderVo vo : voList) {
+            if (vo.getCartId() != null) {
+                UserGoodsCart userGoodsCart = new UserGoodsCart();
+                userGoodsCart.setId(vo.getCartId());
+                userGoodsCart.setLiveId(2);
+                userGoodsCartService.updateById(userGoodsCart);
+            }
         }
         // 用户扣除余额
         if (shopGoodsOrder.getTotalPoint() != null) {
@@ -414,10 +416,14 @@ public class ShopGoodsOrderController {
         shopGoodsOrderDetail.setBuyCount(vo.getCount());
         initShopOrderDetail(shopGoods, shopGoodsOrderDetail);
         // 总金额
-        shopGoodsOrder.setOrderAmountTotal(BigDecimalUtil.mul(shopGoods.getCostPrice(), count));
+        BigDecimal orderAmountTotal = shopGoodsOrder.getOrderAmountTotal() == null ?
+                BigDecimal.ZERO : shopGoodsOrder.getOrderAmountTotal();
+        BigDecimal shopAmount = BigDecimalUtil.mul(shopGoods.getCostPrice(), count);
+        shopGoodsOrder.setOrderAmountTotal(orderAmountTotal.add(
+                shopAmount));
         // 验证优惠券
         Integer userActivityCouponId = vo.getUserActivityCouponId();
-        shopGoodsOrder.setCouponAmount(BigDecimal.ZERO);
+        shopGoodsOrder.setCouponAmount(shopGoodsOrder.getCouponAmount() == null ? BigDecimal.ZERO : shopGoodsOrder.getCouponAmount());
         if (userActivityCouponId != null) {
             List<UserActivityCoupon> userActivityCouponList = userActivityCouponService.selectList(new EntityWrapper<UserActivityCoupon>()
                     .eq("id", userActivityCouponId)
@@ -431,7 +437,7 @@ public class ShopGoodsOrderController {
                     // 优惠券id
                     shopGoodsOrder.setShopActivityCouponId(userActivityCouponId);
                     // 优惠金额
-                    shopGoodsOrder.setCouponAmount(userActivityCoupon.getAmount());
+                    shopGoodsOrder.setCouponAmount(shopGoodsOrder.getCouponAmount().add(userActivityCoupon.getAmount()));
                 } else {
                     resultWrapper.setErrorCode(ErrorCodeEnum.ERROR_ARGS.getKey());
                     resultWrapper.setErrorMsg("优惠券无法使用！");
@@ -444,8 +450,10 @@ public class ShopGoodsOrderController {
             }
         }
         shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_1);
-        shopGoodsOrder.setTotalRealPayment(shopGoodsOrder.getOrderAmountTotal().subtract(
-                shopGoodsOrder.getCouponAmount()));
+        // 实付金额
+        BigDecimal totalRealPayment = shopGoodsOrder.getTotalRealPayment() == null ?
+                BigDecimal.ZERO : shopGoodsOrder.getTotalRealPayment();
+        shopGoodsOrder.setTotalRealPayment(totalRealPayment.add(shopAmount).subtract(shopGoodsOrder.getCouponAmount()));
         // 下单时间
         shopGoodsOrder.setCreateTime(date);
         // 逾期时间
@@ -474,25 +482,6 @@ public class ShopGoodsOrderController {
     public ResultWrapper<ShopGoodsOrderVo> detail(@ApiParam(value = "订单id") @RequestParam(required = false) Integer id,
                                                   @ApiParam(value = "订单编号") @RequestParam(required = false) String orderNo) {
         ResultWrapper<ShopGoodsOrderVo> resultWrapper = new ResultWrapper<>();
-//        ShopGoodsOrderVo shopGoodsOrderVo = new ShopGoodsOrderVo();
-
-//        ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectOne(
-//                new EntityWrapper<ShopGoodsOrder>().eq(id != null, "id", id)
-//                        .eq(StringUtils.isNotEmpty(orderNo), "order_no", orderNo));
-//        if (shopGoodsOrder == null) {
-//            return resultWrapper;
-//        }
-//        BeanUtils.copyProperties(shopGoodsOrder, shopGoodsOrderVo);
-//        if (shopGoodsOrder.getShopActivityCouponId() != null) {
-//            UserActivityCoupon userActivityCoupon = userActivityCouponService.selectById(shopGoodsOrder.getShopActivityCouponId());
-//            // 优惠金额
-//            shopGoodsOrderVo.setAmount(userActivityCoupon.getAmount());
-//            // 满减要求
-//            shopGoodsOrderVo.setMeetAmount(userActivityCoupon.getMeetAmount());
-//        }
-//        List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = shopGoodsOrderDetailService.selectList(new EntityWrapper<ShopGoodsOrderDetail>().eq("order_id", shopGoodsOrder.getId()));
-//        shopGoodsOrderVo.setShopGoodsOrderDetailList(shopGoodsOrderDetailList);
-
         ShopGoodsOrderVo shopGoodsOrderVo = shopGoodsOrderService.selectOneOrder(id, orderNo);
         resultWrapper.setResult(shopGoodsOrderVo);
         return resultWrapper;
@@ -509,31 +498,48 @@ public class ShopGoodsOrderController {
                                                           @ApiParam("订单来源(合伙人=1|库存=2|普通消费者=3|品牌费=4) 逗号分割") @RequestParam(required = false) String orderSource) {
         ResultWrapper<Page<ShopGoodsOrderVo>> resultWrapper = new ResultWrapper<>();
         Page<ShopGoodsOrderVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
-//        EntityWrapper<ShopGoodsOrder> entityWrapper = new EntityWrapper<>();
-//        if (orderStatus != null) {
-//            entityWrapper.eq("order_status", orderStatus);
-//        }
-//        if (orderSource != null) {
-//            String[] split = orderSource.split(",");
-//            entityWrapper.in("order_source", split);
-//        }
-//
-//        List<ShopGoodsOrderVo> shopGoodsOrderVoList = shopGoodsOrderService.selectMyOrder(orderStatus, orderSource);
         page = shopGoodsOrderService.selectMyOrderPage(page, orderStatus, orderSource);
         resultWrapper.setResult(page);
         return resultWrapper;
     }
 
-    @ApiOperation(value = "更新指定ID的订单", notes = "更新指定ID的订单")
-    @PutMapping("/update")
-    public ResultWrapper<ShopGoodsOrder> update(@RequestBody @Validated ShopGoodsOrder po) {
+    @ApiOperation(value = "订单收货", notes = "订单收货")
+    @ApiImplicitParam(name = "id", value = "订单ID", required = true, paramType = "path", dataType = "Integer")
+    @GetMapping(value = "/update/{id:\\d+}")
+    public ResultWrapper<ShopGoodsOrder> update(@PathVariable("id") Integer id) {
         ResultWrapper<ShopGoodsOrder> resultWrapper = new ResultWrapper<>();
-        Integer id = po.getId();
-        boolean successful = false;
-        if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            successful = shopGoodsOrderService.updateById(po);
+        ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectById(id);
+        // 待收货--》待评价
+        if (shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_4)) {
+            ShopGoodsOrder myOrder = new ShopGoodsOrder();
+            myOrder.setId(shopGoodsOrder.getId());
+            myOrder.setOrderStatus(BaseConstant.ORDER_STATUS_5);
+            boolean b = shopGoodsOrderService.updateById(myOrder);
+            resultWrapper.setSuccessful(b);
+            return resultWrapper;
         }
-        resultWrapper.setSuccessful(successful);
+        resultWrapper.setErrorMsg("订单状态不正确，请检查订单！");
+        resultWrapper.setSuccessful(false);
+        return resultWrapper;
+    }
+
+    @ApiOperation(value = "删除指定ID的订单", notes = "删除指定ID的订单")
+    @ApiImplicitParam(name = "id", value = "订单ID", required = true, paramType = "path", dataType = "Integer")
+    @DeleteMapping("/{id:\\d+}")
+    public ResultWrapper<ShopGoodsOrder> delete(@PathVariable("id") Integer id) {
+        ResultWrapper<ShopGoodsOrder> resultWrapper = new ResultWrapper<>();
+        ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectById(id);
+        if (shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_12) ||
+                shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_11)) {
+            ShopGoodsOrder myOrder = new ShopGoodsOrder();
+            myOrder.setUserDel(BaseConstant.USER_DEL);
+            myOrder.setId(shopGoodsOrder.getId());
+            boolean b = shopGoodsOrderService.updateById(myOrder);
+            resultWrapper.setSuccessful(b);
+            return resultWrapper;
+        }
+        resultWrapper.setErrorMsg("订单状态不正确，请检查订单！");
+        resultWrapper.setSuccessful(false);
         return resultWrapper;
     }
 
@@ -545,7 +551,7 @@ public class ShopGoodsOrderController {
         ResultWrapper<Map<String, String>> resultWrapper = new ResultWrapper<>();
         Map<String, String> resultMap = new HashMap<>();
         ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectById(id);
-        if (shopGoodsOrder == null || !shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)) {
+        if (shopGoodsOrder == null || shopGoodsOrder.getOrderStatus().compareTo(BaseConstant.ORDER_STATUS_3) >= 0) {
             throw new OptimisticLockingFailureException("该订单不存在、或者该订单已付款！");
         }
         BigDecimal carriage = shopGoodsOrder.getCarriage();
@@ -557,57 +563,9 @@ public class ShopGoodsOrderController {
         if (shopGoodsOrder.getValidOrderTime() == null || shopGoodsOrder.getValidOrderTime().before(new Date())) {
             throw new OptimisticLockingFailureException("该订单已逾期，请重新提交订单");
         }
-        // 订单逾期时间
-        shopGoodsOrder.setValidOrderTime(DateUtil.getHoursLater(2));
         // 订单编号
         shopGoodsOrder.setTradeNo(shopGoodsOrder.getOrderNo());
         shopGoodsOrderService.updateById(shopGoodsOrder);
-//        else {
-//            // 扣除运费
-//            if (shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_4) || shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_5)){
-//                UserInfo userInfo = userInfoService.selectById(UserUuidThreadLocal.get().getId());
-//                if (userInfo.getBalance1().compareTo(carriage) >= 0){
-//                    userInfo.setBalance1(userInfo.getBalance1().subtract(carriage));
-//                    shopGoodsOrder.setTotalRealPayment(shopGoodsOrder.getTotalRealPayment().subtract(carriage));
-//                    shopGoodsOrder.setTotalPoint(shopGoodsOrder.getTotalPoint().add(carriage));
-//                }else {
-//                    shopGoodsOrder.setTotalRealPayment(shopGoodsOrder.getTotalRealPayment().subtract(userInfo.getBalance1()));
-//                    shopGoodsOrder.setTotalPoint(shopGoodsOrder.getTotalPoint().add(userInfo.getBalance1()));
-//                    userInfo.setBalance1(BigDecimal.ZERO);
-//                }
-//                // 更新用户余额
-//                boolean b = userInfoService.updateById(userInfo);
-//                if (!b){
-//                    throw new OptimisticLockingFailureException("用户余额更新失败");
-//                }
-//                // 更新订单信息
-//                boolean b1 = shopGoodsOrderService.updateById(shopGoodsOrder);
-//                if(!b1){
-//                    throw new OptimisticLockingFailureException("订单更新失败");
-//                }
-//            }
-//        }
-        // 判断权额是否充足
-//        if (shopGoodsOrder.getAdvanceAmount() != null && shopGoodsOrder.getBlessing() != null) {
-//            String[] split = shopGoodsOrder.getBlessing().split(",");
-//            List<AdvanceRechargeRecord> advanceRechargeRecordList = advanceRechargeRecordService.selectList(new EntityWrapper<AdvanceRechargeRecord>()
-//                    .in("id", split));
-//            BigDecimal allAdvanceAmount = new BigDecimal("0");
-//            for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
-//                allAdvanceAmount = allAdvanceAmount.add(advanceRechargeRecord.getAmount());
-//            }
-//            if (allAdvanceAmount.compareTo(shopGoodsOrder.getAdvanceAmount()) < 0) {
-//                throw new OptimisticLockingFailureException("权额不足，请重新下单！");
-//            }
-//        }
-//        // 余额不足
-//        if (shopGoodsOrder.getTotalPoint() != null && (shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_4)
-//                || shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_5))) {
-//            UserInfo userInfo = userInfoService.selectById(UserUuidThreadLocal.get().getId());
-//            if (userInfo.getBalance1().compareTo(shopGoodsOrder.getTotalPoint()) < 0) {
-//                throw new OptimisticLockingFailureException("余额不足，请重新下单！");
-//            }
-//        }
         // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
         String subject = null;
         String notify_url = "http://jgapi.china-mail.com.cn/api/constant/payNotify/weixinNotifyUrl";
@@ -662,5 +620,13 @@ public class ShopGoodsOrderController {
         return resultWrapper;
     }
 
+    @GetMapping(value = "/statistics")
+    @ApiOperation(value = "统计订单", notes = "统计订单")
+    public ResultWrapper<List<ShopGoodsOrderStatisticVo>> detail() {
+        ResultWrapper<List<ShopGoodsOrderStatisticVo>> resultWrapper = new ResultWrapper<>();
+        List<ShopGoodsOrderStatisticVo> statistics = shopGoodsOrderService.statistics();
+        resultWrapper.setResult(statistics);
+        return resultWrapper;
+    }
 }
 

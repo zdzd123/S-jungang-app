@@ -4,12 +4,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableEurekaClient
 @SpringBootApplication
 @EnableCaching(proxyTargetClass = true) // 开启缓存功能
 @EnableScheduling
+@EnableAsync
 public class MyProducerStart {
     /**
      * druid连接池URL：http://localhost:2222/druid/weburi.html

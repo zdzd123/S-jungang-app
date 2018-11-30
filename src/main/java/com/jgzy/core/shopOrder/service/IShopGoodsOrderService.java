@@ -2,6 +2,7 @@ package com.jgzy.core.shopOrder.service;
 
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
+import com.jgzy.core.shopOrder.vo.ShopGoodsOrderStatisticVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
 import com.jgzy.entity.po.ShopGoodsOrder;
 
@@ -44,4 +45,11 @@ public interface IShopGoodsOrderService extends IService<ShopGoodsOrder> {
      * @return 商品订单
      */
     ShopGoodsOrderVo selectOneOrder(Integer id, String orderNo);
+
+    /**
+     * 统计订单数量
+     *
+     * @return 统计
+     */
+    List<ShopGoodsOrderStatisticVo> statistics();
 }

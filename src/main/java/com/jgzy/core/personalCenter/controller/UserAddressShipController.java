@@ -2,7 +2,6 @@ package com.jgzy.core.personalCenter.controller;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
-import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.service.IUserAddressShipService;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.entity.common.ResultWrapper;
@@ -41,7 +40,7 @@ public class UserAddressShipController {
 
     @ApiOperation(value = "获取所有发货地址", notes = "获取所有发货地址")
     @GetMapping(value = "/list")
-    public ResultWrapper<List<UserAddressVo>> listPage(){
+    public ResultWrapper<List<UserAddressVo>> listPage() {
         ResultWrapper<List<UserAddressVo>> resultWrapper = new ResultWrapper<>();
         List<UserAddressVo> userAddressVoList = userAddressShipService.selectMyList();
         resultWrapper.setResult(userAddressVoList);
@@ -51,7 +50,7 @@ public class UserAddressShipController {
     @ApiOperation(value = "发货地址（分页）", notes = "发货地址（分页）")
     @GetMapping(value = "/page/list")
     public ResultWrapper<Page<UserAddressVo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
-                                                         @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
+                                                       @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
         ResultWrapper<Page<UserAddressVo>> resultWrapper = new ResultWrapper<>();
         Page<UserAddressVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
         page = userAddressShipService.getUserAddressShip(page);
@@ -66,11 +65,13 @@ public class UserAddressShipController {
         Integer id = po.getId();
         boolean successful = false;
         if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            if (po.getIsDefault().equals(2)){
+            if (po.getIsDefault().equals(2)) {
                 UserAddressShip my = new UserAddressShip();
                 my.setIsDefault(1);
                 successful = userAddressShipService.update(my, new EntityWrapper<UserAddressShip>()
-                .eq("create_user", UserUuidThreadLocal.get().getId()));
+                        .eq("create_user", UserUuidThreadLocal.get().getId()));
+            } else {
+                userAddressShipService.updateById(po);
             }
             if (successful) {
                 successful = userAddressShipService.updateById(po);
@@ -86,6 +87,14 @@ public class UserAddressShipController {
         ResultWrapper<UserAddressShip> resultWrapper = new ResultWrapper<>();
         po.setCreateUser(UserUuidThreadLocal.get().getId());
         po.setAddTime(new Date());
+        if (po.getIsDefault() == null) {
+            po.setIsDefault(1);
+        } else if (po.getIsDefault() == 2) {
+            UserAddressShip my = new UserAddressShip();
+            my.setIsDefault(1);
+            userAddressShipService.update(my, new EntityWrapper<UserAddressShip>()
+                    .eq("create_user", UserUuidThreadLocal.get().getId()));
+        }
         boolean successful = userAddressShipService.insert(po);
         resultWrapper.setSuccessful(successful);
         return resultWrapper;

@@ -5,6 +5,7 @@
         SELECT
           cart.id,
           cart.goods_id,
+          cart.goods_cart_counts,
           goods.shop_name,
           goods.cost_price,
           goods.pic,
@@ -12,9 +13,9 @@
           goods.goods_unit,
           goods.abstracts,
 		  goods.stock,
-		  cart.goods_cart_counts
+		  goods.stock_type
         FROM user_goods_cart cart
-        JOIN shop_goods goods ON cart.goods_id=goods.id
+        JOIN shop_goods goods ON cart.goods_id=goods.id AND goods.status = 2
         WHERE cart.cart_user_info_id = #{id}
           AND cart.live_id = 1
         ORDER BY cart.id desc

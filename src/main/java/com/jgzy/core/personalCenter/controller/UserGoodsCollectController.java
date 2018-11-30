@@ -20,10 +20,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.stereotype.Controller;
-
 import java.util.Date;
-import java.util.List;
 
 /**
  * <p>
@@ -48,12 +45,12 @@ public class UserGoodsCollectController {
         UserGoodsCollect userGoodsCollect = userGoodsCollectService.selectOne(new EntityWrapper<UserGoodsCollect>()
                 .eq("goods_id", po.getGoodsId())
                 .eq("collect_user_info_id", UserUuidThreadLocal.get().getId()));
-        if (userGoodsCollect == null){
+        if (userGoodsCollect == null) {
             po.setCollectUserInfoId(UserUuidThreadLocal.get().getId());
             po.setCollectTime(DateUtil.getDate());
             boolean successful = userGoodsCollectService.insert(po);
             resultWrapper.setSuccessful(successful);
-        }else {
+        } else {
             userGoodsCollect.setUserDel(1);
             userGoodsCollect.setCollectTime(new Date());
             boolean b = userGoodsCollectService.updateById(userGoodsCollect);
@@ -65,7 +62,7 @@ public class UserGoodsCollectController {
     @ApiOperation(value = "查询个人收藏（分页）", notes = "查询个人收藏（分页）")
     @GetMapping(value = "/page/list")
     public ResultWrapper<Page<UserGoodsCollectionVo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
-                                                          @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
+                                                               @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize) {
         ResultWrapper<Page<UserGoodsCollectionVo>> resultWrapper = new ResultWrapper<>();
         Page<UserGoodsCollectionVo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
         page = userGoodsCollectService.getUserGoodsCollectByUserId(page);
@@ -77,8 +74,10 @@ public class UserGoodsCollectController {
     @ApiOperation(value = "查看商品是否收藏", notes = "查看商品是否收藏")
     public ResultWrapper<Boolean> checkGoodsCollect(@ApiParam(value = "商品id", required = true) @RequestParam Integer goodsId) {
         ResultWrapper<Boolean> resultWrapper = new ResultWrapper<>();
-        int i = userGoodsCollectService.selectCount(new EntityWrapper<UserGoodsCollect>().eq("goods_id", goodsId)
-                .eq("collect_user_info_id", UserUuidThreadLocal.get().getId()));
+        int i = userGoodsCollectService.selectCount(new EntityWrapper<UserGoodsCollect>()
+                .eq("goods_id", goodsId)
+                .eq("collect_user_info_id", UserUuidThreadLocal.get().getId())
+                .eq("user_del", 1));
         resultWrapper.setResult(true);
         if (i == 0) {
             resultWrapper.setResult(false);
@@ -93,7 +92,9 @@ public class UserGoodsCollectController {
         ResultWrapper<UserGoodsCollect> resultWrapper = new ResultWrapper<>();
         boolean successful = false;
         if (ValidatorUtil.isNotNullOrEmpty(id)) {
-            UserGoodsCollect userGoodsCollect = userGoodsCollectService.selectById(id);
+            UserGoodsCollect userGoodsCollect = userGoodsCollectService.selectOne(new EntityWrapper<UserGoodsCollect>()
+                    .eq("goods_id", id)
+                    .eq("collect_user_info_id", UserUuidThreadLocal.get().getId()));
             if (userGoodsCollect == null) {
                 throw new OptimisticLockingFailureException("不存在该商品收藏");
             }

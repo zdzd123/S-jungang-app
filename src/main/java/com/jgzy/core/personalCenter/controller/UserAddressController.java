@@ -108,6 +108,8 @@ public class UserAddressController {
                 my.setIsDefault(1);
                 successful = userAddressService.update(my, new EntityWrapper<UserAddress>()
                         .eq("create_user", UserUuidThreadLocal.get().getId()));
+            }else {
+                userAddressService.updateById(po);
             }
             if (successful) {
                 successful = userAddressService.updateById(po);
@@ -124,7 +126,12 @@ public class UserAddressController {
         po.setCreateUser(UserUuidThreadLocal.get().getId());
         po.setAddTime(new Date());
         if (po.getIsDefault() == null) {
-            po.setIsDefault(2);
+            po.setIsDefault(1);
+        }else if (po.getIsDefault() == 2){
+            UserAddress my = new UserAddress();
+            my.setIsDefault(1);
+            userAddressService.update(my, new EntityWrapper<UserAddress>()
+                    .eq("create_user", UserUuidThreadLocal.get().getId()));
         }
         boolean successful = userAddressService.insert(po);
         resultWrapper.setSuccessful(successful);

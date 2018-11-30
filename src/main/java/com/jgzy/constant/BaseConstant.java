@@ -12,7 +12,8 @@ public class BaseConstant {
 
     // 不是特定商品
     public static final int NOT_SPECIAL = 0;
-    // 特定商品
+    // 特定商品 1
+    public static final int IS_SPECIAL_0 = 0;
     public static final int IS_SPECIAL = 1;
 
     // 合伙人审核状态(0-正常 1-锁定 2-待审核 3-未通过
@@ -38,23 +39,30 @@ public class BaseConstant {
     public static final int ORDER_STATUS_1 = 1;
     public static final int ORDER_STATUS_3 = 3;
     public static final int ORDER_STATUS_4 = 4;
+    public static final int ORDER_STATUS_5 = 5;
     public static final int ORDER_STATUS_6 = 6;
     public static final int ORDER_STATUS_11 = 11;
     public static final int ORDER_STATUS_12 = 12;
     // 流水交易方式(收入=1|支出=2)
     public static final int TRADE_TYPE_1 = 1;
     public static final int TRADE_TYPE_2 = 2;
-    // 1-消费，2-转入，3-转出，4-收益，5-退款，\n" +
-    // 6-已提现，61-提现退回，62-提现冻结，\n" +
-    // 7-合伙人佣金，71-合伙人佣金冻结，72-合伙人佣金冻结到期转出，73-合伙人佣金退回\n" +
-    // 8-消费者佣金，81-消费者佣金冻结，82-消费者佣金冻结到期转出，83-消费者佣金退回\n" +
+    // 1-消费，2-转入，3-转出，
+    // 4-股权收益，41-股权收益冻结
+    // 5-退款，51-退款冻结，
+    // 6-已提现，61-提现退回，62-提现冻结
+    // 7-合伙人佣金，71-合伙人佣金冻结，72-合伙人佣金冻结到期转出，73-合伙人佣金退回
+    // 8-消费者佣金，81-消费者佣金冻结，82-消费者佣金冻结到期转出，83-消费者佣金退回
     // 9-自己消费佣金，91-自己消费佣金冻结，92-自己消费佣金冻结到期转出，93-自己消费佣金退回
     public static final int BUSSINESS_TYPE_1 = 1;
     public static final int BUSSINESS_TYPE_2 = 2;
     public static final int BUSSINESS_TYPE_4 = 4;
+    public static final int BUSSINESS_TYPE_41 = 41;
     public static final int BUSSINESS_TYPE_5 = 5;
+    public static final int BUSSINESS_TYPE_51 = 51;
     public static final int BUSSINESS_TYPE_7 = 7;
+    public static final int BUSSINESS_TYPE_71 = 71;
     public static final int BUSSINESS_TYPE_8 = 8;
+    public static final int BUSSINESS_TYPE_81 = 81;
     public static final int BUSSINESS_TYPE_62 = 62;
     // 1-积分，2-余额，3-冻结，4-微信，5-支付宝，6-提现，7-荣誉值，8-权额， 9-品牌费
     public static final int ACCOUNT_TYPE_1 = 1;
@@ -96,4 +104,8 @@ public class BaseConstant {
     public static final int ORDER_SOURCE_1 = 1;
     public static final int ORDER_SOURCE_2 = 2;
     public static final int ORDER_SOURCE_3 = 3;
+    // 订单用户删除
+    public static final int USER_DEL = 1;
+    // 库存方式（默认=0 | 0库存销售 = 1|0库存自动下架 = 2）
+    public static final int STOCK_TYPE_1 = 1;
 }

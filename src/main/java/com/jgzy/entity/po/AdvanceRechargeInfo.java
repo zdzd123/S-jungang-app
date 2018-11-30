@@ -35,14 +35,14 @@ public class AdvanceRechargeInfo implements Serializable {
     @ApiModelProperty(value = "折扣率", example = "0.8")
     private BigDecimal discountRate;
     @ApiModelProperty(value = "权额描述", example = "不可以用于购买酒具礼盒")
-    private String describe;
+    private String advanceRechargeDescribe;
 
-    public String getDescribe() {
-        return describe;
+    public String getAdvanceRechargeDescribe() {
+        return advanceRechargeDescribe;
     }
 
-    public void setDescribe(String describe) {
-        this.describe = describe;
+    public void setAdvanceRechargeDescribe(String advanceRechargeDescribe) {
+        this.advanceRechargeDescribe = advanceRechargeDescribe;
     }
 
     public Integer getId() {

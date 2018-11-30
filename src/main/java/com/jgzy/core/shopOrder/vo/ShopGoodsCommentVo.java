@@ -22,8 +22,11 @@ import java.util.Date;
 public class ShopGoodsCommentVo{
 
     @ApiModelProperty(value = "id", example = "1")
-    @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
+    /**
+     * 用户id
+     */
+    private Integer userId;
     /**
      * 商品信息id
      */
@@ -70,20 +73,42 @@ public class ShopGoodsCommentVo{
      */
     @ApiModelProperty(value = "状态(待审核=1|已审核=2)", example = "1")
     private Integer status;
-    /**
-     * 规格
-     */
-    @ApiModelProperty(value = "规格", example = "1")
-    private String platformGoodsSpecNames;
-    /**
-     * 规格值
-     */
-    @ApiModelProperty(value = "规格值", example = "1")
-    private String platformGoodsSpecValueNames;
-    @ApiModelProperty(value = "shopGoodsDetailId", example = "1")
-    private Integer shopGoodsDetailId;
     @ApiModelProperty(value = "评价数量", example = "100")
     private Integer commentCount;
+    /**
+     * 昵称
+     */
+    @ApiModelProperty(value = "昵称", example = "昵称")
+    private String nickname;
+    /**
+     * 头像
+     */
+    @ApiModelProperty(value = "头像", example = "/1.png")
+    private String headPortrait;
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String getHeadPortrait() {
+        return headPortrait;
+    }
+
+    public void setHeadPortrait(String headPortrait) {
+        this.headPortrait = headPortrait;
+    }
+
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
 
     public Integer getCommentCount() {
         return commentCount;
@@ -173,30 +198,6 @@ public class ShopGoodsCommentVo{
         this.status = status;
     }
 
-    public String getPlatformGoodsSpecNames() {
-        return platformGoodsSpecNames;
-    }
-
-    public void setPlatformGoodsSpecNames(String platformGoodsSpecNames) {
-        this.platformGoodsSpecNames = platformGoodsSpecNames;
-    }
-
-    public String getPlatformGoodsSpecValueNames() {
-        return platformGoodsSpecValueNames;
-    }
-
-    public void setPlatformGoodsSpecValueNames(String platformGoodsSpecValueNames) {
-        this.platformGoodsSpecValueNames = platformGoodsSpecValueNames;
-    }
-
-    public Integer getShopGoodsDetailId() {
-        return shopGoodsDetailId;
-    }
-
-    public void setShopGoodsDetailId(Integer shopGoodsDetailId) {
-        this.shopGoodsDetailId = shopGoodsDetailId;
-    }
-
     @Override
     public String toString() {
         return "ShopGoodsComment{" +
@@ -210,9 +211,6 @@ public class ShopGoodsCommentVo{
                 ", appraisePic=" + appraisePic +
                 ", appraiseTime=" + appraiseTime +
                 ", status=" + status +
-                ", platformGoodsSpecNames=" + platformGoodsSpecNames +
-                ", platformGoodsSpecValueNames=" + platformGoodsSpecValueNames +
-                ", shopGoodsDetailId=" + shopGoodsDetailId +
                 "}";
     }
 }

@@ -45,7 +45,7 @@ public class ShopStockServiceImpl extends ServiceImpl<ShopStockMapper, ShopStock
     }
 
     @Override
-    public boolean updateMyShopStockByGoodsId(Integer buyCount, Integer shopGoodsId) {
-        return shopStockMapper.updateMyShopStockByGoodsId(buyCount, shopGoodsId);
+    public boolean updateMyShopStockByGoodsId(Integer buyCount, Integer shopGoodsId, Integer userId) {
+        return shopStockMapper.updateMyShopStockByGoodsId(buyCount, shopGoodsId, userId);
     }
 }

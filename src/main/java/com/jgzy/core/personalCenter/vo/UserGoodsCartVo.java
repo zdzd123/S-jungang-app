@@ -23,8 +23,18 @@ public class UserGoodsCartVo {
     private String abstracts;
     @ApiModelProperty(value = "商品库存", example = "商品库存")
     private String stock;
+    @ApiModelProperty(value = "库存方式（0-默认  库存销售=1  库存自动下架=2）", example = "商品库存")
+    private String stockType;
     @ApiModelProperty(value = "购物数量", example = "商品库存")
     private String goodsCartCounts;
+
+    public String getStockType() {
+        return stockType;
+    }
+
+    public void setStockType(String stockType) {
+        this.stockType = stockType;
+    }
 
     public String getId() {
         return id;

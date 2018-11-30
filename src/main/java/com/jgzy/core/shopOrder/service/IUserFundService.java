@@ -6,6 +6,8 @@ import com.jgzy.core.personalCenter.vo.MyTeamDetailVo;
 import com.jgzy.core.personalCenter.vo.MyTeamVo;
 import com.jgzy.entity.po.UserFund;
 
+import java.util.List;
+
 /**
  * <p>
  * 服务类
@@ -27,12 +29,12 @@ public interface IUserFundService extends IService<UserFund> {
     MyTeamVo selectSumIncreaseMoney(Integer id);
 
     /**
-     * 统计消费者和合伙人佣金和分销收益按用户排序
+     * 统计消费者和合伙人佣金和分销收益和累积榜单
      *
      * @param id 用户id
      * @return 消费者和合伙人佣金和分销收益
      */
-    Page<MyTeamDetailVo> selectUserSumIncreaseMoney(Page<MyTeamDetailVo> page, Integer id);
+    MyTeamVo selectUserSumIncreaseMoney(Integer id);
 
     /**
      * 统计消费者和合伙人佣金和分销收益按用户排序

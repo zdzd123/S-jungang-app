@@ -68,13 +68,12 @@ public class OriginatorInfoOrderController {
     public ResultWrapper<HashMap<String, String>> pay() throws Exception {
         ResultWrapper<HashMap<String, String>> resultWrapper = new ResultWrapper<>();
         // 返回参数
-        HashMap<String, String> resultMap = new HashMap<String, String>();
+        HashMap<String, String> resultMap = new HashMap<>();
         Integer id = UserUuidThreadLocal.get().getId();
-        int count = originatorInfoService.selectCount(new EntityWrapper<OriginatorInfo>()
-                .eq("status", 0)
+        OriginatorInfo originatorInfo = originatorInfoService.selectOne(new EntityWrapper<OriginatorInfo>()
                 .eq("user_id", id));
-        if (count != 0) {
-            throw new OptimisticLockingFailureException("已成为正式合伙人");
+        if (originatorInfo == null || originatorInfo.getStatus() != 4) {
+            throw new OptimisticLockingFailureException("请通过审核后缴纳品牌费");
         }
         int orderCount = originatorInfoOrderService.selectCount(new EntityWrapper<OriginatorInfoOrder>()
                 .eq("submit_order_user", id)
@@ -208,7 +207,7 @@ public class OriginatorInfoOrderController {
         // 插入流水
         UserFund userFund = new UserFund();
         userFund.setTradeUserId(originatorInfoOrder.getSubmitOrderUser());
-        userFund.setIncreaseMoney(originatorInfoOrder.getOrderAmount());
+        userFund.setDecreaseMoney(originatorInfoOrder.getOrderAmount());
         userFund.setOrderNo(outTradeNo);
         userFund.setTradeTime(new Date());
         userFund.setTradeType(BaseConstant.TRADE_TYPE_2);

@@ -28,31 +28,47 @@ public interface UserFundMapper extends BaseMapper<UserFund> {
     /**
      * 查询统计
      *
-     * @param id     用户id
+     * @param idList 用户id
      * @param status
      * @return 用户统计
      */
-    List<MyTeamDetailVo> selectUserSumIncreaseMoney(Page<MyTeamDetailVo> page, @Param("id") Integer id, @Param("status") String status);
+    List<MyTeamDetailVo> selectUserSumIncreaseMoney(Page<MyTeamDetailVo> page, @Param("list") List<String> idList, @Param("status") String status);
 
     /**
      * 按月份查询统计
      *
-     * @param id         用户id
+     * @param idList     用户id
      * @param monthBegin 开始时间
      * @param monthEnd   结束时间
      * @param status
      * @return 用户统计
      */
-    List<MyTeamDetailVo> selectUserSumIncreaseMoneyList(@Param("id") Integer id, @Param("begin") String monthBegin,
+    List<MyTeamDetailVo> selectUserSumIncreaseMoneyList(@Param("list") List<String> idList, @Param("begin") String monthBegin,
                                                         @Param("end") String monthEnd, @Param("status") String status);
 
     /**
      * 统计佣金
      *
-     * @param id 用户id
+     * @param id     用户id
      * @param status
      * @return 佣金
      */
     MyTeamVo selectStatisticsIncreaseMoney(@Param("id") Integer id, @Param("status") String status, @Param("begin") String monthBegin,
                                            @Param("end") String monthEnd);
+
+    /**
+     * 我的团队列表
+     *
+     * @param id id
+     * @return 我的团队
+     */
+    String getDistributionList(@Param("id") Integer id);
+
+    /**
+     * 查询我的累积收益
+     *
+     * @param id id
+     * @return 我的累积收益
+     */
+    MyTeamDetailVo selectMySumIncreaseMoneyList(@Param("id") Integer id);
 }

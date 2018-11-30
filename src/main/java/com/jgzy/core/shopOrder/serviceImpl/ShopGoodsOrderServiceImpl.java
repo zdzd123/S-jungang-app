@@ -1,10 +1,12 @@
 package com.jgzy.core.shopOrder.serviceImpl;
 
 import com.baomidou.mybatisplus.plugins.Page;
+import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.mapper.UserActivityCouponMapper;
 import com.jgzy.core.shopOrder.mapper.ShopGoodsOrderMapper;
 import com.jgzy.core.shopOrder.service.IShopGoodsOrderService;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.jgzy.core.shopOrder.vo.ShopGoodsOrderStatisticVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
 import com.jgzy.core.shopOrder.vo.ShopgoodsOrderDetailVo;
 import com.jgzy.entity.common.UserUuidThreadLocal;
@@ -14,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -93,7 +96,11 @@ public class ShopGoodsOrderServiceImpl extends ServiceImpl<ShopGoodsOrderMapper,
         if (orderSource != null) {
             split = orderSource.split(",");
         }
-        List<ShopGoodsOrderVo> shopGoodsOrderVoList = shopGoodsOrderMapper.selectMyOrder(orderStatus, split);
-        return shopGoodsOrderVoList;
+        return shopGoodsOrderMapper.selectMyOrder(orderStatus, split);
+    }
+
+    @Override
+    public List<ShopGoodsOrderStatisticVo> statistics() {
+        return shopGoodsOrderMapper.statistics(UserUuidThreadLocal.get().getId());
     }
 }

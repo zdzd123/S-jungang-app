@@ -65,7 +65,7 @@ public class MyWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
                 // 登录成功后将user对象放置在本地线程中，方便controller和service获取
                 UserUuidThreadLocal.set((UserInfo) RedisUtil.hget(RedisConstant.REDIS_USER_KEY, token));
 //                UserInfo userInfo = new UserInfo();
-//                userInfo.setId(18);
+//                userInfo.setId(1);
 //                UserUuidThreadLocal.set(userInfo);
             }
             return true;

@@ -21,9 +21,9 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-public class ScheduledTasks {
+public class DealOverduePaymentsTasks {
 
-    private static final Logger log = LoggerFactory.getLogger(ScheduledTasks.class);
+    private static final Logger log = LoggerFactory.getLogger(DealOverduePaymentsTasks.class);
 
     @Autowired
     private IShopGoodsOrderService shopGoodsOrderService;
@@ -41,10 +41,10 @@ public class ScheduledTasks {
     private IShopStockService shopStockService;
 
     /**
-     * 处理逾期订单 5分钟
+     * 处理逾期订单 10分钟
      */
-    @Scheduled(fixedRate = 300000)
-//    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 10 * 60 * 1000)
+//    @Scheduled(fixedRate = 1000)
     @Transactional
     public void dealOverduePayments() {
         log.info("---------------------" + "开始处理逾期订单" + "----------------------------");
@@ -148,16 +148,17 @@ public class ScheduledTasks {
                     new EntityWrapper<ShopGoodsOrderDetail>()
                             .eq("order_id", shopGoodsOrder.getId()));
             for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
-                if (!shopGoodsOrder.getOrderSource().equals(BaseConstant.ORDER_SOURCE_2)){
+                if (!shopGoodsOrder.getOrderSource().equals(BaseConstant.ORDER_SOURCE_2)) {
                     // 返还商品库存
                     boolean b = shopGoodsService.updateStockById(shopGoodsOrderDetail.getBuyCount() * -1, shopGoodsOrderDetail.getShopGoodsId());
                     if (!b) {
                         log.info("更新商品库存失败！订单ID为：" + shopGoodsOrder.getId());
                         throw new OptimisticLockingFailureException("更新商品库存失败！订单ID为：" + shopGoodsOrder.getId());
                     }
-                }else {
+                } else {
                     // 返还库存
-                    boolean b1 = shopStockService.updateMyShopStockByGoodsId(shopGoodsOrderDetail.getBuyCount() * -1, shopGoodsOrderDetail.getShopGoodsId());
+                    boolean b1 = shopStockService.updateMyShopStockByGoodsId(shopGoodsOrderDetail.getBuyCount() * -1,
+                            shopGoodsOrderDetail.getShopGoodsId(), shopGoodsOrder.getSubmitOrderUser());
                     if (!b1) {
                         log.info("更新库存失败！订单ID为：" + shopGoodsOrder.getId());
                         throw new OptimisticLockingFailureException("更新库存失败！订单ID为：" + shopGoodsOrder.getId());

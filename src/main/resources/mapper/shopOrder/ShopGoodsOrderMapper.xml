@@ -158,18 +158,12 @@
             <if test="orderNo != null">
                 AND a.order_no = #{orderNo}
             </if>
+            AND user_del != 1
         </where>
         ORDER BY a.id DESC
     </select>
 
     <select id="selectDetailAndAttribute" resultMap="ShopGoodsOrderDetail">
-        <!--SELECT <include refid="Base_Detail_Column_List"/>,<include refid="Base_Attribute_Column_List"/>-->
-        <!--FROM shop_goods_order_detail detail-->
-        <!--RIGHT JOIN shop_goods_attribute att ON detail.shop_goods_id = att.shop_goods_id-->
-        <!--WHERE detail.order_id = #{id}-->
---         AND att.attribute_value_name IS NOT NULL
---         AND att.attribute_value_name != ""
---         AND att.attribute_value_name != "下拉选择"
         SELECT <include refid="Base_Detail_Column_List"/>,goods.abstracts
         FROM shop_goods_order_detail detail
         LEFT JOIN shop_goods goods ON detail.shop_goods_id=goods.id
@@ -178,5 +172,17 @@
 
     <select id="selectOneOrder" resultType="com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo">
 
+    </select>
+    <select id="statistics" resultType="com.jgzy.core.shopOrder.vo.ShopGoodsOrderStatisticVo">
+        SELECT
+            count( * ) count,
+            order_status,
+            order_source
+        FROM
+            shop_goods_order
+        WHERE user_del != 1 AND submit_order_user = #{id}
+        GROUP BY
+            order_status,
+            order_source
     </select>
 </mapper>

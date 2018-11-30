@@ -1,11 +1,11 @@
 package com.jgzy.core.personalCenter.vo;
 
-import com.baomidou.mybatisplus.annotations.TableId;
-import com.baomidou.mybatisplus.enums.IdType;
+import com.jgzy.core.shopOrder.vo.ShopGoodsOrderStatisticVo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.io.Serializable;
+import java.util.List;
 
 @ApiModel("个人中心展示模型-VO")
 public class PersonalCenterVo implements Serializable {
@@ -23,9 +23,15 @@ public class PersonalCenterVo implements Serializable {
     private String headPortrait;
     @ApiModelProperty(value = "用户等级", example = "100")
     private String levelId;
+    @ApiModelProperty(value = "订单数量", example = "100")
+    private List<ShopGoodsOrderStatisticVo> shopGoodsOrderStatisticVolist;
 
-    public static long getSerialVersionUID() {
-        return serialVersionUID;
+    public List<ShopGoodsOrderStatisticVo> getShopGoodsOrderStatisticVolist() {
+        return shopGoodsOrderStatisticVolist;
+    }
+
+    public void setShopGoodsOrderStatisticVolist(List<ShopGoodsOrderStatisticVo> shopGoodsOrderStatisticVolist) {
+        this.shopGoodsOrderStatisticVolist = shopGoodsOrderStatisticVolist;
     }
 
     public String getNickName() {

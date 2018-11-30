@@ -189,4 +189,18 @@ public class DateUtil {
         dar.add(java.util.Calendar.HOUR_OF_DAY, hour);
         return dar.getTime();
     }
+
+    /**
+     * 获取几天后的时间
+     *
+     * @param days 天
+     * @return 时间
+     */
+    public static Date getDaysLater(int days) {
+        Date date = new Date();
+        Calendar dar = Calendar.getInstance();
+        dar.setTime(date);
+        dar.add(Calendar.DATE,dar.get(Calendar.DATE)+days);
+        return dar.getTime();
+    }
 }

@@ -91,7 +91,7 @@ public class ShopGoods implements Serializable {
     /**
      * 库存方式（0库存销售=1|0库存自动下架=2）
      */
-    @ApiModelProperty(value = "库存方式（0库存销售=1|0库存自动下架=2）", example = "1")
+    @ApiModelProperty(value = "库存方式（0-默认  库存销售=1  库存自动下架=2）", example = "1")
     private Integer stockType;
     /**
      * 运费(卖家承担运费=1|买家承担运费=2)
@@ -228,7 +228,7 @@ public class ShopGoods implements Serializable {
     private Integer channel;
     @ApiModelProperty(value = "remarks", example = "1")
     private String remarks;
-    @ApiModelProperty(value = "abstracts", example = "1")
+    @ApiModelProperty(value = "商品简介", example = "1")
     private String abstracts;
     @ApiModelProperty(value = "homePageSort", example = "1")
     private Integer homePageSort;

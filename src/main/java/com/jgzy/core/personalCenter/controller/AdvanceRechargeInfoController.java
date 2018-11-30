@@ -35,7 +35,8 @@ public class AdvanceRechargeInfoController {
     @ApiOperation(value = "查询权额折扣", notes = "查询权额折扣")
     public ResultWrapper<List<AdvanceRechargeInfo>> detail() {
         ResultWrapper<List<AdvanceRechargeInfo>> resultWrapper = new ResultWrapper<>();
-        List<AdvanceRechargeInfo> advanceRechargeInfos = advanceRechargeInfoService.selectList(new EntityWrapper<>());
+        List<AdvanceRechargeInfo> advanceRechargeInfos = advanceRechargeInfoService.selectList(
+                new EntityWrapper<AdvanceRechargeInfo>().orderBy("level_id ASC"));
         resultWrapper.setResult(advanceRechargeInfos);
         return resultWrapper;
     }
