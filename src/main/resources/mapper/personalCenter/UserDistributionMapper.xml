@@ -26,4 +26,33 @@
     <select id="selectMyUserDistributionIdList" resultType="string">
         select getDistributionList (#{id}, 1)
     </select>
+    <select id="selectMyConsumerList" resultType="string">
+        SELECT
+          userDistribution.user_id
+        FROM
+          user_distribution userDistribution
+        LEFT JOIN originator_info originatorInfo ON userDistribution.user_id = originatorInfo.user_id
+        WHERE
+          parent_id = #{id}
+          AND (originatorInfo.`status` IS NULL || originatorInfo.`status` <![CDATA[ <> ]]> 0)
+        UNION ALL
+        SELECT
+          userDistribution.user_id
+        FROM
+          user_distribution userDistribution
+        LEFT JOIN originator_info originatorInfo ON userDistribution.user_id = originatorInfo.user_id
+        WHERE
+          parent_id IN ( SELECT user_id FROM user_distribution WHERE parent_id = #{id} )
+          AND (originatorInfo.`status` IS NULL || originatorInfo.`status` <![CDATA[ <> ]]> 0)
+    </select>
+    <select id="selectMyPartner" resultType="string">
+        SELECT
+          userDistribution.user_id
+        FROM
+          user_distribution userDistribution
+        JOIN originator_info originatorInfo ON userDistribution.user_id = originatorInfo.user_id
+        WHERE
+          parent_id = #{id}
+          AND originatorInfo.`status` <![CDATA[ = ]]> 0
+    </select>
 </mapper>

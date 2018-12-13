@@ -42,8 +42,6 @@ public class ShopGoodsCommentController {
     private IShopGoodsCommentService shopGoodsCommentService;
     @Autowired
     private IShopGoodsOrderService shopGoodsOrderService;
-    @Autowired
-    private DealOverTimeOrderTasks dealOverTimeOrderTasks;
 
     @GetMapping(value = "/detail/{shopGoodsId:\\d+}")
     @ApiImplicitParam(name = "shopGoodsId", value = "商品ID", required = true, paramType = "path", dataType = "Integer")
@@ -101,8 +99,6 @@ public class ShopGoodsCommentController {
         shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_11);
         shopGoodsOrderService.updateById(shopGoodsOrder);
         resultWrapper.setSuccessful(successful);
-        // 异步处理关闭订单
-        dealOverTimeOrderTasks.dealCommissionAmount();
         return resultWrapper;
     }
 }

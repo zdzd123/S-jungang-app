@@ -47,7 +47,17 @@ public class CalcSingleAmountVo {
     private Integer count;
     @ApiModelProperty(value = "商品简介", example = "5")
     private String abstracts;
+    @ApiModelProperty(value = "0-默认 1-0库存可销售", example = "5")
+    private Integer stockType;
 //    private List<ShopGoodsAttribute> shopGoodsAttributeList;
+
+    public Integer getStockType() {
+        return stockType;
+    }
+
+    public void setStockType(Integer stockType) {
+        this.stockType = stockType;
+    }
 
     public String getAbstracts() {
         return abstracts;

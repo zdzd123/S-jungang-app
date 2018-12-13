@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
+import com.jgzy.core.schedule.DealOverTimeOrderTasks;
 import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.core.shopOrder.vo.CalcAmountVo;
 import com.jgzy.core.shopOrder.vo.CalcSingleAmountVo;
@@ -21,6 +22,7 @@ import com.jgzy.utils.WeiXinPayUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +72,11 @@ public class ShopGoodsOriginatorOrderController {
     private IOriginatorInfoOrderService originatorInfoOrderService;
     @Autowired
     private IUserDistributionConstantService userDistributionConstantService;
+    @Autowired
+    private DealOverTimeOrderTasks dealOverTimeOrderTasks;
+
+    @Value("#{'${platformGoodsCategoryList}'.split(',')}")
+    private List<Integer> specialPlatformGoodsCategoryList;
 
     @ApiOperation(value = "添加订单唤起微信支付", notes = "添加订单唤起微信支付")
     @PostMapping(value = "/weixin/save")
@@ -118,26 +125,6 @@ public class ShopGoodsOriginatorOrderController {
         UserInfo userInfo = userInfoService.selectOne(new EntityWrapper<UserInfo>().eq("id", id));
         // 计算订单金额
         CalcAmountVo calcAmountVo = calcAmount(voList, advanceRechargeRecordList, shopGoodsList, userInfo);
-        // 待审核订单 等待计算运费
-        if (carriageType != null && carriageType.equals(BaseConstant.CARRIAGE_TYPE_2)) {
-            // 插入预付单
-            ShopGoodsOrder shopGoodsOrder = initShopGoodsOrder(BaseConstant.ORDER_STATUS_0, calcAmountVo, voList.get(0));
-            shopGoodsOrder.setTradeNo(shopGoodsOrder.getOrderNo());
-            boolean successful = shopGoodsOrderService.insert(shopGoodsOrder);
-            if (!successful) {
-                throw new OptimisticLockingFailureException("订单插入失败");
-            }
-            // 插入订单详情
-            List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = initShopGoodsOrderDetail(voList, shopGoodsOrder, shopGoodsList);
-            boolean batch = shopGoodsOrderDetailService.insertBatch(shopGoodsOrderDetailList);
-            if (!batch) {
-                throw new OptimisticLockingFailureException("订单详情插入失败");
-            }
-            Map<String, String> resultMap = new HashMap<>();
-            resultMap.put("orderNo", shopGoodsOrder.getOrderNo());
-            resultWrapper.setResult(resultMap);
-            return resultWrapper;
-        }
         // 订单
         ShopGoodsOrder shopGoodsOrder;
         // 订单详情
@@ -146,14 +133,30 @@ public class ShopGoodsOriginatorOrderController {
         BigDecimal balance2 = BigDecimal.ZERO;
         // 待使用佣金
         BigDecimal balance3 = BigDecimal.ZERO;
-        // 生成权额信息
-        if (calcAmountVo.getActualAmount() == null || calcAmountVo.getActualAmount().compareTo(BigDecimal.ZERO) == 0) {
+        // 待审核订单 等待计算运费
+        if (carriageType != null && carriageType.equals(BaseConstant.CARRIAGE_TYPE_2)) {
+            // 插入预付单
+            shopGoodsOrder = initShopGoodsOrder(BaseConstant.ORDER_STATUS_0, calcAmountVo, voList.get(0));
+            shopGoodsOrder.setTradeNo(shopGoodsOrder.getOrderNo());
+            boolean successful = shopGoodsOrderService.insert(shopGoodsOrder);
+            if (!successful) {
+                throw new OptimisticLockingFailureException("订单插入失败");
+            }
+            // 插入订单详情
+            shopGoodsOrderDetailList = initShopGoodsOrderDetail(voList, shopGoodsOrder, shopGoodsList);
+            boolean batch = shopGoodsOrderDetailService.insertBatch(shopGoodsOrderDetailList);
+            if (!batch) {
+                throw new OptimisticLockingFailureException("订单详情插入失败");
+            }
+            Map<String, String> resultMap = new HashMap<>();
+            resultMap.put("orderNo", shopGoodsOrder.getOrderNo());
+            resultWrapper.setResult(resultMap);
+        }else if (calcAmountVo.getActualAmount() == null || calcAmountVo.getActualAmount().compareTo(BigDecimal.ZERO) == 0) {
+            // 生成权额信息
             // 插入订单
             shopGoodsOrder = initShopGoodsOrder(BaseConstant.ORDER_STATUS_3, calcAmountVo, voList.get(0));
             if (isStock.equals(BaseConstant.IS_STOCK_2)) {
                 shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_5);
-            } else if (isStock.equals(BaseConstant.IS_STOCK_3)) {
-                shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_4);
             }
             boolean successful = shopGoodsOrderService.insert(shopGoodsOrder);
             if (!successful) {
@@ -167,39 +170,62 @@ public class ShopGoodsOriginatorOrderController {
                 throw new OptimisticLockingFailureException("订单详情插入失败");
             }
             // 使用总金额，用于计算股权和佣金
-            BigDecimal commissionAmont = new BigDecimal("0");
-            commissionAmont = commissionAmont.add(shopGoodsOrder.getAdvanceAmount() == null ? BigDecimal.ZERO : shopGoodsOrder.getAdvanceAmount());
-            commissionAmont = commissionAmont.add(shopGoodsOrder.getTotalPoint() == null ? BigDecimal.ZERO : shopGoodsOrder.getTotalPoint());
+            BigDecimal commissionAmount = BigDecimal.ZERO;
+            commissionAmount = commissionAmount.add(shopGoodsOrder.getAdvanceAmount() == null ? BigDecimal.ZERO : shopGoodsOrder.getAdvanceAmount());
+            commissionAmount = commissionAmount.add(shopGoodsOrder.getTotalPoint() == null ? BigDecimal.ZERO : shopGoodsOrder.getTotalPoint());
+            // 实付金额，剔除礼盒酒具
+            List<ShopgoodsOrderDetailVo> myDetailList = shopGoodsOrderDetailService.
+                    selectMyShopGoodsDetailList(shopGoodsOrder.getId());
+            for (ShopgoodsOrderDetailVo myDetail : myDetailList) {
+                if (specialPlatformGoodsCategoryList.contains(myDetail.getPlatformGoodsCategoryId())) {
+                    BigDecimal cost = myDetail.getMenberPrice().multiply(new BigDecimal(myDetail.getBuyCount().toString()));
+                    commissionAmount = commissionAmount.subtract(cost);
+                }
+            }
             // 品牌费返现
             OriginatorInfoOrder originatorInfoOrder = originatorInfoOrderService.selectOne(
                     new EntityWrapper<OriginatorInfoOrder>()
                             .eq("order_status", BaseConstant.ORDER_STATUS_11)
                             .eq("submit_order_user", id));
             if (originatorInfoOrder != null && originatorInfoOrder.getRemianAmount() != null &&
-                    originatorInfoOrder.getRemianAmount().compareTo(new BigDecimal("0")) > 0) {
+                    originatorInfoOrder.getRemianAmount().compareTo(BigDecimal.ZERO) > 0) {
                 //返回2%剩余品牌费
-                BigDecimal oriAmount = originatorInfoOrder.getOrderAmount().multiply(BaseConstant.ORIGINATOR_RATE);
-                if (originatorInfoOrder.getRemianAmount().compareTo(oriAmount) < 0) {
-                    oriAmount = originatorInfoOrder.getRemianAmount();
+                BigDecimal oriAmount = commissionAmount.multiply(BaseConstant.ORIGINATOR_RATE);
+                if (oriAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    if (originatorInfoOrder.getRemianAmount().compareTo(oriAmount) < 0) {
+                        oriAmount = originatorInfoOrder.getRemianAmount();
+                    }
+                    originatorInfoOrder.setRemianAmount(originatorInfoOrder.getRemianAmount().subtract(oriAmount));
+                    originatorInfoOrder.setUpdateTime(date);
+                    boolean updateOri = originatorInfoOrderService.updateById(originatorInfoOrder);
+                    if (!updateOri) {
+                        throw new OptimisticLockingFailureException("品牌费更新失败");
+                    }
+                    //插入品牌费扣除流水
+                    UserFund userFund = new UserFund();
+                    userFund.setTradeUserId(id);
+                    userFund.setDecreaseMoney(oriAmount);
+                    userFund.setTradeDescribe("品牌费返还");
+                    userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                    userFund.setTradeTime(date);
+                    userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+                    userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_9);
+                    userFund.setPayType(BaseConstant.PAY_TYPE_6);
+                    userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_9);
+                    userFundService.InsertUserFund(userFund);
+                    //插入品牌费冻结流水
+                    UserFund fund = new UserFund();
+                    fund.setTradeUserId(id);
+                    fund.setIncreaseMoney(oriAmount);
+                    fund.setTradeDescribe("品牌费返还");
+                    fund.setOrderNo(shopGoodsOrder.getOrderNo());
+                    fund.setTradeTime(date);
+                    fund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                    fund.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
+                    fund.setPayType(BaseConstant.PAY_TYPE_6);
+                    fund.setBussinessType(BaseConstant.BUSSINESS_TYPE_51);
+                    userFundService.InsertUserFund(fund);
                 }
-                originatorInfoOrder.setRemianAmount(originatorInfoOrder.getRemianAmount().subtract(oriAmount));
-                originatorInfoOrder.setUpdateTime(date);
-                boolean updateOri = originatorInfoOrderService.updateById(originatorInfoOrder);
-                if (!updateOri) {
-                    throw new OptimisticLockingFailureException("品牌费更新失败");
-                }
-                //插入品牌费流水
-                UserFund uu = new UserFund();
-                uu.setTradeUserId(id);
-                uu.setIncreaseMoney(oriAmount);
-                uu.setTradeDescribe("品牌费返还");
-                uu.setOrderNo(shopGoodsOrder.getOrderNo());
-                uu.setTradeTime(date);
-                uu.setTradeType(BaseConstant.TRADE_TYPE_1);
-                uu.setAccountType(BaseConstant.ACCOUNT_TYPE_9);
-                uu.setPayType(BaseConstant.PAY_TYPE_6);
-                uu.setBussinessType(BaseConstant.BUSSINESS_TYPE_51);
-                userFundService.InsertUserFund(uu);
                 // 品牌费加入待使用佣金
                 balance3 = balance3.add(oriAmount);
             }
@@ -208,58 +234,62 @@ public class ShopGoodsOriginatorOrderController {
             UserDistributionConstant parentDistribution = userDistributionConstantService.selectParentDistributionById(id);
             if (myDistribution != null && myDistribution.getStockRightDiscount() != null &&
                     myDistribution.getStockRightDiscount().compareTo(new BigDecimal("0")) > 0) {
-                BigDecimal stockRight = commissionAmont.multiply(myDistribution.getStockRightDiscount());
+                BigDecimal stockRight = commissionAmount.multiply(myDistribution.getStockRightDiscount());
 //                boolean updateDiscount = userInfoService.updateStockRightDiscount(id, stockRight);
 //                if (!updateDiscount) {
 //                    throw new OptimisticLockingFailureException("合伙人股权更新失败");
 //                }
-                UserFund distributionUserFund = new UserFund();
-                distributionUserFund.setTradeUserId(id);
-                distributionUserFund.setIncreaseMoney(stockRight);
-                distributionUserFund.setTradeDescribe("股权收益");
-                distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
-                distributionUserFund.setTradeTime(date);
-                distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-                distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_1);
-                distributionUserFund.setPayType(BaseConstant.PAY_TYPE_9);
-                distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_41);
-                userFundService.InsertUserFund(distributionUserFund);
+                if (stockRight.compareTo(BigDecimal.ZERO) > 0) {
+                    UserFund distributionUserFund = new UserFund();
+                    distributionUserFund.setTradeUserId(id);
+                    distributionUserFund.setIncreaseMoney(stockRight);
+                    distributionUserFund.setTradeDescribe("股权收益");
+                    distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                    distributionUserFund.setTradeTime(date);
+                    distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                    distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_1);
+                    distributionUserFund.setPayType(BaseConstant.PAY_TYPE_9);
+                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_41);
+                    userFundService.InsertUserFund(distributionUserFund);
+                }
                 // 待使用股权
                 balance2 = balance2.add(stockRight);
             }
             if (parentDistribution != null && parentDistribution.getCommissionDiscount() != null &&
                     parentDistribution.getCommissionDiscount().compareTo(new BigDecimal("0")) > 0) {
                 // 佣金
-                BigDecimal commission = commissionAmont.multiply(parentDistribution.getCommissionDiscount());
-                boolean updateCommission = userInfoService.updateCommissionDiscount(parentDistribution.getId(), commission);
-                if (!updateCommission) {
-                    throw new OptimisticLockingFailureException("佣金更新失败");
+                BigDecimal commission = commissionAmount.multiply(parentDistribution.getCommissionDiscount());
+                if (commission.compareTo(BigDecimal.ZERO) > 0) {
+                    boolean updateCommission = userInfoService.updateCommissionDiscount(parentDistribution.getId(), commission);
+                    if (!updateCommission) {
+                        throw new OptimisticLockingFailureException("佣金更新失败");
+                    }
+                    //判断是否是合伙人
+                    int i = originatorInfoService.selectCount(new EntityWrapper<OriginatorInfo>()
+                            .eq("user_id", id)
+                            .eq("status", 0));
+                    //插入佣金和股权流水
+                    UserFund commissionUserFund = new UserFund();
+                    commissionUserFund.setTradeUserId(parentDistribution.getId());
+                    commissionUserFund.setIncreaseMoney(commission);
+                    commissionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                    commissionUserFund.setTradeTime(date);
+                    commissionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                    commissionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
+                    commissionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
+                    if (i == 0) {
+                        commissionUserFund.setTradeDescribe("消费者冻结佣金收益，姓名：" + userInfo.getNickname());
+                        commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
+                    } else {
+                        commissionUserFund.setTradeDescribe("合伙人冻结佣金收益，姓名：" + userInfo.getNickname());
+                        commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_71);
+                    }
+                    userFundService.InsertUserFund(commissionUserFund);
                 }
-                //判断是否是合伙人
-                int i = originatorInfoService.selectCount(new EntityWrapper<OriginatorInfo>()
-                        .eq("user_id", id)
-                        .eq("status", 0));
-                //插入佣金和股权流水
-                UserFund commissionUserFund = new UserFund();
-                commissionUserFund.setTradeUserId(parentDistribution.getId());
-                commissionUserFund.setIncreaseMoney(commission);
-                commissionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
-                commissionUserFund.setTradeTime(date);
-                commissionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-                commissionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
-                commissionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-                if (i == 0) {
-                    commissionUserFund.setTradeDescribe("消费者佣金收益，姓名：" + userInfo.getNickname());
-                    commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
-                } else {
-                    commissionUserFund.setTradeDescribe("合伙人佣金收益，姓名：" + userInfo.getNickname());
-                    commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_71);
-                }
-                userFundService.InsertUserFund(commissionUserFund);
             }
             // 入库单存入库存
-            if (shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)){
-                for (ShopGoodsOrderDetail shopGoodsOrderDetail:shopGoodsOrderDetailList){
+            if (shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)) {
+                for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
                     ShopStock shopStock = new ShopStock();
                     shopStock.setUserInfoId(id);
                     shopStock.setShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
@@ -318,23 +348,30 @@ public class ShopGoodsOriginatorOrderController {
         }
         /* 余额充足 1.更新权额 2.插入订单 */
         if (!CollectionUtils.isEmpty(advanceRechargeRecordList)) {
-            advanceRechargeRecordList.forEach(advanceRechargeRecord -> advanceRechargeRecord.setUpdateTime(date));
-            boolean updateBatchById = advanceRechargeRecordService.updateBatchById(advanceRechargeRecordList);
-            if (!updateBatchById) {
-                throw new OptimisticLockingFailureException("权额更新失败");
+            if (shopGoodsOrder.getAdvanceAmount() != null && shopGoodsOrder.getAdvanceAmount().compareTo(BigDecimal.ZERO) > 0) {
+                advanceRechargeRecordList.forEach(advanceRechargeRecord -> advanceRechargeRecord.setUpdateTime(date));
+                boolean updateBatchById = advanceRechargeRecordService.updateBatchById(advanceRechargeRecordList);
+                if (!updateBatchById) {
+                    throw new OptimisticLockingFailureException("权额更新失败");
+                }
+                String[] advanceList = shopGoodsOrder.getBlessing().split(":");
+                for (String singleAdvance : advanceList) {
+                    // 权额ID，等级和金额
+                    String[] paras = singleAdvance.split(",");
+                    // 插入权额流水
+                    UserFund userFund = new UserFund();
+                    userFund.setTradeUserId(id);
+                    userFund.setDecreaseMoney(new BigDecimal(paras[2]));
+                    userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                    userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+                    userFund.setTradeDescribe(paras[1] + "级权额支付");
+                    userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_8);
+                    userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
+                    userFund.setPayType(BaseConstant.PAY_TYPE_3);
+                    userFund.setTradeTime(date);
+                    userFundService.InsertUserFund(userFund);
+                }
             }
-            // 插入流水权额流水
-            UserFund userFund = new UserFund();
-            userFund.setTradeUserId(id);
-            userFund.setDecreaseMoney(shopGoodsOrder.getAdvanceAmount());
-            userFund.setOrderNo(shopGoodsOrder.getOrderNo());
-            userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
-            userFund.setTradeDescribe("权额支付");
-            userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_8);
-            userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
-            userFund.setPayType(BaseConstant.PAY_TYPE_3);
-            userFund.setTradeTime(date);
-            userFundService.InsertUserFund(userFund);
         }
         // 如果有余额
         if (userInfo != null && userInfo.getBalance1() != null &&
@@ -352,18 +389,20 @@ public class ShopGoodsOriginatorOrderController {
             if (!b) {
                 throw new OptimisticLockingFailureException("用户余额更新失败");
             }
-            // 插入流水余额流水
-            UserFund remain = new UserFund();
-            remain.setTradeUserId(id);
-            remain.setDecreaseMoney(shopGoodsOrder.getTotalPoint());
-            remain.setOrderNo(shopGoodsOrder.getOrderNo());
-            remain.setTradeType(BaseConstant.TRADE_TYPE_2);
-            remain.setTradeDescribe("余额支付");
-            remain.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
-            remain.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
-            remain.setPayType(BaseConstant.PAY_TYPE_4);
-            remain.setTradeTime(date);
-            userFundService.InsertUserFund(remain);
+            if (calcAmountVo.getRemainAmount() != null && calcAmountVo.getRemainAmount().compareTo(BigDecimal.ZERO) > 0) {
+                // 插入流水余额流水
+                UserFund remain = new UserFund();
+                remain.setTradeUserId(id);
+                remain.setDecreaseMoney(shopGoodsOrder.getTotalPoint());
+                remain.setOrderNo(shopGoodsOrder.getOrderNo());
+                remain.setTradeType(BaseConstant.TRADE_TYPE_2);
+                remain.setTradeDescribe("余额支付");
+                remain.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
+                remain.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
+                remain.setPayType(BaseConstant.PAY_TYPE_4);
+                remain.setTradeTime(date);
+                userFundService.InsertUserFund(remain);
+            }
         }
         // 存入库存
         for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
@@ -373,6 +412,10 @@ public class ShopGoodsOriginatorOrderController {
             if (!a) {
                 throw new OptimisticLockingFailureException("库存扣除失败");
             }
+        }
+        if (shopGoodsOrder.getIsStock() != null && shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)) {
+            // 异步处理关闭订单
+            dealOverTimeOrderTasks.dealCommissionAmount();
         }
         return resultWrapper;
     }
@@ -396,14 +439,14 @@ public class ShopGoodsOriginatorOrderController {
                 resultWrapper.setSuccessful(false);
                 return false;
             }
-            if (!shopGoods.getStockType().equals(1)) {
-                // 1-无库存可销售
-                if (shopGoods.getStock() < shopGoodsOrderVo.getCount()) {
-                    resultWrapper.setErrorMsg("商品:" + shopGoods.getShopName() + " 库存不足！");
-                    resultWrapper.setSuccessful(false);
-                    return false;
-                }
-            }
+//            if (!shopGoods.getStockType().equals(1)) {
+//                // 1-无库存可销售
+//                if (shopGoods.getStock() < shopGoodsOrderVo.getCount()) {
+//                    resultWrapper.setErrorMsg("商品:" + shopGoods.getShopName() + " 库存不足！");
+//                    resultWrapper.setSuccessful(false);
+//                    return false;
+//                }
+//            }
             // 权额支付
             if (shopGoodsOrderVo.getPayType().equals(BaseConstant.PAY_TYPE_3)) {
                 if (shopGoodsOrderVo.getAdvanceRechargeIds() == null) {
@@ -685,7 +728,7 @@ public class ShopGoodsOriginatorOrderController {
         // 参加折扣金额
         BigDecimal discountAmount = BigDecimal.ZERO;
         // 不参加折扣金额
-        BigDecimal noDisountAmount = BigDecimal.ZERO;
+        BigDecimal noDiscountAmount = BigDecimal.ZERO;
         // 权额金额
         BigDecimal advanceAmount = BigDecimal.ZERO;
         // 余额
@@ -724,6 +767,7 @@ public class ShopGoodsOriginatorOrderController {
             // 购买数量和库存
             calcSingleAmountVo.setCount(vo.getCount());
             calcSingleAmountVo.setStock(shopGoods.getStock());
+            calcSingleAmountVo.setStockType(shopGoods.getStockType());
             singleCalcAmountVoList.add(calcSingleAmountVo);
             // 计算订单金额
             double singleCount = vo.getCount();
@@ -731,14 +775,10 @@ public class ShopGoodsOriginatorOrderController {
             BigDecimal bigDecimalCount = BigDecimalUtil.mul(singleCount, goodsUnitCount);
             double count = bigDecimalCount.doubleValue();
             // 判断库存是否充足
-            if (count <= shopGoods.getStock()) {
-                calcAmountVo.setIsPresell(BaseConstant.PRE_SELL_2);
-            } else {
-                if (calcAmountVo.getIsPresell() == null) {
-                    calcAmountVo.setIsPresell(BaseConstant.PRE_SELL_1);
-                } else {
-                    calcAmountVo.setIsPresell(calcAmountVo.getIsPresell().equals(BaseConstant.PRE_SELL_2)
-                            ? BaseConstant.PRE_SELL_2 : BaseConstant.PRE_SELL_1);
+            if (!shopGoods.getStockType().equals(1)) {
+                // 1-无库存可销售
+                if (shopGoods.getStock() < count) {
+                    throw new OptimisticLockingFailureException("商品:" + shopGoods.getShopName() + "库存不足");
                 }
             }
             //单个商品总价
@@ -747,15 +787,14 @@ public class ShopGoodsOriginatorOrderController {
             shopGoodsAmount = shopGoodsAmount.add(amount);
             // 总金额：会员价
             totalAmount = totalAmount.add(amount);
-            // TODO 写死了id，当商品为礼盒和酒具的时候不打折,商品为不参加折扣商品
-            if (shopGoods.getPlatformGoodsCategoryId() != 4 && shopGoods.getPlatformGoodsCategoryId() != 5 ||
-                    shopGoods.getIsDiscount() != 0) {
+            // 当商品为特殊商品的时候不打折,商品为不参加折扣商品
+            if (!specialPlatformGoodsCategoryList.contains(shopGoods.getPlatformGoodsCategoryId()) || shopGoods.getIsDiscount() != 0) {
                 // 需打折金额
                 discountAmount = discountAmount.add(amount);
                 // 商品总个数，用于计算耗材费
                 totalCount = totalCount.add(bigDecimalCount);
             } else {
-                noDisountAmount = noDisountAmount.add(amount);
+                noDiscountAmount = noDiscountAmount.add(amount);
             }
         }
         // 计算折扣：1：权额折扣  3：合伙人本身折扣 4：满减折扣 5：余额折扣 依次计算折扣
@@ -765,7 +804,7 @@ public class ShopGoodsOriginatorOrderController {
             // 权额支付和权额余额混合支付
             // 权额id
             String advanceRechargeIds = voList.get(0).getAdvanceRechargeIds();
-            calcAmountVo.setAdvanceIds(advanceRechargeIds);
+            StringBuilder sb = new StringBuilder();
             for (AdvanceRechargeRecord advanceRechargeRecord : advanceRechargeRecordList) {
                 if (advanceRechargeIds == null || !advanceRechargeIds.contains(advanceRechargeRecord.getId().toString())) {
                     continue;
@@ -773,18 +812,33 @@ public class ShopGoodsOriginatorOrderController {
                 // 权额金额
                 BigDecimal myAdvanceAmount = advanceRechargeRecord.getAmount();
                 if (myAdvanceAmount.compareTo(discountAmount) >= 0) {
+                    // 拼接权额ID，等级和金额
+                    sb.append(advanceRechargeRecord.getId());
+                    sb.append(",");
+                    sb.append(advanceRechargeRecord.getLevelId());
+                    sb.append(",");
+                    sb.append(discountAmount);
+                    sb.append(":");
                     // 权额充足
                     advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(discountAmount));
                     advanceAmount = advanceAmount.add(discountAmount);
                     discountAmount = BigDecimal.ZERO;
                     break;
                 } else {
+                    // 拼接权额ID，等级和金额
+                    sb.append(advanceRechargeRecord.getId());
+                    sb.append(",");
+                    sb.append(advanceRechargeRecord.getLevelId());
+                    sb.append(",");
+                    sb.append(myAdvanceAmount);
+                    sb.append(":");
                     // 权额不足
                     advanceRechargeRecord.setAmount(BigDecimal.ZERO);
                     advanceAmount = advanceAmount.add(myAdvanceAmount);
                     discountAmount = discountAmount.subtract(myAdvanceAmount);
                 }
             }
+            calcAmountVo.setAdvanceIds(sb.toString());
         }
         // 2:合伙人本身折扣
         // 本身折扣
@@ -800,6 +854,14 @@ public class ShopGoodsOriginatorOrderController {
             }
             if (originatorDiscountInfoList.get(i).getAmount().compareTo(discountAmount) > 0) {
                 size = i - 1;
+                break;
+            }
+            // 最大折扣
+            if (i == originatorDiscountInfoList.size() - 1 && originatorDiscountInfoList.get(originatorDiscountInfoList.size() - 1)
+                    .getAmount().compareTo(discountAmount) <= 0) {
+                if (size == 0) {
+                    size = originatorDiscountInfoList.size() - 1;
+                }
                 break;
             }
         }
@@ -821,7 +883,7 @@ public class ShopGoodsOriginatorOrderController {
             totalAmount = totalAmount.add(materialCosts);
         }
         // 实付金额=打折金额+不打折金额+耗材费
-        realPayAmount = realPayAmount.add(discountAmount).add(noDisountAmount).add(materialCosts);
+        realPayAmount = realPayAmount.add(discountAmount).add(noDiscountAmount).add(materialCosts);
         // 5：余额折扣（余额等于微信）
         if (payType.equals(BaseConstant.PAY_TYPE_5) || payType.equals(BaseConstant.PAY_TYPE_4)) {
             // 判断折扣金额是否充足

@@ -129,6 +129,9 @@
             <if test="balance4 != null">
                 balance4 = IFNULL( balance4, 0 ) + #{balance4},
             </if>
+            <if test="point != null">
+                point = IFNULL( point, 0 ) + #{point},
+            </if>
             <if test="updateTime != null">
                 update_time = #{updateTime}
             </if>

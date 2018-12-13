@@ -14,9 +14,11 @@ import com.jgzy.constant.BaseConstant;
 import com.jgzy.constant.ErrorCodeEnum;
 import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
+import com.jgzy.core.schedule.DealOverTimeOrderTasks;
 import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderStatisticVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
+import com.jgzy.core.shopOrder.vo.ShopgoodsOrderDetailVo;
 import com.jgzy.entity.common.ResultWrapper;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.common.WeiXinData;
@@ -33,6 +35,7 @@ import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +87,11 @@ public class ShopGoodsOrderController {
     private IDistributionCommissionSetService distributionCommissionSetService;
     @Autowired
     private IUserFundService userFundService;
+    @Autowired
+    private DealOverTimeOrderTasks dealOverTimeOrderTasks;
+
+    @Value("#{'${platformGoodsCategoryList}'.split(',')}")
+    private List<Integer> specialPlatformGoodsCategoryList;
 
     @ApiOperation(value = "添加订单唤起支付宝支付", notes = "添加订单唤起支付宝支付")
     @PostMapping(value = "/ali/save")
@@ -269,6 +277,14 @@ public class ShopGoodsOrderController {
                             .eq("user_id", userInfo.getId()));
             BigDecimal commissionAmount = shopGoodsOrder.getOrderAmountTotal().subtract(
                     shopGoodsOrder.getCouponAmount() == null ? BigDecimal.ZERO : shopGoodsOrder.getCouponAmount());
+            // 实付金额，剔除特殊商品
+            for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
+                ShopGoods shopGoods = shopGoodsService.selectById(shopGoodsOrderDetail.getShopGoodsId());
+                if (specialPlatformGoodsCategoryList.contains(shopGoods.getPlatformGoodsCategoryId())) {
+                    BigDecimal cost = shopGoodsOrderDetail.getCostPrice().multiply(new BigDecimal(shopGoodsOrderDetail.getBuyCount().toString()));
+                    commissionAmount = commissionAmount.subtract(cost);
+                }
+            }
             if (userDistribution != null && userDistribution.getParentId() != null && userDistribution.getParentId() != null) {
                 // 查询供应商分销额
                 DistributionCommissionSet distributionCommissionSet = distributionCommissionSetService.selectOne(
@@ -276,20 +292,22 @@ public class ShopGoodsOrderController {
                 if (distributionCommissionSet != null && distributionCommissionSet.getOneLevelAgents() != null) {
                     BigDecimal amount = commissionAmount.multiply(distributionCommissionSet.getOneLevelAgents())
                             .divide(new BigDecimal("100"), BigDecimal.ROUND_HALF_UP);
-                    //一级分销
-                    userInfoService.updateCommissionDiscount(userDistribution.getParentId(), amount);
-                    // 插入一级分销流水
-                    UserFund distributionUserFund = new UserFund();
-                    distributionUserFund.setTradeUserId(userDistribution.getParentId());
-                    distributionUserFund.setIncreaseMoney(amount);
-                    distributionUserFund.setTradeDescribe("消费者分销收益，姓名：" + userInfo.getNickname());
-                    distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
-                    distributionUserFund.setTradeTime(new Date());
-                    distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-                    distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
-                    distributionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
-                    userFundService.InsertUserFund(distributionUserFund);
+                    if (amount.compareTo(BigDecimal.ZERO) > 0) {
+                        //一级分销
+                        userInfoService.updateCommissionDiscount(userDistribution.getParentId(), amount);
+                        // 插入一级分销流水
+                        UserFund distributionUserFund = new UserFund();
+                        distributionUserFund.setTradeUserId(userDistribution.getParentId());
+                        distributionUserFund.setIncreaseMoney(amount);
+                        distributionUserFund.setTradeDescribe("冻结收益一，姓名：" + userInfo.getNickname());
+                        distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                        distributionUserFund.setTradeTime(new Date());
+                        distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                        distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
+                        distributionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
+                        distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
+                        userFundService.InsertUserFund(distributionUserFund);
+                    }
                 }
                 // 二级分销
                 UserDistribution parentDistribution = userDistributionService.selectOne(
@@ -299,19 +317,21 @@ public class ShopGoodsOrderController {
                         && distributionCommissionSet.getTwoLevelAgents() != null) {
                     BigDecimal amount = commissionAmount.multiply(distributionCommissionSet.getTwoLevelAgents()
                             .divide(new BigDecimal("100"), BigDecimal.ROUND_HALF_UP));
-                    userInfoService.updateCommissionDiscount(parentDistribution.getParentId(), amount);
-                    // 插入二级分销流水
-                    UserFund distributionUserFund = new UserFund();
-                    distributionUserFund.setTradeUserId(parentDistribution.getParentId());
-                    distributionUserFund.setIncreaseMoney(amount);
-                    distributionUserFund.setTradeDescribe("消费者分销收益，姓名：" + userInfo.getNickname());
-                    distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
-                    distributionUserFund.setTradeTime(new Date());
-                    distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-                    distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
-                    distributionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
-                    userFundService.InsertUserFund(distributionUserFund);
+                    if (amount.compareTo(BigDecimal.ZERO) > 0) {
+                        userInfoService.updateCommissionDiscount(parentDistribution.getParentId(), amount);
+                        // 插入二级分销流水
+                        UserFund distributionUserFund = new UserFund();
+                        distributionUserFund.setTradeUserId(parentDistribution.getParentId());
+                        distributionUserFund.setIncreaseMoney(amount);
+                        distributionUserFund.setTradeDescribe("冻结收益二，姓名：" + userInfo.getNickname());
+                        distributionUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                        distributionUserFund.setTradeTime(new Date());
+                        distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                        distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
+                        distributionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
+                        distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
+                        userFundService.InsertUserFund(distributionUserFund);
+                    }
                 }
             }
             // 待发货订单
@@ -346,8 +366,11 @@ public class ShopGoodsOrderController {
             }
         }
         // 用户扣除余额
-        if (shopGoodsOrder.getTotalPoint() != null) {
-            boolean b = userInfoService.updateCommissionDiscount(userInfo.getId(), shopGoodsOrder.getTotalPoint());
+        if (shopGoodsOrder.getTotalPoint() != null && shopGoodsOrder.getTotalPoint().compareTo(BigDecimal.ZERO)>0) {
+            UserInfo myUser = new UserInfo();
+            myUser.setId(userInfo.getId());
+            myUser.setBalance1(new BigDecimal("-" + shopGoodsOrder.getTotalPoint().toString()));
+            boolean b = userInfoService.updateMyBalance(myUser);
             if (!b) {
                 throw new OptimisticLockingFailureException("用户余额更新失败");
             }
@@ -509,13 +532,15 @@ public class ShopGoodsOrderController {
     public ResultWrapper<ShopGoodsOrder> update(@PathVariable("id") Integer id) {
         ResultWrapper<ShopGoodsOrder> resultWrapper = new ResultWrapper<>();
         ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectById(id);
-        // 待收货--》待评价
+        // 待收货-->待评价
         if (shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_4)) {
             ShopGoodsOrder myOrder = new ShopGoodsOrder();
             myOrder.setId(shopGoodsOrder.getId());
             myOrder.setOrderStatus(BaseConstant.ORDER_STATUS_5);
             boolean b = shopGoodsOrderService.updateById(myOrder);
             resultWrapper.setSuccessful(b);
+            // 异步处理关闭订单
+            dealOverTimeOrderTasks.dealCommissionAmount();
             return resultWrapper;
         }
         resultWrapper.setErrorMsg("订单状态不正确，请检查订单！");

@@ -51,10 +51,11 @@ public interface UserFundMapper extends BaseMapper<UserFund> {
      *
      * @param id     用户id
      * @param status
+     * @param ids
      * @return 佣金
      */
     MyTeamVo selectStatisticsIncreaseMoney(@Param("id") Integer id, @Param("status") String status, @Param("begin") String monthBegin,
-                                           @Param("end") String monthEnd);
+                                           @Param("end") String monthEnd, @Param("ids") List<String> ids);
 
     /**
      * 我的团队列表
@@ -71,4 +72,28 @@ public interface UserFundMapper extends BaseMapper<UserFund> {
      * @return 我的累积收益
      */
     MyTeamDetailVo selectMySumIncreaseMoneyList(@Param("id") Integer id);
+
+    /**
+     * 查看流水分页
+     *
+     * @param page          分页
+     * @param beginDate     开始时间
+     * @param endTime       结束时间
+     * @param bussinessType 流水类型
+     * @param accountType   支付方式
+     * @param userFundList  流水类型，支付方式
+     * @param userId
+     * @return
+     */
+    List<UserFund> selectMyPage(Page<UserFund> page, @Param("beginDate") String beginDate, @Param("endTime") String endTime,
+                                @Param("bussinessType") String[] bussinessType, @Param("accountType") String accountType,
+                                @Param("list") List<UserFund> userFundList, @Param("userId") Integer userId);
+
+    /**
+     * 逾期返还金额
+     *
+     * @param myPartnerList ids
+     * @return 逾期返还金额
+     */
+    List<MyTeamDetailVo> selectOverDuePayments(@Param("list") List<String> myPartnerList);
 }

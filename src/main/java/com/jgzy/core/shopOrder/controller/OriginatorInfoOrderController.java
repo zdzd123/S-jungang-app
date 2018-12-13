@@ -122,9 +122,8 @@ public class OriginatorInfoOrderController {
         String notify_url = "http://jgapi.china-mail.com.cn/api/originatorInfoOrder/constant/weixinNotifyUrl";
         // 检验订单状态以及订单的金额
         // TODO 测试用付款
-        amount = new BigDecimal("0.01");
         WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
-                originatorInfoOrder.getOrderNo(), subject, amount.doubleValue(), ip, notify_url);
+                originatorInfoOrder.getOrderNo(), subject, /*amount.doubleValue()*/ new BigDecimal("0.01").doubleValue(), ip, notify_url);
         // 订单失败
         if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
             resultMap.put("return_code", wxData.get("return_code"));
@@ -204,7 +203,7 @@ public class OriginatorInfoOrderController {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return notify.getBodyXML();
         }
-        // 插入流水
+        // 插入微信支付流水
         UserFund userFund = new UserFund();
         userFund.setTradeUserId(originatorInfoOrder.getSubmitOrderUser());
         userFund.setDecreaseMoney(originatorInfoOrder.getOrderAmount());
@@ -212,10 +211,22 @@ public class OriginatorInfoOrderController {
         userFund.setTradeTime(new Date());
         userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
         userFund.setTradeDescribe("微信支付");
-        userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_9);
+        userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_4);
         userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
         userFund.setPayType(BaseConstant.PAY_TYPE_2);
         userFundService.InsertUserFund(userFund);
+        // 插入品牌费新增流水
+        UserFund fund = new UserFund();
+        fund.setTradeUserId(originatorInfoOrder.getSubmitOrderUser());
+        fund.setIncreaseMoney(originatorInfoOrder.getOrderAmount());
+        fund.setOrderNo(outTradeNo);
+        fund.setTradeTime(new Date());
+        fund.setTradeType(BaseConstant.TRADE_TYPE_2);
+        fund.setTradeDescribe("微信支付");
+        fund.setAccountType(BaseConstant.ACCOUNT_TYPE_9);
+        fund.setBussinessType(BaseConstant.BUSSINESS_TYPE_2);
+        fund.setPayType(BaseConstant.PAY_TYPE_2);
+        userFundService.InsertUserFund(fund);
         // 微信认证 openid (必填)
 //        UserOauth userOauth = userOauthService.selectOne(
 //                new EntityWrapper<UserOauth>()

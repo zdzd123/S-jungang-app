@@ -30,100 +30,87 @@
             a.id,
             a.nickname,
             a.head_portrait,
-            SUM(IF(a.bussiness_type = 7,
-                a.increase_money,
-                0)) originatorIncreaseMoney,
-            SUM(IF(a.bussiness_type = 8,
-                a.increase_money,
-                0)) increaseMoney
+            IF(SUM(decrease_money), SUM(decrease_money), 0) totalDecreaseMoney
+--             SUM(IF(a.bussiness_type = 7, a.increase_money, 0)) originatorIncreaseMoney,
+--             SUM(IF(a.bussiness_type = 8, a.increase_money, 0)) increaseMoney
         FROM
-            (SELECT
-                fund.increase_money,
-                    fund.bussiness_type,
-                    userInfo.id,
-                    userinfo.nickname,
-                    userInfo.head_portrait
-            FROM
-                user_info userInfo
-            LEFT JOIN shop_goods_order shopOrder ON userInfo.id = shopOrder.submit_order_user
-            LEFT JOIN user_fund fund ON fund.order_no = shopOrder.trade_no
-                AND fund.trade_type = 1
-                AND fund.account_type = 2
-                AND fund.pay_type = 4
-                AND (bussiness_type = 7 OR bussiness_type = 8)
-            WHERE
-                userInfo.id IN
-                <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
-                    #{item}
-                </foreach>
-            ) a
-        GROUP BY a.id
-        <if test="status == 0">
-            ORDER BY originatorIncreaseMoney ASC
-        </if>
-        <if test="status == 1">
-            ORDER BY increaseMoney ASC
-        </if>
-    </select>
-    <select id="selectUserSumIncreaseMoneyList" resultType="com.jgzy.core.personalCenter.vo.MyTeamDetailVo">
-        SELECT
-            a.id,
-            a.nickname,
-            a.head_portrait,
-            SUM(IF(a.bussiness_type = 7,
-              a.increase_money,
-              0)) originatorIncreaseMoney,
-            SUM(IF(a.bussiness_type = 8,
-              a.increase_money,
-              0)) increaseMoney
-        FROM
-            (SELECT
-                fund.increase_money,
+        (
+            SELECT
+                fund.decrease_money,
                 fund.bussiness_type,
                 userInfo.id,
                 userinfo.nickname,
                 userInfo.head_portrait
             FROM
               user_info userInfo
-            LEFT JOIN shop_goods_order shopOrder ON userInfo.id = shopOrder.submit_order_user
-            LEFT JOIN user_fund fund ON fund.order_no = shopOrder.trade_no
-                AND fund.trade_type = 1
-                AND fund.account_type = 2
-                AND fund.pay_type = 4
-                AND (fund.bussiness_type = 7 OR fund.bussiness_type = 8)
-                <if test="begin != null and end != null">
-                    AND fund.trade_time <![CDATA[ >= ]]> #{begin}
-                    AND fund.trade_time <![CDATA[ <= ]]> #{end}
-                </if>
+--                 LEFT JOIN shop_goods_order shopOrder ON userInfo.id = shopOrder.submit_order_user
+                LEFT JOIN user_fund fund ON fund.trade_user_id = userInfo.id
+                AND bussiness_type = 1
+--                 AND fund.trade_type = 1
+--                 AND fund.account_type = 2
+--                 AND fund.pay_type = 4
+--                 AND (bussiness_type = 7 OR bussiness_type = 8)
             WHERE
               userInfo.id IN
-                <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
-                    #{item}
-                </foreach>
-            ) a
-            GROUP BY a.id
-        <if test="status == 0">
-            ORDER BY originatorIncreaseMoney ASC
-        </if>
-        <if test="status == 1">
-            ORDER BY increaseMoney ASC
-        </if>
+            <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        ) a
+        GROUP BY a.id
+        ORDER BY totalDecreaseMoney DESC
+    </select>
+    <select id="selectUserSumIncreaseMoneyList" resultType="com.jgzy.core.personalCenter.vo.MyTeamDetailVo">
+        SELECT
+            a.id,
+            a.nickname,
+            a.head_portrait,
+            IF(SUM(decrease_money),SUM(decrease_money),0) totalDecreaseMoney
+--             SUM(IF(a.bussiness_type = 7, a.increase_money, 0)) originatorIncreaseMoney,
+--             SUM(IF(a.bussiness_type = 8, a.increase_money, 0)) increaseMoney
+        FROM
+        (
+            SELECT
+                fund.decrease_money,
+                fund.bussiness_type,
+                userInfo.id,
+                userinfo.nickname,
+                userInfo.head_portrait
+            FROM
+              user_info userInfo
+--                 LEFT JOIN shop_goods_order shopOrder ON userInfo.id = shopOrder.submit_order_user
+                LEFT JOIN user_fund fund ON fund.trade_user_id = userInfo.id
+                AND fund.bussiness_type = 1
+--                 AND fund.trade_type = 1
+--                 AND fund.account_type = 2
+--                 AND fund.pay_type = 4
+--                 AND (fund.bussiness_type = 7 OR fund.bussiness_type = 8)
+            <if test="begin != null and end != null">
+                AND fund.trade_time <![CDATA[ >= ]]> #{begin}
+                AND fund.trade_time <![CDATA[ <= ]]> #{end}
+            </if>
+            WHERE
+              userInfo.id IN
+            <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        ) a
+        GROUP BY a.id
+        ORDER BY totalDecreaseMoney DESC
     </select>
     <select id="selectStatisticsIncreaseMoney" resultType="com.jgzy.core.personalCenter.vo.MyTeamVo">
         SELECT
-        sum( fund.increase_money ) totalIncreaseMoney
+          IF(SUM(fund.decrease_money),SUM(fund.decrease_money),0)  totalDecreaseMoney
         FROM
-        user_fund fund
-        LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
-        LEFT JOIN user_info userInfo ON userInfo.id = shopOrder.submit_order_user
-        LEFT JOIN originator_info originator ON userInfo.id = originator.user_id
-        WHERE
-        fund.trade_type=1
-        AND fund.account_type=2
-        AND fund.pay_type=4
-        AND (bussiness_type=7 or bussiness_type=8)
-        <if test="id != null">
-            AND FIND_IN_SET(fund.trade_user_id, getDistributionList(#{id}, 1))
+          user_fund fund
+--             LEFT JOIN shop_goods_order shopOrder ON fund.order_no = shopOrder.trade_no
+            LEFT JOIN user_info userInfo ON userInfo.id = fund.trade_user_id
+            LEFT JOIN originator_info originator ON userInfo.id = originator.user_id
+        WHERE bussiness_type=1
+        <if test="ids != null">
+            AND trade_user_id IN
+            <foreach collection="ids" index="index" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
         </if>
         <if test="begin != null and end != null">
             AND fund.trade_time <![CDATA[ >= ]]> #{begin}
@@ -145,12 +132,12 @@
             a.head_portrait,
             a.balance1,
             a.balance4,
-            SUM(IF(a.bussiness_type = 7,
-                a.increase_money,
-                0)) originatorIncreaseMoney,
-            SUM(IF(a.bussiness_type = 8,
-                a.increase_money,
-                0)) increaseMoney
+            SUM(IF(a.bussiness_type = 7, a.increase_money, 0)) originatorIncreaseMoney,
+            SUM(IF(a.bussiness_type = 71, a.increase_money, 0)) freezeOriginatorIncreaseMoney,
+            SUM(IF(a.bussiness_type = 72, a.decrease_money, 0)) unfreezeOriginatorIncreaseMoney,
+            SUM(IF(a.bussiness_type = 8, a.increase_money, 0)) increaseMoney,
+            SUM(IF(a.bussiness_type = 81, a.increase_money, 0)) freezeIncreaseMoney,
+            SUM(IF(a.bussiness_type = 82, a.decrease_money, 0)) unfreezeIncreaseMoney
         FROM
             (SELECT
                 userInfo.id,
@@ -159,14 +146,91 @@
                     userInfo.balance1,
                     userInfo.balance4,
                     fund.increase_money,
+                    fund.decrease_money,
                     fund.bussiness_type
             FROM
                 user_info userInfo
             LEFT JOIN user_fund fund ON userInfo.id = fund.trade_user_id
-                AND fund.trade_type = 1
-                    AND fund.account_type = 2
-                    AND fund.pay_type = 4
-                    AND (bussiness_type = 7 OR bussiness_type = 8)
+                    AND (bussiness_type = 7 OR bussiness_type = 8 OR bussiness_type = 71 OR bussiness_type = 81 OR bussiness_type = 72 OR bussiness_type = 82)
             WHERE userInfo.id = #{id}) a
+    </select>
+    <select id="selectMyPage" resultType="com.jgzy.entity.po.UserFund">
+        SELECT
+            id,
+            trade_time,
+            trade_type,
+            increase_money,
+            decrease_money,
+            trade_describe,
+            trade_user_id,
+            bussiness_type,
+            account_type,
+            pay_type,
+            balance,
+            order_no
+        FROM
+          user_fund
+        <where>
+            trade_user_id = #{userId}
+            <if test="beginDate != null">
+                AND trade_time <![CDATA[ >= ]]> #{beginDate}
+            </if>
+            <if test="endTime != null">
+                AND trade_time <![CDATA[ <= ]]> #{endTime}
+            </if>
+            <if test="accountType != null">
+                AND account_type = #{accountType}
+            </if>
+            <if test="bussinessType != null">
+                AND bussiness_type IN
+                <foreach collection="bussinessType" index="index" item="item" open="(" separator="," close=")">
+                    #{item.bussinessType}
+                </foreach>
+            </if>
+            <if test="list != null">
+                AND
+                <foreach collection="list" index="index" item="item" open="(" separator="OR" close=")">
+                    (account_type = #{item.accountType} AND bussiness_type = #{item.bussinessType})
+                </foreach>
+            </if>
+        </where>
+        ORDER BY trade_time DESC
+    </select>
+    <select id="selectOverDuePayments" resultType="com.jgzy.core.personalCenter.vo.MyTeamDetailVo">
+        SELECT
+            a.id,
+            a.nickname,
+            a.head_portrait,
+            IF(SUM(increase_money),SUM(increase_money),0) overDuePayments
+            --             SUM(IF(a.bussiness_type = 7, a.increase_money, 0)) originatorIncreaseMoney,
+            --             SUM(IF(a.bussiness_type = 8, a.increase_money, 0)) increaseMoney
+        FROM
+        (
+            SELECT
+                fund.increase_money,
+                fund.bussiness_type,
+                userInfo.id,
+                userinfo.nickname,
+                userInfo.head_portrait
+            FROM
+              user_info userInfo
+            LEFT JOIN shop_goods_order shopOrder ON userInfo.id = shopOrder.submit_order_user
+            LEFT JOIN user_fund fund ON fund.order_no = shopOrder.trade_no
+            AND fund.bussiness_type = 5
+            --                 AND fund.trade_type = 1
+            --                 AND fund.account_type = 2
+            --                 AND fund.pay_type = 4
+            --                 AND (fund.bussiness_type = 7 OR fund.bussiness_type = 8)
+            <!--<if test="begin != null and end != null">-->
+                <!--AND fund.trade_time <![CDATA[ >= ]]> #{begin}-->
+                <!--AND fund.trade_time <![CDATA[ <= ]]> #{end}-->
+            <!--</if>-->
+            WHERE
+              userInfo.id IN
+            <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        ) a
+        GROUP BY a.id
     </select>
 </mapper>

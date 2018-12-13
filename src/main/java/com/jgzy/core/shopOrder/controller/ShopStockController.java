@@ -74,8 +74,6 @@ public class ShopStockController {
     @Autowired
     private IShopGoodsService shopGoodsService;
     @Autowired
-    private IShopGoodsAttributeService shopGoodsAttributeService;
-    @Autowired
     private IUserInfoService userInfoService;
 
     @ApiOperation(value = "获取我的库存(分页)", notes = "获取我的库存(分页)")
@@ -272,6 +270,21 @@ public class ShopStockController {
                     .eq("id", userInfo.getId()));
             if (!b) {
                 throw new OptimisticLockingFailureException("用户余额更新失败！");
+            }
+            // 插入余额流水
+            if (shopGoodsOrder.getTotalPoint() != null && shopGoodsOrder.getTotalPoint().compareTo(BigDecimal.ZERO) > 0) {
+                // 插入冻结余额流水
+                UserFund remain = new UserFund();
+                remain.setTradeUserId(userInfo.getId());
+                remain.setDecreaseMoney(shopGoodsOrder.getTotalPoint());
+                remain.setOrderNo(shopGoodsOrder.getOrderNo());
+                remain.setTradeType(BaseConstant.TRADE_TYPE_2);
+                remain.setTradeDescribe("余额支付");
+                remain.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
+                remain.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
+                remain.setPayType(BaseConstant.PAY_TYPE_4);
+                remain.setTradeTime(date);
+                userFundService.InsertUserFund(remain);
             }
         } else if (payType.equals(BaseConstant.PAY_TYPE_2)) {
             // 微信支付

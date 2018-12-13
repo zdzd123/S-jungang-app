@@ -36,7 +36,7 @@ public class NewsCategoryController {
     @GetMapping(value = "/detail")
     @ApiOperation(value = "查询商品资讯分类", notes = "查询商品资讯分类")
     public ResultWrapper<List<NewsCategory>> detail() {
-        ResultWrapper<List<NewsCategory>> resultWrapper = new ResultWrapper();
+        ResultWrapper<List<NewsCategory>> resultWrapper = new ResultWrapper<>();
         List<NewsCategory> newsCategoryList = newsCategoryService.selectList(new EntityWrapper<NewsCategory>().orderBy("sort_id asc"));
         resultWrapper.setResult(newsCategoryList);
         return resultWrapper;

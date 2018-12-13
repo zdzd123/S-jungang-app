@@ -22,21 +22,41 @@ public class MyTeamVo {
     private BigDecimal increaseMoney;
     @ApiModelProperty(value = "合伙人累积收益", example = "11")
     private BigDecimal originatorIncreaseMoney;
-    @ApiModelProperty(value = "月累积收益", example = "11")
-    private BigDecimal monthIncreaseMoney;
+//    @ApiModelProperty(value = "月累积收益", example = "11")
+//    private BigDecimal monthIncreaseMoney;
     @ApiModelProperty(value = "总共累积收益", example = "11")
     private BigDecimal totalIncreaseMoney;
+    @ApiModelProperty(value = "总共累积消费", example = "11")
+    private BigDecimal totalDecreaseMoney;
+    @ApiModelProperty(value = "月累积消费", example = "11")
+    private BigDecimal monthDecreaseMoney;
     @ApiModelProperty(value = "团员信息")
     private List<MyTeamDetailVo> myTeamDetailVoList;
     @ApiModelProperty(value = "合伙人团员信息")
     private List<MyTeamDetailVo> myOriginatorTeamDetailVoList;
 
-    public BigDecimal getMonthIncreaseMoney() {
-        return monthIncreaseMoney;
+    public BigDecimal getTotalIncreaseMoney() {
+        return totalIncreaseMoney;
     }
 
-    public void setMonthIncreaseMoney(BigDecimal monthIncreaseMoney) {
-        this.monthIncreaseMoney = monthIncreaseMoney;
+    public void setTotalIncreaseMoney(BigDecimal totalIncreaseMoney) {
+        this.totalIncreaseMoney = totalIncreaseMoney;
+    }
+
+    public BigDecimal getTotalDecreaseMoney() {
+        return totalDecreaseMoney;
+    }
+
+    public void setTotalDecreaseMoney(BigDecimal totalDecreaseMoney) {
+        this.totalDecreaseMoney = totalDecreaseMoney;
+    }
+
+    public BigDecimal getMonthDecreaseMoney() {
+        return monthDecreaseMoney;
+    }
+
+    public void setMonthDecreaseMoney(BigDecimal monthDecreaseMoney) {
+        this.monthDecreaseMoney = monthDecreaseMoney;
     }
 
     public List<MyTeamDetailVo> getMyOriginatorTeamDetailVoList() {
@@ -53,14 +73,6 @@ public class MyTeamVo {
 
     public void setMyTeamDetailVoList(List<MyTeamDetailVo> myTeamDetailVoList) {
         this.myTeamDetailVoList = myTeamDetailVoList;
-    }
-
-    public BigDecimal getTotalIncreaseMoney() {
-        return totalIncreaseMoney;
-    }
-
-    public void setTotalIncreaseMoney(BigDecimal totalIncreaseMoney) {
-        this.totalIncreaseMoney = totalIncreaseMoney;
     }
 
     public String getNickname() {

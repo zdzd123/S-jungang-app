@@ -48,8 +48,20 @@ public interface IUserFundService extends IService<UserFund> {
     /**
      * 我的团队统计
      *
-     * @return 统计结果
      * @param status
+     * @return 统计结果
      */
     MyTeamVo selectStatisticsIncreaseMoney(String status);
+
+    /**
+     * 流水统计
+     *
+     * @param page 分页
+     * @param beginDate
+     * @param endTime
+     * @param bussinessType
+     * @param accountType
+     * @return 分页
+     */
+    Page<UserFund> selectMyPage(Page<UserFund> page, String beginDate, String endTime, String bussinessType, String accountType, List<UserFund> userFundList);
 }

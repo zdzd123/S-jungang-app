@@ -7,7 +7,7 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@EnableEurekaClient
+//@EnableEurekaClient
 @SpringBootApplication
 @EnableCaching(proxyTargetClass = true) // 开启缓存功能
 @EnableScheduling

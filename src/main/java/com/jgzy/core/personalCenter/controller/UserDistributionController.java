@@ -54,8 +54,14 @@ public class UserDistributionController {
     public ResultWrapper<UserDistribution> save(@PathVariable("parentId") String parentId) {
         ResultWrapper<UserDistribution> resultWrapper = new ResultWrapper<>();
 
+        Integer id = UserUuidThreadLocal.get().getId();
+        if(parentId.equals(String.valueOf(id))){
+            resultWrapper.setErrorMsg("不可绑定自身");
+            resultWrapper.setSuccessful(false);
+            return resultWrapper;
+        }
         UserDistribution userDistribution = userDistributionService.selectOne(new EntityWrapper<UserDistribution>()
-                .eq("user_id", UserUuidThreadLocal.get().getId()));
+                .eq("user_id", id));
         Integer myParentId;
         if (parentId.equals("null")){
             myParentId = null;
@@ -66,7 +72,7 @@ public class UserDistributionController {
             // 绑定成为下级
             userDistribution = new UserDistribution();
             userDistribution.setParentId(myParentId);
-            userDistribution.setUserId(UserUuidThreadLocal.get().getId());
+            userDistribution.setUserId(id);
             userDistribution.setAddTime(new Date());
             boolean insert = userDistributionService.insert(userDistribution);
             resultWrapper.setSuccessful(insert);

@@ -36,4 +36,20 @@ public interface UserDistributionMapper extends BaseMapper<UserDistribution> {
      * @return 合伙人团队
      */
     String selectMyUserDistributionIdList(@Param("id") Integer id);
+
+    /**
+     * 普通消费者ids
+     *
+     * @param id 用户id
+     * @return 普通消费者ids
+     */
+    List<String> selectMyConsumerList(@Param("id") Integer id);
+
+    /**
+     * 合伙人ids
+     *
+     * @param id 用户id
+     * @return 合伙人ids
+     */
+    List<String> selectMyPartner(@Param("id") Integer id);
 }

@@ -66,12 +66,15 @@ public class DealOverduePaymentsTasks {
                 BigDecimal increaseMoney = userFund.getIncreaseMoney();
                 // 1：权额支付
                 if (userFund.getPayType().equals(BaseConstant.PAY_TYPE_3)) {
+                    String levelId = userFund.getTradeDescribe().substring(0, 1);
+                    // 权额支付id、等级和金额
                     AdvanceRechargeRecord advanceRechargeRecord = advanceRechargeRecordService.selectOne(
                             new EntityWrapper<AdvanceRechargeRecord>()
-                                    .eq("user_id", shopGoodsOrder.getSubmitOrderUser()));
+                                    .eq("user_id", shopGoodsOrder.getSubmitOrderUser())
+                                    .eq("level_id", levelId));
                     if (advanceRechargeRecord == null) {
-                        log.info("该用户不存在权额！订单ID为" + shopGoodsOrder.getId());
-                        throw new OptimisticLockingFailureException("该用户不存在权额！订单ID为" + shopGoodsOrder.getId());
+                        log.info("该用户不存在等级为：" + levelId + "的权额！订单ID为" + shopGoodsOrder.getId());
+                        throw new OptimisticLockingFailureException("该用户不存在等级为：" + levelId + "的权额！订单ID为" + shopGoodsOrder.getId());
                     }
                     Date updateTime = advanceRechargeRecord.getUpdateTime();
                     advanceRechargeRecord.setAmount(advanceRechargeRecord.getAmount().subtract(increaseMoney).add(decreaseMoney));
@@ -88,13 +91,13 @@ public class DealOverduePaymentsTasks {
                     myUserFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
                     myUserFund.setIncreaseMoney(decreaseMoney);
                     myUserFund.setDecreaseMoney(increaseMoney);
-                    myUserFund.setTradeDescribe("逾期订单返还权额");
+                    myUserFund.setTradeDescribe("逾期订单返还" + levelId + "级权额");
                     myUserFund.setOrderNo(shopGoodsOrder.getOrderNo());
                     myUserFund.setTradeTime(date);
                     myUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
                     myUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_8);
                     myUserFund.setPayType(BaseConstant.PAY_TYPE_3);
-                    myUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_5);
+                    myUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_3);
                     myUserFundList.add(myUserFund);
                 }
                 // 2：余额支付
@@ -125,7 +128,7 @@ public class DealOverduePaymentsTasks {
                     myUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
                     myUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
                     myUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-                    myUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_5);
+                    myUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_3);
                     myUserFundList.add(myUserFund);
                 }
                 // 3：优惠券
@@ -136,6 +139,8 @@ public class DealOverduePaymentsTasks {
             }
             // 更新订单
             shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_12);
+            // 更新订单已使用
+            shopGoodsOrder.setIsRead(1);
             boolean update = shopGoodsOrderService.update(shopGoodsOrder, new EntityWrapper<ShopGoodsOrder>()
                     .eq("id", shopGoodsOrder.getId())
                     .eq("order_status", BaseConstant.ORDER_STATUS_1));

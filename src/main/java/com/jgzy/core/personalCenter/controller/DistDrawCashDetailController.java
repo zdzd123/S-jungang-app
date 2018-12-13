@@ -81,19 +81,30 @@ public class DistDrawCashDetailController {
         if (!flag){
             throw new OptimisticLockingFailureException("插入冻结金额失败！");
         }
-        // 插入冻结流水
+        // 插入余额转出流水
         UserFund userFund = new UserFund();
         userFund.setTradeUserId(id);
-        userFund.setIncreaseMoney(po.getWithdrawNum());
+        userFund.setDecreaseMoney(po.getWithdrawNum());
         userFund.setOrderNo(po.getPartnerTradeNo());
-        userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-        userFund.setTradeDescribe("用户：" + userInfo.getNickname() + "提现放入冻结金额，" + "冻结金额为：" + po.getWithdrawNum() + " 元");
-        userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
-        userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_62);
+        userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+        userFund.setTradeDescribe("用户：" + userInfo.getNickname() + "提现放入提现账户");
+        userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
+        userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_6);
         userFund.setPayType(BaseConstant.PAY_TYPE_4);
         userFund.setTradeTime(new Date());
         userFundService.InsertUserFund(userFund);
-        resultWrapper.setSuccessful(successful);
+        // 插入提现流水
+        UserFund fund = new UserFund();
+        fund.setTradeUserId(id);
+        fund.setIncreaseMoney(po.getWithdrawNum());
+        fund.setOrderNo(po.getPartnerTradeNo());
+        fund.setTradeType(BaseConstant.TRADE_TYPE_1);
+        fund.setTradeDescribe("用户：" + userInfo.getNickname() + "提现放入提现金额账户");
+        fund.setAccountType(BaseConstant.ACCOUNT_TYPE_6);
+        fund.setBussinessType(BaseConstant.BUSSINESS_TYPE_61);
+        fund.setPayType(BaseConstant.PAY_TYPE_4);
+        fund.setTradeTime(new Date());
+        userFundService.InsertUserFund(fund);
         return resultWrapper;
     }
 }

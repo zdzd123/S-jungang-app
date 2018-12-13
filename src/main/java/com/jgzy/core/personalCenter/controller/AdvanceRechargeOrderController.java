@@ -172,7 +172,7 @@ public class AdvanceRechargeOrderController {
         // 插入流水
         UserFund userFund = new UserFund();
         userFund.setTradeUserId(advanceRechargeOrder.getSubmitOrderUser());
-        userFund.setIncreaseMoney(advanceRechargeOrder.getAmount());
+        userFund.setIncreaseMoney(advanceRechargeOrder.getAmount().divide(advanceRechargeOrder.getDiscountRate(), BigDecimal.ROUND_HALF_UP));
         userFund.setOrderNo(outTradeNo);
         userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
         userFund.setTradeDescribe("权额充值");

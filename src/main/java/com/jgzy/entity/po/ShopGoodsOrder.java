@@ -36,7 +36,7 @@ public class ShopGoodsOrder implements Serializable {
     private Integer orderStatus;
     @ApiModelProperty(value = "下单人(用户id)", example = "1")
     private Integer submitOrderUser;
-    @ApiModelProperty(value = "blessing", example = "blessing")
+    @ApiModelProperty(value = "权额支付id、等级和金额", example = "blessing")
     private String blessing;
     @ApiModelProperty(value = "isRedpacket", example = "isRedpacket")
     private Integer isRedpacket;

@@ -74,6 +74,7 @@ public class ShopGoodsController {
         if (po.getShopName() != null) {
             entityWrapper.like("shop_name", po.getShopName());
         }
+        entityWrapper.orderBy("listSort ASC");
         page = shopGoodsService.selectPageVo(page, entityWrapper);
         resultWrapper.setResult(page);
         return resultWrapper;
@@ -85,7 +86,8 @@ public class ShopGoodsController {
         ResultWrapper<List<ShopGoods>> resultWrapper = new ResultWrapper<>();
         String[] split = shopGoodsIds.split(",");
         List<ShopGoods> shopGoodsList = shopGoodsService.selectList(new EntityWrapper<ShopGoods>()
-                .in("id", split));
+                .in("id", split)
+                .orderBy("listSort ASC"));
         resultWrapper.setResult(shopGoodsList);
         return resultWrapper;
     }
@@ -104,13 +106,19 @@ public class ShopGoodsController {
         // 是合伙人并且能查看所有折扣
         int size = 0;
         for (int i = 0; i < advanceRechargeInfos.size(); i++) {
-
             if ((originatorInfo == null || originatorInfo.getDiscountStatus() != 1) && i > 1) {
                 size = i - 1;
                 break;
             }
             if (advanceRechargeInfos.get(i).getAmount().compareTo(amount) > 0) {
                 size = i;
+                break;
+            }
+            if (i == advanceRechargeInfos.size()-1 && advanceRechargeInfos.get(advanceRechargeInfos.size()-1)
+                    .getAmount().compareTo(amount) <= 0){
+                if (size == 0){
+                    size = advanceRechargeInfos.size()-1;
+                }
                 break;
             }
         }
