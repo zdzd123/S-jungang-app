@@ -77,4 +77,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     public boolean updateMyBalance(UserInfo myUser) {
         return userInfoMapper.updateMyBalance(myUser);
     }
+
+    @Override
+    public List<String> selectManagerUser() {
+        return userInfoMapper.selectManagerUser();
+    }
 }

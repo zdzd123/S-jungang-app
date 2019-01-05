@@ -24,11 +24,10 @@ public interface ShopGoodsOrderMapper extends BaseMapper<ShopGoodsOrder> {
     /**
      * 查询商品订单，包含详情和属性
      *
-     * @param orderStatus 订单状态
-     * @param split       订单来源
+     * @param orderId 订单id
      * @return 订单
      */
-    List<ShopGoodsOrderVo> selectMyOrder(@Param("orderStatus") Integer orderStatus, @Param("list") String[] split);
+    ShopGoodsOrderVo selectMyOrder(@Param("orderId") Integer orderId);
 
     /**
      * 查询商品订单信息

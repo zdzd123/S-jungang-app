@@ -58,6 +58,10 @@ public class ShopGoodsOrderVo {
     private Integer orderStatus;
     @ApiModelProperty(value = "下单人(用户id)", example = "1")
     private Integer submitOrderUser;
+    @ApiModelProperty(value = "下单人姓名", example = "小明")
+    private String submitOrderUserName;
+    @ApiModelProperty(value = "下单人号码", example = "下单人号码")
+    private String submitOrderUserPhone;
     @ApiModelProperty(value = "blessing", example = "blessing")
     private String blessing;
     @ApiModelProperty(value = "isRedpacket", example = "1")
@@ -157,6 +161,22 @@ public class ShopGoodsOrderVo {
     private BigDecimal totalRealPayment;
     @ApiModelProperty(value = "订单详情", example = "1")
     private List<ShopgoodsOrderDetailVo> shopgoodsOrderDetailVoList;
+
+    public String getSubmitOrderUserPhone() {
+        return submitOrderUserPhone;
+    }
+
+    public void setSubmitOrderUserPhone(String submitOrderUserPhone) {
+        this.submitOrderUserPhone = submitOrderUserPhone;
+    }
+
+    public String getSubmitOrderUserName() {
+        return submitOrderUserName;
+    }
+
+    public void setSubmitOrderUserName(String submitOrderUserName) {
+        this.submitOrderUserName = submitOrderUserName;
+    }
 
     public Integer getCartId() {
         return cartId;

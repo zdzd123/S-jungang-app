@@ -4,6 +4,7 @@ import com.jgzy.core.personalCenter.mapper.AdvanceRechargeRecordMapper;
 import com.jgzy.core.personalCenter.service.IAdvanceRechargeRecordService;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.jgzy.entity.po.AdvanceRechargeRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,5 +17,11 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AdvanceRechargeRecordServiceImpl extends ServiceImpl<AdvanceRechargeRecordMapper, AdvanceRechargeRecord> implements IAdvanceRechargeRecordService {
+    @Autowired
+    private AdvanceRechargeRecordMapper advanceRechargeRecordMapper;
 
+    @Override
+    public boolean updateMyAdvanceRecharge(AdvanceRechargeRecord advanceRechargeRecord) {
+        return advanceRechargeRecordMapper.updateMyAdvanceRecharge(advanceRechargeRecord);
+    }
 }

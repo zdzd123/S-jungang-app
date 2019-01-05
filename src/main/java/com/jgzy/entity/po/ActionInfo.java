@@ -7,6 +7,7 @@ import java.util.Date;
 
 import com.baomidou.mybatisplus.annotations.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.google.common.base.Objects;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -204,4 +205,5 @@ public class ActionInfo implements Serializable {
                 ", isDelete=" + isDelete +
                 "}";
     }
+
 }

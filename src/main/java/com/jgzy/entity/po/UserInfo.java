@@ -160,7 +160,7 @@ public class UserInfo implements Serializable {
      */
     @ApiModelProperty(value = "用户来源  1=IOS|2=Android|3=微信|4=后台", example = "1")
     private Integer fromSource;
-    @ApiModelProperty(value = "isRobot", example = "1")
+    @ApiModelProperty(value = "判断是否是管理员，需要推送订单消息", example = "1")
     private Integer isRobot;
     @ApiModelProperty(value = "isGetCoupon", example = "1")
     private Integer isGetCoupon;

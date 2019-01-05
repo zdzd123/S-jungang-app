@@ -94,14 +94,6 @@ public class ShopStockController {
     public ResultWrapper<CalcAmountVo> calcAmountForShow(@RequestBody List<ShopGoodsOrderVo> voList) {
         ResultWrapper<CalcAmountVo> resultWrapper = new ResultWrapper<>();
         CalcAmountVo calcAmountVo = new CalcAmountVo();
-//        List<Integer> shopGoodsIds = new ArrayList<>();
-//        voList.forEach(shopGoodsOrderVo -> shopGoodsIds.add(shopGoodsOrderVo.getShopGoodsId()));
-        // 查询商品
-//        List<ShopGoods> shopGoodsList = shopGoodsService.selectList(
-//                new EntityWrapper<ShopGoods>().in("id", shopGoodsIds));
-//        if (shopGoodsList == null || shopGoodsList.size() != voList.size()) {
-//            throw new OptimisticLockingFailureException("商品id有误");
-//        }
         // 总个数
         int allCount = 0;
         List<CalcSingleAmountVo> calcSingleAmountVoList = new ArrayList<>();
@@ -111,14 +103,6 @@ public class ShopStockController {
                 throw new OptimisticLockingFailureException("该id库存有误" + vo.getId());
             }
             ShopGoods shopGoods = shopGoodsService.selectById(shopStock.getShopGoodsId());
-//            // 获取商品信息
-//            ShopGoods shopGoods = null;
-//            for (ShopGoods myShopGoods : shopGoodsList) {
-//                if (myShopGoods.getId().equals(vo.getShopGoodsId())) {
-//                    shopGoods = myShopGoods;
-//                    break;
-//                }
-//            }
             if (shopGoods == null) {
                 throw new OptimisticLockingFailureException("该id商户有误" + vo.getShopGoodsId());
             }
@@ -139,14 +123,6 @@ public class ShopStockController {
             // 商品数量
             calcSingleAmountVo.setCount(shopStock.getCount());
             calcSingleAmountVo.setAbstracts(shopGoods.getAbstracts());
-            // 商品属性
-//            List<ShopGoodsAttribute> shopGoodsAttributeList = shopGoodsAttributeService.selectList(
-//                    new EntityWrapper<ShopGoodsAttribute>()
-//                            .eq("shop_goods_id", shopGoods.getId())
-//                            .ne("attribute_value_name", "")
-//                            .ne("attribute_value_name", "下拉选择")
-//                            .isNotNull("attribute_value_name"));
-//            calcSingleAmountVo.setShopGoodsAttributeList(shopGoodsAttributeList);
             // 剔除酒具礼盒
             if (shopGoods.getPlatformGoodsCategoryId() != 4 || shopGoods.getPlatformGoodsCategoryId() != 5) {
                 //总数,用于计算耗材费
@@ -309,7 +285,7 @@ public class ShopStockController {
             }
         }
         // 逾期时间
-        shopGoodsOrder.setValidOrderTime(DateUtil.getHoursLater(2));
+        shopGoodsOrder.setValidOrderTime(DateUtil.getMINsLater(30));
         boolean insert = shopGoodsOrderService.insert(shopGoodsOrder);
         if (!insert) {
             throw new OptimisticLockingFailureException("订单插入失败！");
@@ -321,17 +297,24 @@ public class ShopStockController {
         }
         // 下单扣除商品库存
         for (ShopGoodsOrderDetail shopGoodsOrderDetail : shopGoodsOrderDetailList) {
-//            boolean a = shopGoodsService.updateStockById(shopGoodsOrderDetail.getBuyCount(),
-//                    shopGoodsOrderDetail.getShopGoodsId());
-//            if (!a){
-//                throw new OptimisticLockingFailureException("商品库存扣除失败");
-//            }
             // 下单扣除库存
             boolean c = shopStockService.updateMyShopStockByGoodsId(shopGoodsOrderDetail.getBuyCount(),
                     shopGoodsOrderDetail.getShopGoodsId(), shopGoodsOrder.getSubmitOrderUser());
             if (!c) {
                 throw new OptimisticLockingFailureException("库存扣除失败");
             }
+            // 存入入库流水
+            UserFund userFund = new UserFund();
+            userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
+            userFund.setDecreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+            userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+            userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+            userFund.setTradeDescribe("库存发货");
+            userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
+            userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_11);
+            userFund.setPayType(BaseConstant.PAY_TYPE_10);
+            userFund.setTradeTime(date);
+            userFundService.InsertUserFund(userFund);
         }
 
         resultMap.put("orderNo", shopGoodsOrder.getOrderNo());
@@ -407,8 +390,6 @@ public class ShopStockController {
         String notify_url = "http://jgapi.china-mail.com.cn/api/shopStock/constant/weixinNotifyUrl";
         // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
         // 检验订单状态以及订单的金额
-        // TODO 测试用支付
-        actualAmount = new BigDecimal("0.01");
         WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
                 out_trade_no, subject, actualAmount.doubleValue(), ip, notify_url);
         // 订单失败
@@ -464,34 +445,7 @@ public class ShopStockController {
 //            notify.setResultFail("TotalAmount fail");
 //            return notify.getBodyXML();
 //        }
-        // 更新余额
-//        BigDecimal totalPoint = shopGoodsOrder.getTotalPoint();
         Date date = new Date();
-//        if (shopGoodsOrder.getPayType().equals(BaseConstant.PAY_TYPE_4) && totalPoint!= null && totalPoint.compareTo(BigDecimal.ZERO) > 0){
-//            UserInfo userInfo = userInfoService.selectById(shopGoodsOrder.getSubmitOrderUser());
-//            if (userInfo.getPoint().compareTo(totalPoint) >= 0){
-//                userInfo.setPoint(userInfo.getPoint().subtract(totalPoint));
-//            }
-//            boolean b = userInfoService.updateById(userInfo);
-//            if (!b){
-//                logger.info("-----------------------pointUpdate fail------------------------------");
-//                notify.setResultFail("pointUpdate fail" + userInfo.getPoint());
-//                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-//                return notify.getBodyXML();
-//            }
-//            // 插入流水
-//            UserFund userFund = new UserFund();
-//            userFund.setDecreaseMoney(shopGoodsOrder.getTotalRealPayment());
-//            userFund.setTradeDescribe("余额支付");
-//            userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
-//            userFund.setPayType(BaseConstant.PAY_TYPE_4);
-//            userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
-//            userFund.setOrderNo(outTradeNo);
-//            userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
-//            userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
-//            userFund.setTradeTime(date);
-//            userFundService.InsertUserFund(userFund);
-//        }
         // 更新订单
         ShopGoodsOrder myShopGoodsOrder = new ShopGoodsOrder();
         myShopGoodsOrder.setId(shopGoodsOrder.getId());

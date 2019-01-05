@@ -85,7 +85,7 @@ public class OriginatorInfoOrderController {
         OriginatorInfoOrder originatorInfoOrder = originatorInfoOrderService.selectOne(new EntityWrapper<OriginatorInfoOrder>()
                 .eq("submit_order_user", id)
                 .eq("order_status", BaseConstant.ORDER_STATUS_1));
-        if (originatorInfoOrder == null){
+        if (originatorInfoOrder == null) {
             // init
             originatorInfoOrder = new OriginatorInfoOrder();
             originatorInfoOrder.setOrderStatus(BaseConstant.ORDER_STATUS_1);
@@ -121,9 +121,8 @@ public class OriginatorInfoOrderController {
         String product_id = ""; // 产品id (非必填)
         String notify_url = "http://jgapi.china-mail.com.cn/api/originatorInfoOrder/constant/weixinNotifyUrl";
         // 检验订单状态以及订单的金额
-        // TODO 测试用付款
         WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
-                originatorInfoOrder.getOrderNo(), subject, /*amount.doubleValue()*/ new BigDecimal("0.01").doubleValue(), ip, notify_url);
+                originatorInfoOrder.getOrderNo(), subject, amount.doubleValue(), ip, notify_url);
         // 订单失败
         if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
             resultMap.put("return_code", wxData.get("return_code"));
@@ -166,18 +165,17 @@ public class OriginatorInfoOrderController {
             notify.setResultFail("OutTradeNo fail" + outTradeNo);
             return notify.getBodyXML();
         }
-        if (!originatorInfoOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)){
+        if (!originatorInfoOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)) {
             logger.info("-----------------------OrderStatus fail------------------------------");
             notify.setResultFail("OrderStatus fail" + originatorInfoOrder.getOrderStatus());
             return notify.getBodyXML();
         }
-        // TODO 测试用注释
-//        if (originatorInfoOrder.getOrderAmount().multiply(new BigDecimal("100")).compareTo(totaAmount) != 0) {
-//            logger.info("-----------------------TotalAmount fail------------------------------");
-//            logger.info("-----------------------" + notify.toString() + "------------------------------");
-//            notify.setResultFail("TotalAmount fail" + totaAmount);
-//            return notify.getBodyXML();
-//        }
+        if (originatorInfoOrder.getOrderAmount().multiply(new BigDecimal("100")).compareTo(totaAmount) != 0) {
+            logger.info("-----------------------TotalAmount fail------------------------------");
+            logger.info("-----------------------" + notify.toString() + "------------------------------");
+            notify.setResultFail("TotalAmount fail" + totaAmount);
+            return notify.getBodyXML();
+        }
         logger.info("-----------------------" + notify + "------------------------------");
         // 更新订单
         originatorInfoOrder.setOrderStatus(BaseConstant.ORDER_STATUS_11);

@@ -5,7 +5,7 @@ import com.jgzy.entity.po.AdvanceRechargeRecord;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author zou
@@ -13,4 +13,11 @@ import com.jgzy.entity.po.AdvanceRechargeRecord;
  */
 public interface IAdvanceRechargeRecordService extends IService<AdvanceRechargeRecord> {
 
+    /**
+     * 更新用户权额
+     *
+     * @param advanceRechargeRecord 修改权额
+     * @return flag
+     */
+    boolean updateMyAdvanceRecharge(AdvanceRechargeRecord advanceRechargeRecord);
 }

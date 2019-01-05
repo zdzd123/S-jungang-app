@@ -37,6 +37,8 @@ public class UserGoodsCollect implements Serializable {
      */
     @ApiModelProperty(value = "收藏人(用户id)", example = "1")
     private Integer collectUserInfoId;
+    @ApiModelProperty(value = "收藏人数量", example = "1")
+    private Integer collectCounts;
     /**
      * 收藏时间
      */
@@ -48,7 +50,24 @@ public class UserGoodsCollect implements Serializable {
      */
     @ApiModelProperty(value = "1-未删除 2-删除", example = "1")
     private Integer userDel = 1;
+    @ApiModelProperty(value = "收藏人类型 1-合伙人", example = "1")
+    private Integer type;
 
+    public Integer getCollectCounts() {
+        return collectCounts;
+    }
+
+    public void setCollectCounts(Integer collectCounts) {
+        this.collectCounts = collectCounts;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
+    }
 
     public Integer getId() {
         return id;

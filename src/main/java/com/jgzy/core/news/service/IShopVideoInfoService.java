@@ -1,5 +1,6 @@
 package com.jgzy.core.news.service;
 
+import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
 import com.jgzy.core.news.vo.ShopVideoInfoVo;
 import com.jgzy.entity.po.ShopVideoInfo;
@@ -23,4 +24,14 @@ public interface IShopVideoInfoService extends IService<ShopVideoInfo> {
      * @return 视屏商品
      */
     ShopVideoInfoVo selectMyShopVideo(Integer id);
+
+    /**
+     * 查询视频列表
+     *
+     * @param page
+     * @param platformVideoCategoryId
+     * @param type
+     * @return
+     */
+    Page<ShopVideoInfo> selectMyPage(Page<ShopVideoInfo> page, String platformVideoCategoryId, String type);
 }

@@ -35,12 +35,14 @@ public class NewsInfoController {
     @GetMapping(value = "/page/list")
     public ResultWrapper<Page<NewsInfo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
                                                   @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize,
-                                                  @ApiParam(value = "资讯分类") @RequestParam(required = false) String newsCategoryId) {
+                                                  @ApiParam(value = "资讯分类") @RequestParam(required = false) String newsCategoryId,
+                                                  @ApiParam(value = "1-独家专区 2-游学记") @RequestParam(required = false) String type) {
         ResultWrapper<Page<NewsInfo>> resultWrapper = new ResultWrapper<>();
         Page<NewsInfo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
-        page = newsInfoService.selectPage(page, new EntityWrapper<NewsInfo>()
-                .eq("status", 2)
-                .eq(StringUtils.isNotEmpty(newsCategoryId), "news_category_id", newsCategoryId));
+        page = newsInfoService.selectMyPage(page, newsCategoryId, type);
+//        page = newsInfoService.selectMyPage(page, new EntityWrapper<NewsInfo>()
+//                .eq("status", 2)
+//                .eq(StringUtils.isNotEmpty(newsCategoryId), "news_category_id", newsCategoryId));
         resultWrapper.setResult(page);
         return resultWrapper;
     }

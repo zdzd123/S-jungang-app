@@ -12,7 +12,9 @@
             items.extra_field3,
             info.advert_site,
             info.platform_goods_category_id,
-            info.id
+            info.id,
+            info.pic advertPic,
+            info.remarks
         FROM
             advert_items items
         RIGHT JOIN advert_info info ON items.advert_info_id = info.id
@@ -24,5 +26,6 @@
                 info.advert_site = #{advertSite}
             </if>
         </where>
+        ORDER BY info.sort
     </select>
 </mapper>

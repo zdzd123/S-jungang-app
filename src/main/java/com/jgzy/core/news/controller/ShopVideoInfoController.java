@@ -36,11 +36,13 @@ public class ShopVideoInfoController {
     @GetMapping(value = "/page/list")
     public ResultWrapper<Page<ShopVideoInfo>> listPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,
                                                        @ApiParam(value = "每页数", required = true) @RequestParam(defaultValue = "10") String pageSize,
-                                                       @ApiParam(value = "平台分类ID") @RequestParam(required = false) String platformVideoCategoryId) {
+                                                       @ApiParam(value = "平台分类ID") @RequestParam(required = false) String platformVideoCategoryId,
+                                                       @ApiParam(value = "1-商学院 2-庄主在线") @RequestParam(required = false) String type) {
         ResultWrapper<Page<ShopVideoInfo>> resultWrapper = new ResultWrapper<>();
         Page<ShopVideoInfo> page = new Page<>(Integer.parseInt(pageNum), Integer.parseInt(pageSize));
-        page = shopVideoInfoService.selectPage(page, new EntityWrapper<ShopVideoInfo>()
-                .eq(StringUtils.isNotEmpty(platformVideoCategoryId), "platform_video_category_id", platformVideoCategoryId));
+        page = shopVideoInfoService.selectMyPage(page, platformVideoCategoryId, type);
+//        page = shopVideoInfoService.selectPage(page, new EntityWrapper<ShopVideoInfo>()
+//                .eq(StringUtils.isNotEmpty(platformVideoCategoryId), "platform_video_category_id", platformVideoCategoryId));
         resultWrapper.setResult(page);
         return resultWrapper;
     }

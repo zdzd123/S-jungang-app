@@ -6,6 +6,7 @@ import com.jgzy.core.personalCenter.vo.UserInfoVo;
 import com.jgzy.entity.po.UserInfo;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * <p>
@@ -71,4 +72,11 @@ public interface IUserInfoService extends IService<UserInfo> {
      * @return flag
      */
     boolean updateMyBalance(UserInfo myUser);
+
+    /**
+     * 获取管理者的openId，用于发送订单消息
+     *
+     * @return
+     */
+    List<String> selectManagerUser();
 }

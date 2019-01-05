@@ -65,7 +65,7 @@ public class MyWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
                 // 登录成功后将user对象放置在本地线程中，方便controller和service获取
                 UserUuidThreadLocal.set((UserInfo) RedisUtil.hget(RedisConstant.REDIS_USER_KEY, token));
 //                UserInfo userInfo = new UserInfo();
-//                userInfo.setId(1);
+//                userInfo.setId(3);
 //                UserUuidThreadLocal.set(userInfo);
             }
             return true;
@@ -74,12 +74,14 @@ public class MyWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
         @Override
         public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
             /*
-             * tomcat底层 每一个请求都是一个线程，如果每一个请求都启动一个线程，性能就会降低， 1.
-             * 于是就有了线程池，而线程池中的线程并不是真正销毁或真正启动的。 2.
-             * 也就是说这个请求的线程是个可复用的线程，第二次请求可能还会拿到刚刚的线程， 3. 若不清空，里面本身就有uuid，数据会错乱
+             * tomcat底层 每一个请求都是一个线程，如果每一个请求都启动一个线程，性能就会降低，
+             * 1.于是就有了线程池，而线程池中的线程并不是真正销毁或真正启动的。
+             * 2.也就是说这个请求的线程是个可复用的线程，第二次请求可能还会拿到刚刚的线程，
+             * 3. 若不清空，里面本身就有uuid，数据会错乱
              */
             // 清空本地线程中的uuid对象数据
             UserUuidThreadLocal.set(null);
+//            UserUuidThreadLocal.remove();
             super.afterCompletion(request, response, handler, ex);
         }
     }

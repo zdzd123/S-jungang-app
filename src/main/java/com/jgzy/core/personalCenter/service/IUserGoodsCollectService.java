@@ -20,6 +20,7 @@ public interface IUserGoodsCollectService extends IService<UserGoodsCollect> {
      *
      * @return
      * @param page
+     * @param type
      */
-    Page<UserGoodsCollectionVo> getUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page);
+    Page<UserGoodsCollectionVo> getUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page, String type);
 }

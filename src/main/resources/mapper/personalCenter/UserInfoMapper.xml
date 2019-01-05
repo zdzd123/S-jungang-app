@@ -13,6 +13,7 @@
                 WHERE
                     user_del = 1
                 AND collect_user_info_id = #{id}
+                AND type IS NULL
             ) collect,
             (
                 SELECT
@@ -137,6 +138,9 @@
             </if>
         </set>
         WHERE
-          id = #{id}
+        id = #{id}
     </update>
+    <select id="selectManagerUser" resultType="string">
+        select oauth_openid from user_info userInfo INNER JOIN user_oauth oauth on userInfo.id = oauth.user_id and userInfo.is_robot=1
+    </select>
 </mapper>

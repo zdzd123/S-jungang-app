@@ -37,7 +37,16 @@ public class NewsCategory implements Serializable {
     @ApiModelProperty(value = "addTime", example = "2018-06-29 09:17:54")
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
     private Date addTime;
+    @ApiModelProperty(value = "1-独家专区 2-游学记", example = "1")
+    private Integer type;
 
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
+    }
 
     public Integer getId() {
         return id;

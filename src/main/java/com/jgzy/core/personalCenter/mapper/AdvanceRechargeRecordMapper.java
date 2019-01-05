@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 /**
  * <p>
- *  Mapper 接口
+ * Mapper 接口
  * </p>
  *
  * @author zou
@@ -14,5 +14,11 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface AdvanceRechargeRecordMapper extends BaseMapper<AdvanceRechargeRecord> {
-
+    /**
+     * 更新我的权额信息
+     *
+     * @param advanceRechargeRecord 权额信息
+     * @return flag
+     */
+    boolean updateMyAdvanceRecharge(AdvanceRechargeRecord advanceRechargeRecord);
 }

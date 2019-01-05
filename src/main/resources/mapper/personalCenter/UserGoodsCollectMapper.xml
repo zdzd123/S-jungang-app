@@ -5,19 +5,30 @@
         SELECT
             collect.id,
             collect.goods_id,
+            collect.collect_counts count,
             goods.shop_name,
+            goods.platform_goods_category_id,
+            goods.market_price,
             goods.cost_price,
+            goods.menber_price,
             goods.pic,
             goods.status,
             goods.goods_unit,
             goods.abstracts,
-            goods.stock
+            goods.stock,
+            goods.goods_unit_count
         FROM
             user_goods_collect collect
         JOIN shop_goods goods ON collect.goods_id = goods.id
         WHERE
             collect.collect_user_info_id = #{id}
-        AND collect.user_del = 1
+            AND collect.user_del = 1
+        <if test="type != null">
+            AND collect.type = #{type}
+        </if>
+        <if test="type == null">
+            AND collect.type IS NULL
+        </if>
         ORDER BY collect.id DESC
     </select>
 </mapper>

@@ -5,10 +5,9 @@ import com.alipay.api.internal.util.AlipaySignature;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.jgzy.config.AlipayConfig;
 import com.jgzy.constant.BaseConstant;
-import com.jgzy.core.personalCenter.service.IUserDistributionConstantService;
-import com.jgzy.core.personalCenter.service.IUserDistributionService;
-import com.jgzy.core.personalCenter.service.IUserInfoService;
+import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.schedule.DealOverTimeOrderTasks;
+import com.jgzy.core.schedule.DealOverduePaymentsTasks;
 import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.core.shopOrder.vo.ShopgoodsOrderDetailVo;
 import com.jgzy.entity.po.*;
@@ -65,6 +64,10 @@ public class PayNotifyController {
     private IShopStockService shopStockService;
     @Autowired
     private DealOverTimeOrderTasks dealOverTimeOrderTasks;
+    @Autowired
+    private IAdvanceRechargeRecordService advanceRechargeRecordService;
+    @Autowired
+    private DealOverduePaymentsTasks dealOverduePaymentsTasks;
 
     @Value("#{'${platformGoodsCategoryList}'.split(',')}")
     private List<Integer> specialPlatformGoodsCategoryList;
@@ -159,15 +162,15 @@ public class PayNotifyController {
     @Transactional
     public String weixinNotifyUrl(HttpServletRequest request) {
         logger.info("-----------------------——微信回调开始——------------------------------");
-        BigDecimal zero = new BigDecimal("0");
         Date date = new Date();
         WeiXinNotify notify = WeiXinPayUtil.notify_url(request);
         String outTradeNo = notify.getOut_trade_no(); // 商户网站订单系统中唯一订单号
         BigDecimal totalAmount = new BigDecimal(notify.getTotal_fee()); // 付款金额
 
-        // TODO 测试代码
 //        WeiXinNotify notify = new WeiXinNotify();
-//        String outTradeNo = "HHR112909405218372";
+//        String outTradeNo = "HHR010412184884796";
+//        BigDecimal totalAmount = new BigDecimal("141375");
+        logger.info("-----------------------——微信回调订单编号" + outTradeNo + "——------------------------------");
 
         // 校验订单
         ShopGoodsOrder shopGoodsOrder = shopGoodsOrderService.selectOne(
@@ -177,18 +180,23 @@ public class PayNotifyController {
             notify.setResultFail("OutTradeNo fail" + outTradeNo);
             return notify.getBodyXML();
         }
-        if (!shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)) {
+        if (shopGoodsOrder.getTotalRealPayment().multiply(new BigDecimal("100")).compareTo(totalAmount) != 0) {
+            logger.info("-----------------------TotalAmount fail------------------------------");
+            notify.setResultFail("TotalAmount fail" + totalAmount);
+            return notify.getBodyXML();
+        }
+        if (!shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1) &&
+                !shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_12)) {
             logger.info("-----------------------OrderStatus fail------------------------------");
             notify.setResultFail("OrderStatus fail" + shopGoodsOrder.getOrderStatus());
             return notify.getBodyXML();
         }
+        // 逾期订单扣除已返金额重新下单
+        if (shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_12)) {
+            dealOverduePaymentsTasks.returnOverduePayments(shopGoodsOrder);
+        }
+
         Integer id = shopGoodsOrder.getSubmitOrderUser();
-        // TODO 测试用隐藏判断金额是否正确
-//        if (shopGoodsOrder.getTotalRealPayment().multiply(new BigDecimal("100")).compareTo(totalAmount) != 0) {
-//            logger.info("-----------------------TotalAmount fail------------------------------");
-//            notify.setResultFail("TotalAmount fail" + totalAmount);
-//            return notify.getBodyXML();
-//        }
         List<UserFund> userFundList = new ArrayList<>();
         //订单
         ShopGoodsOrder myShopGoodsOrder = new ShopGoodsOrder();
@@ -231,6 +239,18 @@ public class PayNotifyController {
                 if (!insert) {
                     throw new OptimisticLockingFailureException("库存插入失败");
                 }
+                // 存入入库流水
+                UserFund userFund = new UserFund();
+                userFund.setTradeUserId(id);
+                userFund.setIncreaseMoney(new BigDecimal(shopStock.getCount()));
+                userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                userFund.setTradeDescribe("存入库存");
+                userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
+                userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_10);
+                userFund.setPayType(BaseConstant.PAY_TYPE_10);
+                userFund.setTradeTime(date);
+                userFundService.InsertUserFund(userFund);
             }
         }
         // 更新订单
@@ -264,8 +284,21 @@ public class PayNotifyController {
                 .eq("status", 0));
         boolean isOriginator;
         isOriginator = i != 0;
+        // 权额购买金额需要按照购买时的折扣反推金额
+        BigDecimal advanceAmount = BigDecimal.ZERO;
+        if (shopGoodsOrder.getAdvanceAmount() != null && shopGoodsOrder.getAdvanceAmount().compareTo(BigDecimal.ZERO) > 0) {
+            String[] advanceList = shopGoodsOrder.getBlessing().split(":");
+            for (String singleAdvance : advanceList) {
+                // 权额ID，等级和金额
+                String[] paras = singleAdvance.split(",");
+                AdvanceRechargeRecord advanceRechargeRecord = advanceRechargeRecordService.selectById(paras[0]);
+                BigDecimal singleAdvanceAmount = new BigDecimal(paras[2]);
+                // 权额金额需要反推至充值金额
+                advanceAmount = advanceAmount.add(singleAdvanceAmount.multiply(advanceRechargeRecord.getDiscountRate()));
+            }
+        }
         // 实付金额 = 权额购买金额+余额购买金额+实际支付金额-运费-耗材费
-        BigDecimal commissionAmount = (shopGoodsOrder.getAdvanceAmount() == null ? BigDecimal.ZERO : shopGoodsOrder.getAdvanceAmount())
+        BigDecimal commissionAmount = advanceAmount
                 .add(shopGoodsOrder.getTotalPoint() == null ? BigDecimal.ZERO : shopGoodsOrder.getTotalPoint())
                 .add(shopGoodsOrder.getTotalRealPayment() == null ? BigDecimal.ZERO : shopGoodsOrder.getTotalRealPayment())
                 .subtract(shopGoodsOrder.getCarriage() == null ? BigDecimal.ZERO : shopGoodsOrder.getCarriage())
@@ -291,7 +324,7 @@ public class PayNotifyController {
                 new EntityWrapper<OriginatorInfoOrder>()
                         .eq("order_status", BaseConstant.ORDER_STATUS_11)
                         .eq("submit_order_user", id));
-        if (originatorInfoOrder != null && originatorInfoOrder.getRemianAmount() != null && originatorInfoOrder.getRemianAmount().compareTo(zero) > 0) {
+        if (originatorInfoOrder != null && originatorInfoOrder.getRemianAmount() != null && originatorInfoOrder.getRemianAmount().compareTo(BigDecimal.ZERO) > 0) {
             //返回2%剩余品牌费
             BigDecimal oriAmount = commissionAmount.multiply(BaseConstant.ORIGINATOR_RATE);
             if (oriAmount.compareTo(BigDecimal.ZERO) > 0) {
@@ -343,7 +376,7 @@ public class PayNotifyController {
             UserDistributionConstant myDistribution = userDistributionConstantService.selectMyDistributionById(id);
             UserDistributionConstant parentDistribution = userDistributionConstantService.selectParentDistributionById(id);
             // 合伙人股权
-            if (myDistribution != null && myDistribution.getStockRightDiscount().compareTo(zero) > 0) {
+            if (myDistribution != null && myDistribution.getStockRightDiscount().compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal stockRight = commissionAmount.multiply(myDistribution.getStockRightDiscount());
                 if (stockRight.compareTo(BigDecimal.ZERO) > 0) {
                     UserFund distributionUserFund = new UserFund();
@@ -362,7 +395,7 @@ public class PayNotifyController {
                 }
             }
             // 合伙人佣金
-            if (parentDistribution != null && parentDistribution.getCommissionDiscount().compareTo(zero) > 0) {
+            if (parentDistribution != null && parentDistribution.getCommissionDiscount().compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal commission = commissionAmount.multiply(parentDistribution.getCommissionDiscount());
                 if (commission.compareTo(BigDecimal.ZERO) > 0) {
                     boolean updateCommission = userInfoService.updateCommissionDiscount(parentDistribution.getId(), commission);
@@ -465,6 +498,8 @@ public class PayNotifyController {
             // 异步处理关闭订单
             dealOverTimeOrderTasks.dealCommissionAmount();
         }
+        // 给管理员发送订单消息
+        shopGoodsOrderService.sendOrderTemplateToManager(shopGoodsOrder);
         return notify.getBodyXML();
     }
 }

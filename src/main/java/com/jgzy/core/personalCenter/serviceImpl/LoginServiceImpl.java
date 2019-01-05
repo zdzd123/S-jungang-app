@@ -45,9 +45,7 @@ public class LoginServiceImpl extends ServiceImpl<LoginMapper, UserInfo> impleme
                 throw new OptimisticLockingFailureException(BaseConstant.ERROR_KEY);
             }
             userInfoList.get(0).setToken(token);
-            // TODO redis add token 测试用不加过期时间
-            //RedisUtil.hset(RedisConstant.REDIS_USER_KEY, token, userInfoList.get(0), RedisConstant.REDIS_TIME_OUT);
-            RedisUtil.hset(RedisConstant.REDIS_USER_KEY, token, userInfoList.get(0));
+            RedisUtil.hset(RedisConstant.REDIS_USER_KEY, token, userInfoList.get(0), RedisConstant.REDIS_LOGIN_TIME_OUT);
             return token;
         }
         return BaseConstant.ERROR_KEY;

@@ -200,7 +200,21 @@ public class DateUtil {
         Date date = new Date();
         Calendar dar = Calendar.getInstance();
         dar.setTime(date);
-        dar.add(Calendar.DATE,dar.get(Calendar.DATE)+days);
+        dar.add(Calendar.DATE, days);
+        return dar.getTime();
+    }
+
+    /**
+     * 获取几分钟后的时间
+     *
+     * @param mins 天
+     * @return 时间
+     */
+    public static Date getMINsLater(int mins) {
+        Date date = new Date();
+        Calendar dar = Calendar.getInstance();
+        dar.setTime(date);
+        dar.add(Calendar.MINUTE, mins);
         return dar.getTime();
     }
 }

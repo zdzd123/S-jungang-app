@@ -31,20 +31,20 @@ public interface IShopGoodsOrderService extends IService<ShopGoodsOrder> {
     /**
      * 查询商品订单包含详情和属性
      *
-     * @param orderStatus 订单状态
-     * @param orderSource 订单来源
+     * @param orderId 订单id
      * @return 订单
      */
-    List<ShopGoodsOrderVo> selectMyOrder(Integer orderStatus, String orderSource);
+    ShopGoodsOrderVo selectMyOrder(Integer orderId);
 
     /**
      * 查询单个商品订单包含详情和属性
      *
      * @param id      订单id
      * @param orderNo 订单编号
+     * @param role
      * @return 商品订单
      */
-    ShopGoodsOrderVo selectOneOrder(Integer id, String orderNo);
+    ShopGoodsOrderVo selectOneOrder(Integer id, String orderNo, String role);
 
     /**
      * 统计订单数量
@@ -52,4 +52,11 @@ public interface IShopGoodsOrderService extends IService<ShopGoodsOrder> {
      * @return 统计
      */
     List<ShopGoodsOrderStatisticVo> statistics();
+
+    /**
+     * 给管理员发送订单消息
+     *
+     * @param shopGoodsOrder 订单消息
+     */
+    void sendOrderTemplateToManager(ShopGoodsOrder shopGoodsOrder);
 }

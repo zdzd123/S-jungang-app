@@ -91,6 +91,12 @@ public class DealOverTimeOrderTasks {
     @Transactional
     public void dealCommissionAmount() {
         log.info("---------------------" + "开始处理已收货后的金额" + "----------------------------");
+        try {
+            // 修正用于异步执行比上一步处理订单更快
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         // 查询关闭未处理订单 返点标识 0-未返点 1-已返点
         List<ShopGoodsOrder> shopGoodsOrderList = shopGoodsOrderService.selectList(new EntityWrapper<ShopGoodsOrder>()
                 .ge("order_status", BaseConstant.ORDER_STATUS_5)

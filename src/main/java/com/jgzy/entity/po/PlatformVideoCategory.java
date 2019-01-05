@@ -39,6 +39,16 @@ public class PlatformVideoCategory implements Serializable {
     @ApiModelProperty(value = "添加时间", example = "2018-06-29 09:17:54")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date addTime;
+    @ApiModelProperty(value = "1-商学院 2-庄主在线", example = "1")
+    private Integer type;
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
+    }
 
     public String getPic() {
         return pic;

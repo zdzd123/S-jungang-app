@@ -63,7 +63,6 @@ public class LoginController {
                 WeiXinPayConfig.getApp_id() + "&secret=" + WeiXinPayConfig.getApp_secret() + "&code=" + code + "&grant_type=authorization_code");
         JSONObject jsonObject = new JSONObject(string);
         System.out.println("jsonObject---------------------------------------------/api/v1/weixinLogin" + jsonObject);
-        // TODO access_token每2个小时后更新，每天限制10000次
         String access_token = jsonObject.getString("access_token");
         String openid = jsonObject.getString("openid");
         String userInfo = HttpRequest.sendGet("https://api.weixin.qq.com/sns/userinfo?access_token=" +

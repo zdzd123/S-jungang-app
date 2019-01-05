@@ -24,8 +24,8 @@ public class UserGoodsCollectServiceImpl extends ServiceImpl<UserGoodsCollectMap
     private UserGoodsCollectMapper userGoodsCollectMapper;
 
     @Override
-    public Page<UserGoodsCollectionVo> getUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page) {
+    public Page<UserGoodsCollectionVo> getUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page, String type) {
         Integer id = UserUuidThreadLocal.get().getId();
-        return page.setRecords(userGoodsCollectMapper.selectUserGoodsCollectByUserId(page, id));
+        return page.setRecords(userGoodsCollectMapper.selectUserGoodsCollectByUserId(page, id, type));
     }
 }

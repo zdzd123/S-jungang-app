@@ -249,30 +249,30 @@ public class WeiXinPayUtil {
                 } else if (tagName.equals("transaction_id")) {
                     notify.transaction_id = js.getJSONArray("childNodes").getString(0);
                 }
-                // 优惠券 ------------------17-12-19
-                else if (tagName.equals("coupon_count")) {
-                    notify.coupon_count = js.getJSONArray("childNodes").getString(0);
-                } else if (tagName.equals("coupon_fee")) {
-                    notify.coupon_fee = js.getJSONArray("childNodes").getString(0);
-                }
-                // coupon_fee_0
-                else if (tagName.equals("coupon_fee_0")) {
-                    notify.coupon_fee_0 = js.getJSONArray("childNodes").getString(0);
-                } else if (tagName.equals("coupon_id_0")) {
-                    notify.coupon_id_0 = js.getJSONArray("childNodes").getString(0);
-                }
-                // coupon_fee_1
-                else if (tagName.equals("coupon_fee_1")) {
-                    notify.coupon_fee_1 = js.getJSONArray("childNodes").getString(0);
-                } else if (tagName.equals("coupon_id_1")) {
-                    notify.coupon_id_1 = js.getJSONArray("childNodes").getString(0);
-                }
-                // coupon_fee_2
-                else if (tagName.equals("coupon_fee_2")) {
-                    notify.coupon_fee_2 = js.getJSONArray("childNodes").getString(0);
-                } else if (tagName.equals("coupon_id_2")) {
-                    notify.coupon_id_2 = js.getJSONArray("childNodes").getString(0);
-                }
+//                // 优惠券 ------------------17-12-19
+//                else if (tagName.equals("coupon_count")) {
+//                    notify.coupon_count = js.getJSONArray("childNodes").getString(0);
+//                } else if (tagName.equals("coupon_fee")) {
+//                    notify.coupon_fee = js.getJSONArray("childNodes").getString(0);
+//                }
+//                // coupon_fee_0
+//                else if (tagName.equals("coupon_fee_0")) {
+//                    notify.coupon_fee_0 = js.getJSONArray("childNodes").getString(0);
+//                } else if (tagName.equals("coupon_id_0")) {
+//                    notify.coupon_id_0 = js.getJSONArray("childNodes").getString(0);
+//                }
+//                // coupon_fee_1
+//                else if (tagName.equals("coupon_fee_1")) {
+//                    notify.coupon_fee_1 = js.getJSONArray("childNodes").getString(0);
+//                } else if (tagName.equals("coupon_id_1")) {
+//                    notify.coupon_id_1 = js.getJSONArray("childNodes").getString(0);
+//                }
+//                // coupon_fee_2
+//                else if (tagName.equals("coupon_fee_2")) {
+//                    notify.coupon_fee_2 = js.getJSONArray("childNodes").getString(0);
+//                } else if (tagName.equals("coupon_id_2")) {
+//                    notify.coupon_id_2 = js.getJSONArray("childNodes").getString(0);
+//                }
                 // 签名
                 else if (tagName.equals("sign")) {
                     notify.sign = js.getJSONArray("childNodes").getString(0);
@@ -298,17 +298,17 @@ public class WeiXinPayUtil {
             wxData.put("transaction_id", notify.transaction_id);
 
             // 优惠券 ------------------17-12-19
-            wxData.put("coupon_count", notify.coupon_count);
-            wxData.put("coupon_fee", notify.coupon_fee);
-            // coupon_fee_0
-            wxData.put("coupon_fee_0", notify.coupon_fee_0);
-            wxData.put("coupon_id_0", notify.coupon_id_0);
-            // coupon_fee_1
-            wxData.put("coupon_fee_1", notify.coupon_fee_1);
-            wxData.put("coupon_id_1", notify.coupon_id_1);
-            // coupon_fee_2
-            wxData.put("coupon_fee_2", notify.coupon_fee_2);
-            wxData.put("coupon_id_2", notify.coupon_id_2);
+//            wxData.put("coupon_count", notify.coupon_count);
+//            wxData.put("coupon_fee", notify.coupon_fee);
+//            // coupon_fee_0
+//            wxData.put("coupon_fee_0", notify.coupon_fee_0);
+//            wxData.put("coupon_id_0", notify.coupon_id_0);
+//            // coupon_fee_1
+//            wxData.put("coupon_fee_1", notify.coupon_fee_1);
+//            wxData.put("coupon_id_1", notify.coupon_id_1);
+//            // coupon_fee_2
+//            wxData.put("coupon_fee_2", notify.coupon_fee_2);
+//            wxData.put("coupon_id_2", notify.coupon_id_2);
 
             wxData.put("key", WeiXinPayConfig.getKey());
 
@@ -322,10 +322,7 @@ public class WeiXinPayUtil {
                 return notify.setResult("FAIL", "微信支付回调签名异常");
             }
             return notify.setResult("SUCCESS", "OK");
-        } catch (JSONException e) {
-            e.printStackTrace();
-            notify.setReturn_msg(e.getMessage());
-        } catch (IOException e) {
+        } catch (JSONException | IOException e) {
             e.printStackTrace();
             notify.setReturn_msg(e.getMessage());
         }

@@ -20,5 +20,6 @@ import java.util.List;
 @Repository
 public interface UserGoodsCollectMapper extends BaseMapper<UserGoodsCollect> {
 
-    List<UserGoodsCollectionVo> selectUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page, @Param("id") Integer id);
+    List<UserGoodsCollectionVo> selectUserGoodsCollectByUserId(Page<UserGoodsCollectionVo> page,
+                                                               @Param("id") Integer id, @Param("type") String type);
 }

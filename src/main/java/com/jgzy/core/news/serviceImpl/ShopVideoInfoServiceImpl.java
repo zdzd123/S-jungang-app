@@ -1,5 +1,6 @@
 package com.jgzy.core.news.serviceImpl;
 
+import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.core.news.mapper.ShopVideoInfoMapper;
 import com.jgzy.core.news.service.IShopVideoInfoService;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
@@ -29,5 +30,10 @@ public class ShopVideoInfoServiceImpl extends ServiceImpl<ShopVideoInfoMapper, S
     @Override
     public ShopVideoInfoVo selectMyShopVideo(Integer id) {
         return shopVideoInfoMapper.selectMyShopVideo(id);
+    }
+
+    @Override
+    public Page<ShopVideoInfo> selectMyPage(Page<ShopVideoInfo> page, String platformVideoCategoryId, String type) {
+        return page.setRecords(shopVideoInfoMapper.selectMyPage(page, platformVideoCategoryId, type));
     }
 }

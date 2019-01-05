@@ -2,11 +2,16 @@ package com.jgzy.utils;
 
 
 import com.jgzy.config.WeiXinPayConfig;
+import com.jgzy.constant.BaseConstant;
+import com.jgzy.core.personalCenter.service.IUserInfoService;
 import com.jgzy.entity.common.Template;
 import com.jgzy.entity.common.TemplateParam;
+import com.jgzy.entity.common.TemplateWithUrl;
+import com.jgzy.entity.po.ShopGoodsOrder;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.*;
@@ -27,6 +32,8 @@ public class TemplateMessageUtil {
     private static final String TEMPLATE_PAY_SUCCESS = "labWUz72DvnQkLlnC93D4Rk4xBQ-LtLHBcSl5PuLgYI";
     // 充值成功
     private static final String TEMPLATE_RECHARGE_SUCCESS = "lbzHMpCkqe7IfFSaMPwoVK7HUB1eEZpYMPpbVclIRYM";
+    // 订单提醒
+    private static final String TEMPLATE_ORDER_REMIND = "-2XcoryU6X--reUnv1qV12lP30ChRFUDp3oGVRCsuCs";
 
     /**
      * 初始化消息模版
@@ -40,6 +47,56 @@ public class TemplateMessageUtil {
         template.setToUser(openId);
         template.setTopColor("#00DD00");
         return template;
+    }
+
+    /**
+     * 初始化消息模版
+     *
+     * @param templateId 模版id
+     * @return 消息模版
+     */
+    private static TemplateWithUrl initTemplateWithUrl(String openId, String templateId) {
+        TemplateWithUrl template = new TemplateWithUrl();
+        template.setTemplateId(templateId);
+        template.setToUser(openId);
+        template.setTopColor("#00DD00");
+        return template;
+    }
+
+    /**
+     * 初始化订单提醒消息模版
+     *
+     * @param shopGoodsOrder 订单信息
+     * @return 消息模版
+     */
+    public static void initorderRemindTemplate(List<String> openIdList, ShopGoodsOrder shopGoodsOrder) {
+        TemplateWithUrl template = initTemplateWithUrl(null, TEMPLATE_ORDER_REMIND);
+        List<TemplateParam> paras = new ArrayList<>();
+        String keyword1 = shopGoodsOrder.getOrderNo();
+        String remark = null;
+        if (shopGoodsOrder.getCarriageType().equals(BaseConstant.CARRIAGE_TYPE_2) && shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_0)) {
+            remark = "订单需计算运费，请尽快处理";
+            keyword1 += "(" + shopGoodsOrder.getReceiveMan() + "-" + shopGoodsOrder.getContactPhone() + ")";
+        } else if (shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_1)) {
+            remark = "订单为下单邮寄订单，请尽快发货";
+            keyword1 += "(" + shopGoodsOrder.getReceiveMan() + "-" + shopGoodsOrder.getContactPhone() + ")";
+        } else if (shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)) {
+            remark = "订单为线上库存订单";
+        } else if (shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_3)) {
+            remark = "订单为自提订单，请准备好商品";
+            keyword1 += "(" + shopGoodsOrder.getReceiveMan() + "-" + shopGoodsOrder.getContactPhone() + ")";
+        }
+        paras.add(new TemplateParam("first", "您好，有新的订单需要您处理！", "#565656"));
+        paras.add(new TemplateParam("keyword1", keyword1, "#565656"));
+        paras.add(new TemplateParam("keyword2", shopGoodsOrder.getOrderAmountTotal().toString(), "#565656"));
+        paras.add(new TemplateParam("keyword3", DateUtil.formatDate(shopGoodsOrder.getCreateTime(), DateUtil.DATETIME_FORMAT), "#565656"));
+        paras.add(new TemplateParam("remark", remark, "#565656"));
+        template.setTemplateParamList(paras);
+        template.setUrl("http://jungang.china-mail.com.cn/songnaerWechat/#/orderDetail/" + shopGoodsOrder.getId() + "?role=1");
+        for (String openId : openIdList) {
+            template.setToUser(openId);
+            sendTemplateMsg(template);
+        }
     }
 
     /**

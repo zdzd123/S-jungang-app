@@ -97,8 +97,6 @@ public class AdvanceRechargeOrderController {
         String notify_url = "http://jgapi.china-mail.com.cn/api/advanceRechargeOrder/constant/weixinNotifyUrl";
         // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
         // 检验订单状态以及订单的金额
-        // TODO 测试用支付
-        total_fee = new BigDecimal("0.01");
         WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
                 out_trade_no, subject, total_fee.doubleValue(), ip, notify_url);
         // 订单失败
@@ -144,18 +142,14 @@ public class AdvanceRechargeOrderController {
         String outTradeNo = notify.getOut_trade_no(); // 商户网站订单系统中唯一订单号
         BigDecimal totalAmount = new BigDecimal(notify.getTotal_fee());// 付款金额
 
-//        WeiXinNotify notify = new WeiXinNotify();
-//        String outTradeNo = "1115085323-6984";
-
         AdvanceRechargeOrder advanceRechargeOrder = advanceRechargeOrderService.selectOne(
                 new EntityWrapper<AdvanceRechargeOrder>().eq("order_no", outTradeNo));
-        // TODO 测试用隐藏判断金额是否正确
-//        if (advanceRechargeOrder == null || advanceRechargeOrder.getAmount() == null ||
-//                advanceRechargeOrder.getAmount().compareTo(totalAmount) != 0) {
-//            logger.info("-----------------------OrderStatus fail------------------------------");
-//            notify.setResultFail("order fail");
-//            return notify.getBodyXML();
-//        }
+        if (advanceRechargeOrder == null || advanceRechargeOrder.getAmount() == null ||
+                advanceRechargeOrder.getAmount().multiply(new BigDecimal("100")).compareTo(totalAmount) != 0) {
+            logger.info("-----------------------OrderStatus fail------------------------------");
+            notify.setResultFail("order fail");
+            return notify.getBodyXML();
+        }
         if (!advanceRechargeOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_1)) {
             logger.info("-----------------------OrderStatus fail------------------------------");
             notify.setResultFail("OrderStatus fail" + advanceRechargeOrder.getOrderStatus());

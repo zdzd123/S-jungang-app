@@ -21,6 +21,8 @@ public class AdvertInfoVo {
     private Integer shopGoodsId;
     @ApiModelProperty(value = "单页id", example = "1")
     private Integer singlePageId;
+    @ApiModelProperty(value = "广告展示图", example = "/songnaer/upload/20180517/201805171712270640.jpg")
+    private String advertPic;
     @ApiModelProperty(value = "图片地址", example = "/songnaer/upload/20180517/201805171712270640.jpg")
     private String pic;
     @ApiModelProperty(value = "跳转类型 0-无 2-商品详情 3-活动详情 4-礼包详情 5-单页", example = "0")
@@ -43,6 +45,24 @@ public class AdvertInfoVo {
     private ActionGiftPack actionGiftPack;
     @ApiModelProperty(value = "单页")
     private SinglePage singlePage;
+    @ApiModelProperty(value = "标题")
+    private String remarks;
+
+    public String getAdvertPic() {
+        return advertPic;
+    }
+
+    public void setAdvertPic(String advertPic) {
+        this.advertPic = advertPic;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
+    }
 
     public Integer getShopGoodsId() {
         return shopGoodsId;

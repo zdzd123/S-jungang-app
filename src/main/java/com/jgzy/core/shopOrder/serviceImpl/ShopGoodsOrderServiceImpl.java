@@ -1,8 +1,8 @@
 package com.jgzy.core.shopOrder.serviceImpl;
 
 import com.baomidou.mybatisplus.plugins.Page;
-import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.mapper.UserActivityCouponMapper;
+import com.jgzy.core.personalCenter.mapper.UserInfoMapper;
 import com.jgzy.core.shopOrder.mapper.ShopGoodsOrderMapper;
 import com.jgzy.core.shopOrder.service.IShopGoodsOrderService;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
@@ -12,11 +12,12 @@ import com.jgzy.core.shopOrder.vo.ShopgoodsOrderDetailVo;
 import com.jgzy.entity.common.UserUuidThreadLocal;
 import com.jgzy.entity.po.ShopGoodsOrder;
 import com.jgzy.entity.po.UserActivityCoupon;
+import com.jgzy.utils.TemplateMessageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,16 +34,22 @@ public class ShopGoodsOrderServiceImpl extends ServiceImpl<ShopGoodsOrderMapper,
     private ShopGoodsOrderMapper shopGoodsOrderMapper;
     @Autowired
     private UserActivityCouponMapper userActivityCouponMapper;
+    @Autowired
+    private UserInfoMapper userInfoMapper;
 
     @Override
-    public ShopGoodsOrderVo selectOneOrder(Integer id, String orderNo) {
+    public ShopGoodsOrderVo selectOneOrder(Integer id, String orderNo, String role) {
 //        ShopGoodsOrder shopGoodsOrder = new ShopGoodsOrder();
 //        shopGoodsOrder.setId(id);
 //        shopGoodsOrder.setOrderNo(orderNo);
 //        // 查询单条
 //        shopGoodsOrder = shopGoodsOrderMapper.selectOne(shopGoodsOrder);
 //        ShopGoodsOrderVo shopGoodsOrderVo = shopGoodsOrderMapper.selectOneOrder(id, orderNo);
-        Integer userId = UserUuidThreadLocal.get().getId();
+        Integer userId = null;
+        if (StringUtils.isEmpty(role)){
+            userId = UserUuidThreadLocal.get().getId();
+        }
+
         List<ShopGoodsOrderVo> shopGoodsOrderVoList = shopGoodsOrderMapper.selectOrderPage(userId, new Page<>(), null, null, id, orderNo);
         if (!CollectionUtils.isEmpty(shopGoodsOrderVoList)) {
             ShopGoodsOrderVo shopGoodsOrderVo = shopGoodsOrderVoList.get(0);
@@ -91,16 +98,18 @@ public class ShopGoodsOrderServiceImpl extends ServiceImpl<ShopGoodsOrderMapper,
     }
 
     @Override
-    public List<ShopGoodsOrderVo> selectMyOrder(Integer orderStatus, String orderSource) {
-        String[] split = null;
-        if (orderSource != null) {
-            split = orderSource.split(",");
-        }
-        return shopGoodsOrderMapper.selectMyOrder(orderStatus, split);
+    public ShopGoodsOrderVo selectMyOrder(Integer orderId) {
+        return shopGoodsOrderMapper.selectMyOrder(orderId);
     }
 
     @Override
     public List<ShopGoodsOrderStatisticVo> statistics() {
         return shopGoodsOrderMapper.statistics(UserUuidThreadLocal.get().getId());
+    }
+
+    @Override
+    public void sendOrderTemplateToManager(ShopGoodsOrder shopGoodsOrder) {
+        List<String> openIdList = userInfoMapper.selectManagerUser();
+        TemplateMessageUtil.initorderRemindTemplate(openIdList, shopGoodsOrder);
     }
 }

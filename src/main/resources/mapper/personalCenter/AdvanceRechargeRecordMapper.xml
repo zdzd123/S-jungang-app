@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.jgzy.core.personalCenter.mapper.AdvanceRechargeRecordMapper">
-
+    <update id="updateMyAdvanceRecharge" parameterType="com.jgzy.entity.po.AdvanceRechargeRecord">
+        UPDATE advance_recharge_record
+        SET amount = amount - #{amount},
+          update_time = #{updateTime}
+        WHERE
+            id = #{id}
+    </update>
 </mapper>

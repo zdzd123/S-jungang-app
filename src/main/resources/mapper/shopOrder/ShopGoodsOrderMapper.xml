@@ -80,8 +80,8 @@
         <result column="extract" jdbcType="INTEGER" property="extract"/>
         <result column="extract_time" jdbcType="TIMESTAMP" property="extractTime"/>
         <result column="abstracts" jdbcType="VARCHAR" property="abstracts"/>
-        <collection property="shopGoodsAttributeList" column="shop_goods_id"
-                    ofType="com.jgzy.entity.po.ShopGoodsAttribute" resultMap="ShopGoodsAttribute"/>
+        <!--<collection property="shopGoodsAttributeList" column="shop_goods_id"-->
+                    <!--ofType="com.jgzy.entity.po.ShopGoodsAttribute" resultMap="ShopGoodsAttribute"/>-->
     </resultMap>
 
     <resultMap id="ShopGoodsAttribute" type="com.jgzy.entity.po.ShopGoodsAttribute">
@@ -118,23 +118,13 @@
 
 
     <select id="selectMyOrder" resultMap="ShopGoodsOrderVo">
-        SELECT <include refid="Base_Column_List" />,<include refid="Base_Detail_Column_List"/>,<include refid="Base_Attribute_Column_List"/>
+        SELECT <include refid="Base_Column_List" />,<include refid="Base_Detail_Column_List"/>
         FROM shop_goods_order a
         RIGHT JOIN shop_goods_order_detail detail ON a.id = detail.order_id
-        RIGHT JOIN shop_goods_attribute att ON detail.shop_goods_id = att.shop_goods_id
         <where>
-            <if test="orderStatus != null">
-                a.order_status = #{orderStatus}
+            <if test="orderId != null">
+                a.id = #{orderId}
             </if>
-            <if test="list != null">
-                AND order_source IN
-                <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
-                    #{item}
-                </foreach>
-            </if>
-            AND att.attribute_value_name IS NOT NULL
-            AND att.attribute_value_name != ""
-            AND att.attribute_value_name != "下拉选择"
         </where>
     </select>
 
@@ -142,7 +132,9 @@
         SELECT <include refid="Base_Column_List"/>
         FROM shop_goods_order a
         <where>
-            a.submit_order_user = #{userId}
+            <if test="userId != null">
+                AND a.submit_order_user = #{userId}
+            </if>
             <if test="orderStatus != null">
                 AND a.order_status = #{orderStatus}
             </if>
@@ -158,7 +150,7 @@
             <if test="orderNo != null">
                 AND a.order_no = #{orderNo}
             </if>
-            AND user_del != 1
+            AND a.order_status <![CDATA[ <> ]]> 13
         </where>
         ORDER BY a.id DESC
     </select>

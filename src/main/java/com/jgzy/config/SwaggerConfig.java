@@ -84,8 +84,7 @@ public class SwaggerConfig {
     }
 
     private ApiInfo apiInfo() {
-        // TODO 测试用添加token
-        return new ApiInfo("前置接口 token:4f797d70f2b548c190f8a4cdee233b93",//大标题
+        return new ApiInfo("前置接口",//大标题
                 "内部接口",//小标题
                 env.getProperty("doc.api.version"),
                 env.getProperty("doc.api.termsOfServiceUrl"),

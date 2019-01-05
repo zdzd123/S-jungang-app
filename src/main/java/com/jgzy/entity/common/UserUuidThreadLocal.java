@@ -9,12 +9,7 @@ import com.jgzy.entity.po.UserInfo;
  * @author zou
  */
 public class UserUuidThreadLocal {
-    // 把构造函数私有，外面不能new，只能通过下面两个方法操作
-    private UserUuidThreadLocal() {
-
-    }
-
-    private static final ThreadLocal<UserInfo> LOCAL = new ThreadLocal<UserInfo>();
+    private static final ThreadLocal<UserInfo> LOCAL = new ThreadLocal<>();
 
     public static void set(UserInfo userInfo) {
         LOCAL.set(userInfo);
@@ -22,5 +17,9 @@ public class UserUuidThreadLocal {
 
     public static UserInfo get() {
         return LOCAL.get();
+    }
+
+    public static void remove() {
+        LOCAL.remove();
     }
 }
