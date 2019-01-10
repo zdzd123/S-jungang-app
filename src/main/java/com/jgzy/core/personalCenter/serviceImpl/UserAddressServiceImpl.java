@@ -59,4 +59,9 @@ public class UserAddressServiceImpl extends ServiceImpl<UserAddressMapper, UserA
         Integer id = UserUuidThreadLocal.get().getId();
         return userAddressMapper.selectUserAddressList(id);
     }
+
+    @Override
+    public List<UserAddressVo> selectAllAddressPageList() {
+        return userAddressMapper.selectAllAddressPageList(UserUuidThreadLocal.get().getId());
+    }
 }

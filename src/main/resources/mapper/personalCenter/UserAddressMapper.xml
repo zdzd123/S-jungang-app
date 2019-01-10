@@ -66,7 +66,7 @@
         <where>
             create_user = #{id}
         </where>
-        ORDER BY is_default desc
+        ORDER BY is_default desc,id desc
     </select>
 
     <select id="selectDetailById" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
@@ -88,7 +88,6 @@
         <where>
             id = #{userAddressId}
         </where>
-        ORDER BY is_default desc
     </select>
     <select id="selectUserAddressList" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
         SELECT
@@ -105,6 +104,50 @@
           user_address address
         where
             create_user = #{id}
-        ORDER BY is_default desc
+        ORDER BY is_default desc,id desc
+    </select>
+    <select id="selectAllAddressPageList" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
+        SELECT
+            id,
+            `name`,
+            phone,
+            zip_code,
+            (select `name` from province_info where id = address.province_id) province,
+            province_id,
+            (select `name` from city_info where id = address.city_id) city,
+            city_id,
+            (select `name` from area_info where id = address.area_id) area,
+            area_id,
+            address,
+            create_user,
+            is_default,
+            add_time
+        FROM
+        user_address address
+        <where>
+            create_user = #{userId}
+        </where>
+        union
+            SELECT
+            id,
+            `name`,
+            phone,
+            zip_code,
+            (select `name` from province_info where id = shipAddress.province_id) province,
+            province_id,
+            (select `name` from city_info where id = shipAddress.city_id) city,
+            city_id,
+            (select `name` from area_info where id = shipAddress.area_id) area,
+            area_id,
+            address,
+            create_user,
+            is_default,
+            add_time
+            FROM
+        user_address_ship shipAddress
+        <where>
+            create_user = #{userId}
+        </where>
+        ORDER BY is_default desc,id desc
     </select>
 </mapper>

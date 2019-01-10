@@ -26,6 +26,7 @@
         <result column="order_amount_total" jdbcType="DECIMAL" property="orderAmountTotal"/>
         <result column="carriage" jdbcType="DECIMAL" property="carriage"/>
         <result column="carriage_type" jdbcType="INTEGER" property="carriageType"/>
+        <result column="carriage_type_detail" jdbcType="INTEGER" property="carriageTypeDetail"/>
         <result column="coupon_amount" jdbcType="DECIMAL" property="couponAmount"/>
         <result column="material_amount" jdbcType="DECIMAL" property="materialAmount"/>
         <result column="advance_amount" jdbcType="DECIMAL" property="advanceAmount"/>
@@ -98,7 +99,7 @@
         a.id id, order_no, order_status, submit_order_user, blessing, is_redpacket, shop_info_id,
         actual_amount, pay_type, need_invoice, invoice_type, invoice_head, invoice_content,
         express_company, express_no, receive_man, contact_phone, receive_address, shipper,
-        shipper_phone, shipper_address, order_amount_total, carriage, carriage_type, coupon_amount,
+        shipper_phone, shipper_address, order_amount_total, carriage, carriage_type, carriage_type_detail, coupon_amount,
         material_amount, advance_amount, create_time, pay_time, send_out_time, valid_order_time,
         is_groupbuy, is_presell, remarks, shop_order_tag_ids, shop_activity_coupon_id, consumption_points,
         payment_stage, transaction_number, closing_time, order_source, shop_order_tag, groupbuy_order_id,

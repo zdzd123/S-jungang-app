@@ -46,6 +46,8 @@ public class ShopGoodsOrderVo {
     private String advanceRechargeIds;
     @ApiModelProperty(value = "运费标识 1-到付 2-等待计算", example = "1")
     private Integer carriageType;
+    @ApiModelProperty(value = "运费具体标识 1-物流园自提 2-送货上门", example = "1")
+    private Integer carriageTypeDetail;
     @ApiModelProperty(value = "购物车id", example = "1")
     private Integer cartId;
 
@@ -161,6 +163,14 @@ public class ShopGoodsOrderVo {
     private BigDecimal totalRealPayment;
     @ApiModelProperty(value = "订单详情", example = "1")
     private List<ShopgoodsOrderDetailVo> shopgoodsOrderDetailVoList;
+
+    public Integer getCarriageTypeDetail() {
+        return carriageTypeDetail;
+    }
+
+    public void setCarriageTypeDetail(Integer carriageTypeDetail) {
+        this.carriageTypeDetail = carriageTypeDetail;
+    }
 
     public String getSubmitOrderUserPhone() {
         return submitOrderUserPhone;

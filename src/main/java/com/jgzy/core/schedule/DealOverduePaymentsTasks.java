@@ -54,8 +54,15 @@ public class DealOverduePaymentsTasks {
         // 查询过期未支付商品订单
         List<ShopGoodsOrder> shopGoodsOrderList = shopGoodsOrderService.selectList(new EntityWrapper<ShopGoodsOrder>()
                 .le("valid_order_time", date)
+                .ne("is_read", 1)
                 .eq("order_status", BaseConstant.ORDER_STATUS_1)
-                .last("limit 100"));
+                .orNew()
+                .eq("order_status", BaseConstant.ORDER_STATUS_12)
+                .ne("is_read", 1)
+                .orNew()
+                .eq("order_status", BaseConstant.ORDER_STATUS_13)
+                .ne("is_read", 1)
+        );
         List<UserFund> myUserFundList = new ArrayList<>();
         for (ShopGoodsOrder shopGoodsOrder : shopGoodsOrderList) {
             // 查询所有该订单产生的流水
@@ -136,12 +143,13 @@ public class DealOverduePaymentsTasks {
                 // 3：优惠券
             }
             // 更新订单
-            shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_12);
+            if (shopGoodsOrder.getOrderStatus() == BaseConstant.ORDER_STATUS_1) {
+                shopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_12);
+            }
             // 更新订单已使用
             shopGoodsOrder.setIsRead(1);
             boolean update = shopGoodsOrderService.update(shopGoodsOrder, new EntityWrapper<ShopGoodsOrder>()
-                    .eq("id", shopGoodsOrder.getId())
-                    .eq("order_status", BaseConstant.ORDER_STATUS_1));
+                    .eq("id", shopGoodsOrder.getId()));
             if (!update) {
                 log.info("更新订单失败！订单ID为：" + shopGoodsOrder.getId());
                 throw new OptimisticLockingFailureException("更新订单失败！订单ID为：" + shopGoodsOrder.getId());

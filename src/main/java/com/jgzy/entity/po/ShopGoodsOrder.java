@@ -76,6 +76,8 @@ public class ShopGoodsOrder implements Serializable {
     private BigDecimal carriage;
     @ApiModelProperty(value = "运费标识 1-到付 2-等待计算", example = "1")
     private Integer carriageType;
+    @ApiModelProperty(value = "运费具体标识 1-物流园自提 2-送货上门", example = "1")
+    private Integer carriageTypeDetail;
     @ApiModelProperty(value = "优惠金额(元)", example = "1")
     private BigDecimal couponAmount;
     @ApiModelProperty(value = "权额购买金额", example = "200")
@@ -140,6 +142,14 @@ public class ShopGoodsOrder implements Serializable {
     @TableField("total_Real_payment")
     @ApiModelProperty(value = "总实际付款", example = "1")
     private BigDecimal totalRealPayment;
+
+    public Integer getCarriageTypeDetail() {
+        return carriageTypeDetail;
+    }
+
+    public void setCarriageTypeDetail(Integer carriageTypeDetail) {
+        this.carriageTypeDetail = carriageTypeDetail;
+    }
 
     public Integer getCarriageType() {
         return carriageType;

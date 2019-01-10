@@ -68,4 +68,11 @@ public interface IUserAddressService extends IService<UserAddress> {
      * @return 地址
      */
     List<UserAddressVo> selectMyList();
+
+    /**
+     * 获取所有发货地址和收货地址
+     *
+     * @return
+     */
+    List<UserAddressVo> selectAllAddressPageList();
 }

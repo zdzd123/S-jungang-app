@@ -35,4 +35,13 @@ public interface IShopStockService extends IService<ShopStock> {
      * @return flag
      */
     boolean updateMyShopStockByGoodsId(Integer buyCount, Integer shopGoodsId, Integer userId);
+
+    /**
+     * 通过id或者商品id查询某个人的库存
+     *
+     * @param id          库存id
+     * @param shopGoodsId 商品id
+     * @return 库存
+     */
+    ShopStockVo selectMyStockByIdOrShopGoodsId(Integer id, Integer shopGoodsId);
 }

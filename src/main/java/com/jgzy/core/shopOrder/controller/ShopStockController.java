@@ -26,6 +26,7 @@ import com.jgzy.utils.WeiXinPayUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +99,14 @@ public class ShopStockController {
         int allCount = 0;
         List<CalcSingleAmountVo> calcSingleAmountVoList = new ArrayList<>();
         for (ShopGoodsOrderVo vo : voList) {
-            ShopStock shopStock = shopStockService.selectById(vo.getId());
+            ShopStock shopStock = null;
+            if (vo.getId() == null && vo.getShopGoodsId() != null) {
+                shopStock = shopStockService.selectOne(new EntityWrapper<ShopStock>()
+                        .eq("shop_goods_id", vo.getShopGoodsId())
+                        .eq("user_info_id", UserUuidThreadLocal.get().getId()));
+            } else if (vo.getId() != null && vo.getShopGoodsId() == null) {
+                shopStock = shopStockService.selectById(vo.getId());
+            }
             if (shopStock == null) {
                 throw new OptimisticLockingFailureException("该id库存有误" + vo.getId());
             }
@@ -180,6 +188,7 @@ public class ShopStockController {
         shopGoodsOrder.setSubmitOrderUser(UserUuidThreadLocal.get().getId());
         shopGoodsOrder.setCreateTime(date);
         shopGoodsOrder.setIsStock(BaseConstant.IS_STOCK_1);
+        shopGoodsOrder.setCarriageTypeDetail(voList.get(0).getCarriageTypeDetail());
         if (voList.get(0).getIsStock().equals(BaseConstant.IS_STOCK_3)) {
             shopGoodsOrder.setIsStock(BaseConstant.IS_STOCK_3);
         }
@@ -189,7 +198,8 @@ public class ShopStockController {
         List<ShopGoodsOrderDetail> shopGoodsOrderDetailList = new ArrayList<>();
         for (ShopStockVo shopStockVo : voList) {
             ShopGoodsOrderDetail shopGoodsOrderDetail = new ShopGoodsOrderDetail();
-            ShopStockVo shopStock = shopStockService.selectMyStockById(shopStockVo.getId());
+            // 通过id或者商品id查询某个人的库存
+            ShopStockVo shopStock = shopStockService.selectMyStockByIdOrShopGoodsId(shopStockVo.getId(), shopStockVo.getShopGoodsId());
             if (shopStock == null) {
                 throw new OptimisticLockingFailureException("该库存不存在！");
             }
@@ -266,6 +276,9 @@ public class ShopStockController {
             // 微信支付
             shopGoodsOrder.setPayType(BaseConstant.PAY_TYPE_2);
             shopGoodsOrder.setTotalRealPayment(materialCosts);
+        }
+        if (carriageType == null){
+            carriageType = 1;
         }
         if (carriageType.equals(2)) {
             // 等待计算

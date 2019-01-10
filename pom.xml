@@ -127,6 +127,12 @@
             <artifactId>json</artifactId>
             <version>20180813</version>
         </dependency>
+        <!--https://mvnrepository.com/artifact/com.google.zxing/core/3.3.0-->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.3.0</version>
+        </dependency>
 
 
     </dependencies>

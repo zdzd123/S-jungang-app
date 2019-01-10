@@ -85,6 +85,15 @@ public class UserAddressController {
         return resultWrapper;
     }
 
+    @ApiOperation(value = "获取所有收获地址和发货地址", notes = "获取所有收获地址和发货地址")
+    @GetMapping(value = "allList")
+    public ResultWrapper<List<UserAddressVo>> allListPage() {
+        ResultWrapper<List<UserAddressVo>> resultWrapper = new ResultWrapper<>();
+        List<UserAddressVo> userAddressList = userAddressService.selectAllAddressPageList();
+        resultWrapper.setResult(userAddressList);
+        return resultWrapper;
+    }
+
     @ApiOperation(value = "收货地址（分页）", notes = "收货地址（分页）")
     @GetMapping(value = "/page/list")
     public ResultWrapper<Page<UserAddressVo>> shipListPage(@ApiParam(value = "页码", required = true) @RequestParam(defaultValue = "1") String pageNum,

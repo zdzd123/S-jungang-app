@@ -63,7 +63,6 @@ public class DealOverTimeOrderTasks {
                 myOrderList.add(myOrder);
             }
             shopGoodsOrderService.updateBatchById(myOrderList);
-            dealCommissionAmount();
         }
         log.info("---------------------" + "15天未确定订单处理结束" + "----------------------------");
         log.info("---------------------" + "处理30天未评价订单" + "----------------------------");
@@ -81,6 +80,8 @@ public class DealOverTimeOrderTasks {
             }
             shopGoodsOrderService.updateBatchById(myOrderList);
         }
+        // 处理佣金股权和分销金额的解冻
+        dealCommissionAmount();
         log.info("---------------------" + "30天未评价订单处理结束" + "----------------------------");
     }
 
@@ -93,7 +94,7 @@ public class DealOverTimeOrderTasks {
         log.info("---------------------" + "开始处理已收货后的金额" + "----------------------------");
         try {
             // 修正用于异步执行比上一步处理订单更快
-            Thread.sleep(1000L);
+            Thread.sleep(2000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

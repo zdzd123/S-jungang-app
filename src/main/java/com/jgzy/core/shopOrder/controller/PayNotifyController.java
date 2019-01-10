@@ -279,11 +279,11 @@ public class PayNotifyController {
         BigDecimal balance2 = BigDecimal.ZERO; // 待使用股权
         BigDecimal balance3 = BigDecimal.ZERO; // 待使用佣金
         // 判断是否是合伙人
-        int i = originatorInfoService.selectCount(new EntityWrapper<OriginatorInfo>()
+        OriginatorInfo originatorInfo = originatorInfoService.selectOne(new EntityWrapper<OriginatorInfo>()
                 .eq("user_id", id)
                 .eq("status", 0));
         boolean isOriginator;
-        isOriginator = i != 0;
+        isOriginator = originatorInfo != null;
         // 权额购买金额需要按照购买时的折扣反推金额
         BigDecimal advanceAmount = BigDecimal.ZERO;
         if (shopGoodsOrder.getAdvanceAmount() != null && shopGoodsOrder.getAdvanceAmount().compareTo(BigDecimal.ZERO) > 0) {
@@ -388,7 +388,7 @@ public class PayNotifyController {
                     distributionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
                     distributionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_1);
                     distributionUserFund.setPayType(BaseConstant.PAY_TYPE_9);
-                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_41);
+                    distributionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_4);
                     userFundList.add(distributionUserFund);
                     // 待使用股权
                     balance2 = balance2.add(stockRight);
@@ -414,7 +414,7 @@ public class PayNotifyController {
                     commissionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
                     commissionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
                     commissionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-                    commissionUserFund.setTradeDescribe("合伙人冻结佣金收益，姓名：" + userInfo.getNickname());
+                    commissionUserFund.setTradeDescribe("合伙人冻结佣金收益，姓名：" + originatorInfo.getUserName());
                     commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_71);
                     userFundList.add(commissionUserFund);
                 }
@@ -482,7 +482,8 @@ public class PayNotifyController {
         // 更新本人待使用金额
         UserInfo myUser = new UserInfo();
         myUser.setId(id);
-        myUser.setBalance2(balance2);
+        // 股权金额不用冻结
+        myUser.setPoint(balance2);
         myUser.setBalance3(balance3);
         myUser.setUpdateTime(date);
         boolean flag = userInfoService.updateMyBalance(myUser);

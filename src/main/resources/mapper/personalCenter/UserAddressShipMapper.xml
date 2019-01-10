@@ -20,7 +20,7 @@
         <where>
             create_user = #{id}
         </where>
-        ORDER BY is_default desc
+        ORDER BY is_default desc,id desc
     </select>
     <select id="selectDetailById" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
         SELECT
@@ -41,7 +41,6 @@
         <where>
             id = #{shipAddressId}
         </where>
-        ORDER BY is_default desc
     </select>
     <select id="selectMyList" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
         SELECT
@@ -59,6 +58,6 @@
         <where>
             create_user = #{id}
         </where>
-        ORDER BY is_default desc
+        ORDER BY is_default desc,id desc
     </select>
 </mapper>

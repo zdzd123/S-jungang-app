@@ -3,16 +3,16 @@
 <mapper namespace="com.jgzy.core.shopOrder.mapper.ShopStockMapper">
     <select id="selectMyStock" resultType="com.jgzy.core.shopOrder.vo.ShopStockVo">
         SELECT
-            stock.id,
-            stock.count,
-            goods.shop_name,
-            goods.shop_describe,
-            goods.pic,
-            goods.menber_price,
-            goods.stock,
-            goods.id shopGoodsId
+        stock.id,
+        stock.count,
+        goods.shop_name,
+        goods.shop_describe,
+        goods.pic,
+        goods.menber_price,
+        goods.stock,
+        goods.id shopGoodsId
         FROM
-            shop_stock stock
+        shop_stock stock
         JOIN shop_goods goods ON stock.shop_goods_id = goods.id
         <where>
             stock.user_info_id = #{id}
@@ -68,4 +68,28 @@
         WHERE shop_goods_id = #{shopGoodsId}
           AND user_info_id = #{userId}
     </update>
+    <select id="selectMyStockByIdOrShopGoodsId" resultType="com.jgzy.core.shopOrder.vo.ShopStockVo">
+         SELECT
+            stock.id,
+            goods.id as shopGoodsId,
+            stock.count,
+            goods.shop_name,
+            goods.shop_describe,
+            goods.pic,
+            goods.menber_price,
+            goods.cost_price,
+            goods.market_price,
+            goods.stock
+        FROM
+        shop_stock stock
+        JOIN shop_goods goods ON stock.shop_goods_id = goods.id
+        <where>
+            <if test="id != null">
+                stock.id = #{id}
+            </if>
+            <if test="id == null">
+                stock.shop_goods_id = #{shopGoodsId} AND stock.user_info_id = #{userId}
+            </if>
+        </where>
+    </select>
 </mapper>

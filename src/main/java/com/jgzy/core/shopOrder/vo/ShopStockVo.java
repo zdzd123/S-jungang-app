@@ -32,6 +32,8 @@ public class ShopStockVo {
     @NotNull
     @ApiModelProperty(value = "运费标识 1-到付 2-等待计算", example = "1")
     private Integer carriageType;
+    @ApiModelProperty(value = "1-物流园自提 2-送货上门", example = "1")
+    private Integer carriageTypeDetail;
     @NotNull
     @ApiModelProperty(value = "收货地址", example = "1")
     private Integer addressId;
@@ -50,6 +52,14 @@ public class ShopStockVo {
     private String receiveMan;
     @ApiModelProperty(value = "联系电话", example = "18311111111")
     private String contactPhone;
+
+    public Integer getCarriageTypeDetail() {
+        return carriageTypeDetail;
+    }
+
+    public void setCarriageTypeDetail(Integer carriageTypeDetail) {
+        this.carriageTypeDetail = carriageTypeDetail;
+    }
 
     public String getReceiveMan() {
         return receiveMan;

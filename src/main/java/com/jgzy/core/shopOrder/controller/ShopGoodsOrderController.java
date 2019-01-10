@@ -15,6 +15,7 @@ import com.jgzy.constant.ErrorCodeEnum;
 import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.core.schedule.DealOverTimeOrderTasks;
+import com.jgzy.core.schedule.DealOverduePaymentsTasks;
 import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderStatisticVo;
 import com.jgzy.core.shopOrder.vo.ShopGoodsOrderVo;
@@ -90,6 +91,8 @@ public class ShopGoodsOrderController {
     private DealOverTimeOrderTasks dealOverTimeOrderTasks;
     @Autowired
     private IOriginatorInfoService originatorInfoService;
+    @Autowired
+    private DealOverduePaymentsTasks dealOverduePaymentsTasks;
 
     @Value("#{'${platformGoodsCategoryList}'.split(',')}")
     private List<Integer> specialPlatformGoodsCategoryList;
@@ -674,6 +677,13 @@ public class ShopGoodsOrderController {
         ShopGoodsOrderVo shopGoodsOrderVo = shopGoodsOrderService.selectMyOrder(orderId);
         resultWrapper.setResult(shopGoodsOrderVo);
         return resultWrapper;
+    }
+
+    @GetMapping(value = "/constant/dealOverduePayments")
+    @ApiOperation(value = "处理逾期订单", notes = "处理逾期订单")
+    @Transactional
+    public void dealOverduePayments() {
+        dealOverduePaymentsTasks.dealOverduePayments();
     }
 }
 

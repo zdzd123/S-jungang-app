@@ -282,7 +282,7 @@ public class ShopGoodsOriginatorOrderController {
                         throw new OptimisticLockingFailureException("佣金更新失败");
                     }
                     //判断是否是合伙人
-                    int i = originatorInfoService.selectCount(new EntityWrapper<OriginatorInfo>()
+                    OriginatorInfo originatorInfo = originatorInfoService.selectOne(new EntityWrapper<OriginatorInfo>()
                             .eq("user_id", id)
                             .eq("status", 0));
                     //插入佣金和股权流水
@@ -294,11 +294,11 @@ public class ShopGoodsOriginatorOrderController {
                     commissionUserFund.setTradeType(BaseConstant.TRADE_TYPE_1);
                     commissionUserFund.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
                     commissionUserFund.setPayType(BaseConstant.PAY_TYPE_4);
-                    if (i == 0) {
+                    if (originatorInfo == null) {
                         commissionUserFund.setTradeDescribe("消费者冻结佣金收益，姓名：" + userInfo.getNickname());
                         commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_81);
                     } else {
-                        commissionUserFund.setTradeDescribe("合伙人冻结佣金收益，姓名：" + userInfo.getNickname());
+                        commissionUserFund.setTradeDescribe("合伙人冻结佣金收益，姓名：" + originatorInfo.getUserName());
                         commissionUserFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_71);
                     }
                     userFundService.InsertUserFund(commissionUserFund);
@@ -638,6 +638,8 @@ public class ShopGoodsOriginatorOrderController {
         }
         // 运费标识
         shopGoodsOrder.setCarriageType(carriageType);
+        // 运费具体标识
+        shopGoodsOrder.setCarriageTypeDetail(shopGoodsOrderVo.getCarriageTypeDetail());
         // 权额ids
         shopGoodsOrder.setBlessing(calcAmountVo.getAdvanceIds());
         // 备注

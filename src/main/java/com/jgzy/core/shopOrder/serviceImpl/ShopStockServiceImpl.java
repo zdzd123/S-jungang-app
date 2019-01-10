@@ -48,4 +48,13 @@ public class ShopStockServiceImpl extends ServiceImpl<ShopStockMapper, ShopStock
     public boolean updateMyShopStockByGoodsId(Integer buyCount, Integer shopGoodsId, Integer userId) {
         return shopStockMapper.updateMyShopStockByGoodsId(buyCount, shopGoodsId, userId);
     }
+
+    @Override
+    public ShopStockVo selectMyStockByIdOrShopGoodsId(Integer id, Integer shopGoodsId) {
+        if (id == null && shopGoodsId == null){
+            return null;
+        }else {
+            return shopStockMapper.selectMyStockByIdOrShopGoodsId(id, shopGoodsId, UserUuidThreadLocal.get().getId());
+        }
+    }
 }
