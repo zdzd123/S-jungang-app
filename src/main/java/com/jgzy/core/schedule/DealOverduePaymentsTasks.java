@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.jgzy.constant.BaseConstant;
 import com.jgzy.core.personalCenter.service.IAdvanceRechargeRecordService;
 import com.jgzy.core.personalCenter.service.IUserInfoService;
+import com.jgzy.core.personalCenter.service.IUserStockFundService;
 import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.entity.po.*;
 import org.slf4j.Logger;
@@ -41,6 +42,8 @@ public class DealOverduePaymentsTasks {
     private IShopGoodsService shopGoodsService;
     @Autowired
     private IShopStockService shopStockService;
+    @Autowired
+    private IUserStockFundService userStockFundService;
 
     /**
      * 处理逾期订单 10分钟
@@ -175,17 +178,27 @@ public class DealOverduePaymentsTasks {
                         throw new OptimisticLockingFailureException("更新库存失败！订单ID为：" + shopGoodsOrder.getId());
                     }
                     // 存入入库流水
-                    UserFund userFund = new UserFund();
-                    userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
-                    userFund.setDecreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
-                    userFund.setOrderNo(shopGoodsOrder.getOrderNo());
-                    userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-                    userFund.setTradeDescribe("库存退还");
-                    userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
-                    userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_12);
-                    userFund.setPayType(BaseConstant.PAY_TYPE_10);
-                    userFund.setTradeTime(date);
-                    userFundService.InsertUserFund(userFund);
+//                    UserFund userFund = new UserFund();
+//                    userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
+//                    userFund.setDecreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+//                    userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+//                    userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+//                    userFund.setTradeDescribe("库存退还");
+//                    userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
+//                    userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_12);
+//                    userFund.setPayType(BaseConstant.PAY_TYPE_10);
+//                    userFund.setTradeTime(date);
+//                    userFundService.InsertUserFund(userFund);
+                    UserStockFund userStockFund = new UserStockFund();
+                    userStockFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
+                    userStockFund.setTradeShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
+                    userStockFund.setTradeTime(new Date());
+                    userStockFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                    userStockFund.setIncreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+                    userStockFund.setDecreaseMoney(BigDecimal.ZERO);
+                    userStockFund.setTradeDescribe("库存退还");
+                    userStockFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                    userStockFundService.insertMyUserStock(userStockFund);
                 }
             }
             // 插入流水
@@ -288,17 +301,27 @@ public class DealOverduePaymentsTasks {
                     throw new OptimisticLockingFailureException("更新库存失败！订单ID为：" + shopGoodsOrder.getId());
                 }
                 // 存入入库流水
-                UserFund userFund = new UserFund();
-                userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
-                userFund.setDecreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
-                userFund.setOrderNo(shopGoodsOrder.getOrderNo());
-                userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
-                userFund.setTradeDescribe("逾期订单支付成功库存扣除");
-                userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
-                userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_11);
-                userFund.setPayType(BaseConstant.PAY_TYPE_10);
-                userFund.setTradeTime(date);
-                myUserFundList.add(userFund);
+//                UserFund userFund = new UserFund();
+//                userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
+//                userFund.setDecreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+//                userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+//                userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+//                userFund.setTradeDescribe("逾期订单支付成功库存扣除");
+//                userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
+//                userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_11);
+//                userFund.setPayType(BaseConstant.PAY_TYPE_10);
+//                userFund.setTradeTime(date);
+//                myUserFundList.add(userFund);
+                UserStockFund userStockFund = new UserStockFund();
+                userStockFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
+                userStockFund.setTradeShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
+                userStockFund.setTradeTime(new Date());
+                userStockFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+                userStockFund.setIncreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+                userStockFund.setDecreaseMoney(BigDecimal.ZERO);
+                userStockFund.setTradeDescribe("逾期订单支付成功库存扣除");
+                userStockFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                userStockFundService.insertMyUserStock(userStockFund);
             }
         }
         // 插入流水

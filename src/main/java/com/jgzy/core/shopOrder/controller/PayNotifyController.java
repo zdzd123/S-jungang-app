@@ -68,6 +68,8 @@ public class PayNotifyController {
     private IAdvanceRechargeRecordService advanceRechargeRecordService;
     @Autowired
     private DealOverduePaymentsTasks dealOverduePaymentsTasks;
+    @Autowired
+    private IUserStockFundService userStockFundService;
 
     @Value("#{'${platformGoodsCategoryList}'.split(',')}")
     private List<Integer> specialPlatformGoodsCategoryList;
@@ -168,8 +170,9 @@ public class PayNotifyController {
         BigDecimal totalAmount = new BigDecimal(notify.getTotal_fee()); // 付款金额
 
 //        WeiXinNotify notify = new WeiXinNotify();
-//        String outTradeNo = "HHR010412184884796";
-//        BigDecimal totalAmount = new BigDecimal("141375");
+//        String outTradeNo = "HHR0110172700-1326";
+//        BigDecimal totalAmount = new BigDecimal("705315");
+
         logger.info("-----------------------——微信回调订单编号" + outTradeNo + "——------------------------------");
 
         // 校验订单
@@ -195,6 +198,7 @@ public class PayNotifyController {
         if (shopGoodsOrder.getOrderStatus().equals(BaseConstant.ORDER_STATUS_12)) {
             dealOverduePaymentsTasks.returnOverduePayments(shopGoodsOrder);
         }
+
 
         Integer id = shopGoodsOrder.getSubmitOrderUser();
         List<UserFund> userFundList = new ArrayList<>();
@@ -240,17 +244,27 @@ public class PayNotifyController {
                     throw new OptimisticLockingFailureException("库存插入失败");
                 }
                 // 存入入库流水
-                UserFund userFund = new UserFund();
-                userFund.setTradeUserId(id);
-                userFund.setIncreaseMoney(new BigDecimal(shopStock.getCount()));
-                userFund.setOrderNo(shopGoodsOrder.getOrderNo());
-                userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-                userFund.setTradeDescribe("存入库存");
-                userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
-                userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_10);
-                userFund.setPayType(BaseConstant.PAY_TYPE_10);
-                userFund.setTradeTime(date);
-                userFundService.InsertUserFund(userFund);
+//                UserFund userFund = new UserFund();
+//                userFund.setTradeUserId(id);
+//                userFund.setIncreaseMoney(new BigDecimal(shopStock.getCount()));
+//                userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+//                userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+//                userFund.setTradeDescribe("存入库存");
+//                userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
+//                userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_10);
+//                userFund.setPayType(BaseConstant.PAY_TYPE_10);
+//                userFund.setTradeTime(date);
+//                userFundService.InsertUserFund(userFund);
+                UserStockFund userStockFund = new UserStockFund();
+                userStockFund.setTradeUserId(id);
+                userStockFund.setTradeShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
+                userStockFund.setTradeTime(new Date());
+                userStockFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                userStockFund.setIncreaseMoney(new BigDecimal(shopStock.getCount()));
+                userStockFund.setDecreaseMoney(BigDecimal.ZERO);
+                userStockFund.setTradeDescribe("存入库存");
+                userStockFund.setOrderNo(shopGoodsOrder.getOrderNo());
+                userStockFundService.insertMyUserStock(userStockFund);
             }
         }
         // 更新订单
@@ -495,12 +509,16 @@ public class PayNotifyController {
         }
         logger.info("-----------------------微信回调接口结束------------------------------");
         notify.setResultSuccess();
-        if (shopGoodsOrder.getIsStock() != null && shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)) {
-            // 异步处理关闭订单
-            dealOverTimeOrderTasks.dealCommissionAmount();
+        try {
+            if (shopGoodsOrder.getIsStock() != null && shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)) {
+                // 异步处理关闭订单
+                dealOverTimeOrderTasks.dealCommissionAmount();
+            }
+            // 给管理员发送订单消息
+            shopGoodsOrderService.sendOrderTemplateToManager(shopGoodsOrder);
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        // 给管理员发送订单消息
-        shopGoodsOrderService.sendOrderTemplateToManager(shopGoodsOrder);
         return notify.getBodyXML();
     }
 }

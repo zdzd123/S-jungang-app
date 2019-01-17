@@ -4,10 +4,7 @@ package com.jgzy.core.shopOrder.controller;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.jgzy.constant.BaseConstant;
-import com.jgzy.core.personalCenter.service.IUserAddressService;
-import com.jgzy.core.personalCenter.service.IUserAddressShipService;
-import com.jgzy.core.personalCenter.service.IUserInfoService;
-import com.jgzy.core.personalCenter.service.IUserOauthService;
+import com.jgzy.core.personalCenter.service.*;
 import com.jgzy.core.personalCenter.vo.UserAddressVo;
 import com.jgzy.core.shopOrder.service.*;
 import com.jgzy.core.shopOrder.vo.CalcAmountVo;
@@ -76,6 +73,8 @@ public class ShopStockController {
     private IShopGoodsService shopGoodsService;
     @Autowired
     private IUserInfoService userInfoService;
+    @Autowired
+    private IUserStockFundService userStockFundService;
 
     @ApiOperation(value = "获取我的库存(分页)", notes = "获取我的库存(分页)")
     @GetMapping(value = "/page/list")
@@ -298,7 +297,8 @@ public class ShopStockController {
             }
         }
         // 逾期时间
-        shopGoodsOrder.setValidOrderTime(DateUtil.getMINsLater(30));
+//        shopGoodsOrder.setValidOrderTime(DateUtil.getMINsLater(30));
+        shopGoodsOrder.setValidOrderTime(DateUtil.getHoursLater(2));
         boolean insert = shopGoodsOrderService.insert(shopGoodsOrder);
         if (!insert) {
             throw new OptimisticLockingFailureException("订单插入失败！");
@@ -317,19 +317,32 @@ public class ShopStockController {
                 throw new OptimisticLockingFailureException("库存扣除失败");
             }
             // 存入入库流水
-            UserFund userFund = new UserFund();
-            userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
-            userFund.setDecreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
-            userFund.setOrderNo(shopGoodsOrder.getOrderNo());
-            userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
-            userFund.setTradeDescribe("库存发货");
-            userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
-            userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_11);
-            userFund.setPayType(BaseConstant.PAY_TYPE_10);
-            userFund.setTradeTime(date);
-            userFundService.InsertUserFund(userFund);
+//            UserFund userFund = new UserFund();
+//            userFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
+//            userFund.setDecreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+//            userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+//            userFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+//            userFund.setTradeDescribe("库存发货");
+//            userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
+//            userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_11);
+//            userFund.setPayType(BaseConstant.PAY_TYPE_10);
+//            userFund.setTradeTime(date);
+//            userFundService.InsertUserFund(userFund);
+            UserStockFund userStockFund = new UserStockFund();
+            userStockFund.setTradeUserId(shopGoodsOrder.getSubmitOrderUser());
+            userStockFund.setTradeShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
+            userStockFund.setTradeTime(new Date());
+            userStockFund.setTradeType(BaseConstant.TRADE_TYPE_2);
+            userStockFund.setIncreaseMoney(BigDecimal.ZERO);
+            userStockFund.setDecreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+            userStockFund.setTradeDescribe("库存发货");
+            userStockFund.setOrderNo(shopGoodsOrder.getOrderNo());
+            userStockFundService.insertMyUserStock(userStockFund);
         }
-
+        if (shopGoodsOrder.getTotalRealPayment() == null || shopGoodsOrder.getTotalRealPayment().compareTo(zero) == 0) {
+            // 给管理员发送订单消息
+            shopGoodsOrderService.sendOrderTemplateToManager(shopGoodsOrder);
+        }
         resultMap.put("orderNo", shopGoodsOrder.getOrderNo());
         resultWrapper.setResult(resultMap);
         return resultWrapper;

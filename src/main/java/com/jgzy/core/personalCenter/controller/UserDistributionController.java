@@ -88,14 +88,20 @@ public class UserDistributionController {
     }
 
     @GetMapping(value = "/generateQRCode")
+//    @GetMapping(value = "/constant/generateQRCode")
     @ApiOperation(value = "生成二维码", notes = "生成二维码")
-    public ResultWrapper<String> generateQRCode(HttpServletResponse response) throws Exception {
+    public ResultWrapper<String> generateQRCode() throws Exception {
         ResultWrapper<String> resultWrapper = new ResultWrapper<>();
         UserInfo userInfo = UserUuidThreadLocal.get();
         String url = "http://jungang.china-mail.com.cn/songnaerWechat/?#/?parentId=" + userInfo.getId() + "&aaa=aaa";
-        String base64 = QRCodeUtil.encode(url, userInfo.getHeadPortrait(), new ByteArrayOutputStream(), true);
+        String logoRul = "C:\\Program Files\\S-jungang\\image\\logo.jpg";
+//        String url = "http://jungang.china-mail.com.cn/songnaerWechat/?#/?parentId=" + 1 + "&aaa=aaa";
+//        String logoRul = "logo.png";
+
+        String base64 = QRCodeUtil.encode(url, logoRul, new ByteArrayOutputStream(), true, false);
         resultWrapper.setResult(base64);
         return resultWrapper;
     }
+
 }
 

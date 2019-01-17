@@ -32,9 +32,10 @@ public class QRCodeUtil {
     private static final int HEIGHT = 60;
 
     private static BufferedImage createImage(String content, String imgPath,
-                                             boolean needCompress) throws Exception {
+                                             boolean needCompress, boolean netWorkImage) throws Exception {
         Hashtable<EncodeHintType, Object> hints = new Hashtable<EncodeHintType, Object>();
-        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
+//        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
         hints.put(EncodeHintType.CHARACTER_SET, CHARSET);
         hints.put(EncodeHintType.MARGIN, 1);
         BitMatrix bitMatrix = new MultiFormatWriter().encode(content,
@@ -53,7 +54,7 @@ public class QRCodeUtil {
             return image;
         }
         // 插入图片
-        QRCodeUtil.insertImage(image, imgPath, needCompress);
+        QRCodeUtil.insertImage(image, imgPath, needCompress, netWorkImage);
         return image;
     }
 
@@ -69,8 +70,18 @@ public class QRCodeUtil {
      * @throws Exception
      */
     private static void insertImage(BufferedImage source, String imgPath,
-                                    boolean needCompress) throws Exception {
-        String myImagePath = getImageStream(imgPath);
+                                    boolean needCompress, boolean netWorkImage) throws Exception {
+        String myImagePath;
+        if (netWorkImage) {
+            myImagePath = getImageStream(imgPath);
+        }else {
+            File file = new File(imgPath);
+            if (!file.exists()) {
+                System.err.println(""+imgPath+"   该文件不存在！");
+                return;
+            }
+            myImagePath = imgPath;
+        }
         Image src = ImageIO.read(new File(myImagePath));
         int width = src.getWidth(null);
         int height = src.getHeight(null);
@@ -99,9 +110,17 @@ public class QRCodeUtil {
         graph.setStroke(new BasicStroke(3f));
         graph.draw(shape);
         graph.dispose();
-        new File(myImagePath).delete();
+        if (netWorkImage) {
+            new File(myImagePath).delete();
+        }
     }
 
+    /**
+     * 远程读取logo
+     *
+     * @param imgPath 地址
+     * @return 图片地址
+     */
     public static String getImageStream(String imgPath){
         String imageFilePath = "C:\\Program Files\\S-jungang\\image\\" + CommonUtil.getUUID() + ".jpg";
         try {
@@ -143,9 +162,9 @@ public class QRCodeUtil {
      * @throws Exception
      */
     public static void encode(String content, String imgPath, String destPath,
-                              boolean needCompress) throws Exception {
+                              boolean needCompress, boolean netWorkImage) throws Exception {
         BufferedImage image = QRCodeUtil.createImage(content, imgPath,
-                needCompress);
+                needCompress, netWorkImage);
         mkdirs(destPath);
         String file = new Random().nextInt(99999999)+".jpg";
         ImageIO.write(image, FORMAT_NAME, new File(destPath+"/"+file));
@@ -179,7 +198,7 @@ public class QRCodeUtil {
      */
     public static void encode(String content, String imgPath, String destPath)
             throws Exception {
-        QRCodeUtil.encode(content, imgPath, destPath, false);
+        QRCodeUtil.encode(content, imgPath, destPath, false, false);
     }
 
     /**
@@ -194,8 +213,8 @@ public class QRCodeUtil {
      * @throws Exception
      */
     public static void encode(String content, String destPath,
-                              boolean needCompress) throws Exception {
-        QRCodeUtil.encode(content, null, destPath, needCompress);
+                              boolean needCompress, boolean netWorkImage) throws Exception {
+        QRCodeUtil.encode(content, null, destPath, needCompress, netWorkImage);
     }
 
     /**
@@ -208,7 +227,7 @@ public class QRCodeUtil {
      * @throws Exception
      */
     public static void encode(String content, String destPath) throws Exception {
-        QRCodeUtil.encode(content, null, destPath, false);
+        QRCodeUtil.encode(content, null, destPath, false,false);
     }
 
     /**
@@ -222,12 +241,13 @@ public class QRCodeUtil {
      *            输出流
      * @param needCompress
      *            是否压缩LOGO
+     * @param netWorkImage 是否网络图片
      * @throws Exception
      */
     public static String encode(String content, String imgPath,
-                                ByteArrayOutputStream output, boolean needCompress) throws Exception {
+                                ByteArrayOutputStream output, boolean needCompress, boolean netWorkImage) throws Exception {
         BufferedImage image = QRCodeUtil.createImage(content, imgPath,
-                needCompress);
+                needCompress, netWorkImage);
 
         ImageIO.write(image, FORMAT_NAME, output);//写入流中
         byte[] bytes = output.toByteArray();//转换成字节
@@ -248,7 +268,7 @@ public class QRCodeUtil {
      */
     public static void encode(String content, OutputStream output)
             throws Exception {
-        QRCodeUtil.encode(content, null, (ByteArrayOutputStream) output, false);
+        QRCodeUtil.encode(content, null, (ByteArrayOutputStream) output, false, false);
     }
 
     /**
@@ -293,4 +313,7 @@ public class QRCodeUtil {
 //        String text = "http://jungang.china-mail.com.cn/songnaerWechat/?#/?parentId="+ 11 +"&aaa=aaa";
 //        QRCodeUtil.encode(text, "c:/Users/Administrator/Desktop/liupeng/1.png", "c:/Users/Administrator/Desktop/liupeng/barcode", true);
 //    }
+
+
+
 }

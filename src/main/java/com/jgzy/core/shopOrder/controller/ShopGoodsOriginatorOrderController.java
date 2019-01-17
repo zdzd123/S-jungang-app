@@ -29,11 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.InetAddress;
@@ -74,6 +72,8 @@ public class ShopGoodsOriginatorOrderController {
     private IUserDistributionConstantService userDistributionConstantService;
     @Autowired
     private DealOverTimeOrderTasks dealOverTimeOrderTasks;
+    @Autowired
+    private IUserStockFundService userStockFundService;
 
     @Value("#{'${platformGoodsCategoryList}'.split(',')}")
     private List<Integer> specialPlatformGoodsCategoryList;
@@ -133,6 +133,8 @@ public class ShopGoodsOriginatorOrderController {
         BigDecimal balance2 = BigDecimal.ZERO;
         // 待使用佣金
         BigDecimal balance3 = BigDecimal.ZERO;
+        // 用户库存流水
+        List<UserStockFund> userStockFundList = new ArrayList<>();
         // 待审核订单 等待计算运费
         if (carriageType != null && carriageType.equals(BaseConstant.CARRIAGE_TYPE_2)) {
             // 插入预付单
@@ -336,17 +338,27 @@ public class ShopGoodsOriginatorOrderController {
                         throw new OptimisticLockingFailureException("库存插入失败");
                     }
                     // 存入入库流水
-                    UserFund userFund = new UserFund();
-                    userFund.setTradeUserId(id);
-                    userFund.setIncreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
-                    userFund.setOrderNo(shopGoodsOrder.getOrderNo());
-                    userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
-                    userFund.setTradeDescribe("存入库存");
-                    userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
-                    userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_10);
-                    userFund.setPayType(BaseConstant.PAY_TYPE_10);
-                    userFund.setTradeTime(date);
-                    userFundService.InsertUserFund(userFund);
+                    UserStockFund userStockFund = new UserStockFund();
+                    userStockFund.setTradeUserId(id);
+                    userStockFund.setTradeShopGoodsId(shopGoodsOrderDetail.getShopGoodsId());
+                    userStockFund.setTradeTime(new Date());
+                    userStockFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+                    userStockFund.setIncreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+                    userStockFund.setDecreaseMoney(BigDecimal.ZERO);
+                    userStockFund.setTradeDescribe("存入库存");
+                    userStockFund.setOrderNo(shopGoodsOrder.getOrderNo());
+//                    UserFund userFund = new UserFund();
+//                    userFund.setTradeUserId(id);
+//                    userFund.setIncreaseMoney(new BigDecimal(shopGoodsOrderDetail.getBuyCount()));
+//                    userFund.setOrderNo(shopGoodsOrder.getOrderNo());
+//                    userFund.setTradeType(BaseConstant.TRADE_TYPE_1);
+//                    userFund.setTradeDescribe("存入库存");
+//                    userFund.setAccountType(BaseConstant.ACCOUNT_TYPE_10);
+//                    userFund.setBussinessType(BaseConstant.BUSSINESS_TYPE_10);
+//                    userFund.setPayType(BaseConstant.PAY_TYPE_10);
+//                    userFund.setTradeTime(date);
+//                    userFundService.InsertUserFund(userFund);
+                    userStockFundList.add(userStockFund);
                 }
             }
             Map<String, String> resultMap = new HashMap<>();
@@ -441,6 +453,10 @@ public class ShopGoodsOriginatorOrderController {
             if (!a) {
                 throw new OptimisticLockingFailureException("库存扣除失败");
             }
+        }
+        // 用户库存流水
+        if (!CollectionUtils.isEmpty(userStockFundList)){
+            userStockFundService.insertMyUserStockBatch(userStockFundList);
         }
         if (shopGoodsOrder.getIsStock() != null && shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)) {
             // 异步处理关闭订单
@@ -560,6 +576,9 @@ public class ShopGoodsOriginatorOrderController {
         Integer isStock = shopGoodsOrderVo.getIsStock();
         //运费标识 1-到付 2-等待计算
         Integer carriageType = shopGoodsOrderVo.getCarriageType();
+        if (carriageType == null) {
+            carriageType = 1;
+        }
         ShopGoodsOrder shopGoodsOrder = new ShopGoodsOrder();
         // 合伙人订单
         shopGoodsOrder.setOrderSource(BaseConstant.ORDER_SOURCE_1);
@@ -645,7 +664,8 @@ public class ShopGoodsOriginatorOrderController {
         // 备注
         shopGoodsOrder.setRemarks(shopGoodsOrderVo.getRemarks());
         // 逾期时间
-        shopGoodsOrder.setValidOrderTime(DateUtil.getMINsLater(30));
+//        shopGoodsOrder.setValidOrderTime(DateUtil.getMINsLater(30));
+        shopGoodsOrder.setValidOrderTime(DateUtil.getHoursLater(2));
         return shopGoodsOrder;
     }
 

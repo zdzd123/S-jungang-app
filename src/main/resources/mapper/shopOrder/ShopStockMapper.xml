@@ -25,6 +25,7 @@
             </if>
             AND stock.count <![CDATA[ <> ]]> 0
         </where>
+        ORDER BY stock.count DESC
     </select>
 
     <select id="selectMyStockById" resultType="com.jgzy.core.shopOrder.vo.ShopStockVo">

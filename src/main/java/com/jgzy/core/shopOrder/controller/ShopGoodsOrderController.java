@@ -486,7 +486,8 @@ public class ShopGoodsOrderController {
         // 备注
         shopGoodsOrder.setRemarks(vo.getRemarks());
         // 逾期时间
-        shopGoodsOrder.setValidOrderTime(DateUtil.getMINsLater(30));
+//        shopGoodsOrder.setValidOrderTime(DateUtil.getMINsLater(30));
+        shopGoodsOrder.setValidOrderTime(DateUtil.getHoursLater(2));
         return true;
     }
 
@@ -607,56 +608,69 @@ public class ShopGoodsOrderController {
             throw new OptimisticLockingFailureException("该订单已逾期，请重新提交订单");
         }
         // 订单编号
-        shopGoodsOrder.setTradeNo(shopGoodsOrder.getOrderNo());
-        shopGoodsOrderService.updateById(shopGoodsOrder);
-        // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-        String subject = null;
-        String notify_url = "http://jgapi.china-mail.com.cn/api/constant/payNotify/weixinNotifyUrl";
-        if (shopGoodsOrder.getOrderNo().contains(BaseConstant.PRE_ORDER)) {
-            subject = "军港之业合伙人订单"; // 订单名称 (必填)
-        } else if (shopGoodsOrder.getOrderNo().contains(BaseConstant.PRE_ORDER_STOCK)) {
-            subject = "军港之业库存订单"; // 订单名称 (必填)
-            notify_url = "http://jgapi.china-mail.com.cn/api/shopStock/constant/weixinNotifyUrl";
-        } else {
-            subject = "军港之业消费者订单"; // 订单名称 (必填)
-        }
-        // 获取服务器ip
-        String ip = InetAddress.getLocalHost().getHostAddress();
-        UserOauth userOauth = userOauthService.selectOne(
-                new EntityWrapper<UserOauth>()
-                        .eq("user_id", UserUuidThreadLocal.get().getId()));
-        if (userOauth == null || userOauth.getOauthOpenid() == null) {
-            resultMap.put("return_code", "FAIL");
-            resultMap.put("err_code_des", "openid is null");
-            resultWrapper.setResult(resultMap);
-            return resultWrapper;
-        }
-        String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
-        String product_id = ""; // 产品id (非必填)
-        // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-        // 检验订单状态以及订单的金额
-        WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
-                shopGoodsOrder.getOrderNo(), subject, shopGoodsOrder.getTotalRealPayment().doubleValue(), ip, notify_url);
-        // 订单失败
-        if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
-            resultMap.put("return_code", wxData.get("return_code"));
-            if (wxData.get("return_msg") != null) {
-                resultMap.put("return_msg", wxData.get("return_msg"));
-            } else if (wxData.get("err_code_des") != null) {
-                resultMap.put("err_code_des", wxData.get("err_code_des"));
+        ShopGoodsOrder myShopGoodsOrder = new ShopGoodsOrder();
+        myShopGoodsOrder.setId(shopGoodsOrder.getId());
+        myShopGoodsOrder.setTradeNo(shopGoodsOrder.getOrderNo());
+        if (shopGoodsOrder.getTotalRealPayment().compareTo(BigDecimal.ZERO) == 0){
+            myShopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_3);
+            if (shopGoodsOrder.getIsStock() != null && shopGoodsOrder.getIsStock().equals(BaseConstant.IS_STOCK_2)) {
+                myShopGoodsOrder.setOrderStatus(BaseConstant.ORDER_STATUS_5);
             }
-            resultWrapper.setResult(resultMap);
-            return resultWrapper;
+            myShopGoodsOrder.setPayTime(new Date());
+            resultMap.put("orderNo", shopGoodsOrder.getOrderNo());
+            // 给管理员发送订单消息
+            shopGoodsOrderService.sendOrderTemplateToManager(shopGoodsOrder);
+        }else {
+            // ↓↓↓↓↓↓↓↓↓↓请在这里配置您的基本信息↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+            String subject = null;
+            String notify_url = "http://jgapi.china-mail.com.cn/api/constant/payNotify/weixinNotifyUrl";
+            if (shopGoodsOrder.getOrderNo().contains(BaseConstant.PRE_ORDER)) {
+                subject = "军港之业合伙人订单"; // 订单名称 (必填)
+            } else if (shopGoodsOrder.getOrderNo().contains(BaseConstant.PRE_ORDER_STOCK)) {
+                subject = "军港之业库存订单"; // 订单名称 (必填)
+                notify_url = "http://jgapi.china-mail.com.cn/api/shopStock/constant/weixinNotifyUrl";
+            } else {
+                subject = "军港之业消费者订单"; // 订单名称 (必填)
+            }
+            // 获取服务器ip
+            String ip = InetAddress.getLocalHost().getHostAddress();
+            UserOauth userOauth = userOauthService.selectOne(
+                    new EntityWrapper<UserOauth>()
+                            .eq("user_id", UserUuidThreadLocal.get().getId()));
+            if (userOauth == null || userOauth.getOauthOpenid() == null) {
+                resultMap.put("return_code", "FAIL");
+                resultMap.put("err_code_des", "openid is null");
+                resultWrapper.setResult(resultMap);
+                return resultWrapper;
+            }
+            String openid = userOauth.getOauthOpenid(); // 微信认证 openid (必填)
+            String product_id = ""; // 产品id (非必填)
+            // ↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+            // 检验订单状态以及订单的金额
+            WeiXinData wxData = WeiXinPayUtil.makePreOrder(WeiXinTradeType.JSAPI, openid, product_id,
+                    shopGoodsOrder.getOrderNo(), subject, shopGoodsOrder.getTotalRealPayment().doubleValue(), ip, notify_url);
+            // 订单失败
+            if (wxData.hasKey("return_code") && wxData.get("return_code").equals("FAIL")) {
+                resultMap.put("return_code", wxData.get("return_code"));
+                if (wxData.get("return_msg") != null) {
+                    resultMap.put("return_msg", wxData.get("return_msg"));
+                } else if (wxData.get("err_code_des") != null) {
+                    resultMap.put("err_code_des", wxData.get("err_code_des"));
+                }
+                resultWrapper.setResult(resultMap);
+                return resultWrapper;
+            }
+            resultMap.put("appId", wxData.get("appId"));
+            resultMap.put("nonceStr", wxData.get("nonceStr"));
+            resultMap.put("timeStamp", wxData.get("timeStamp"));
+            resultMap.put("signType", wxData.get("signType"));
+            resultMap.put("packageValue", wxData.get("package"));
+            resultMap.put("sign", wxData.get("sign"));
+            resultMap.put("order_no", shopGoodsOrder.getOrderNo());
+            resultMap.put("order_ids", "");
         }
-        resultMap.put("appId", wxData.get("appId"));
-        resultMap.put("nonceStr", wxData.get("nonceStr"));
-        resultMap.put("timeStamp", wxData.get("timeStamp"));
-        resultMap.put("signType", wxData.get("signType"));
-        resultMap.put("packageValue", wxData.get("package"));
-        resultMap.put("sign", wxData.get("sign"));
-        resultMap.put("order_no", shopGoodsOrder.getOrderNo());
-        resultMap.put("order_ids", "");
         resultWrapper.setResult(resultMap);
+        shopGoodsOrderService.updateById(myShopGoodsOrder);
         return resultWrapper;
     }
 
@@ -685,5 +699,6 @@ public class ShopGoodsOrderController {
     public void dealOverduePayments() {
         dealOverduePaymentsTasks.dealOverduePayments();
     }
+
 }
 
