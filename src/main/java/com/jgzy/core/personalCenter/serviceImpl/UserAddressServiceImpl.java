@@ -55,13 +55,13 @@ public class UserAddressServiceImpl extends ServiceImpl<UserAddressMapper, UserA
     }
 
     @Override
-    public List<UserAddressVo> selectMyList() {
+    public List<UserAddressVo> selectMyList(String search) {
         Integer id = UserUuidThreadLocal.get().getId();
-        return userAddressMapper.selectUserAddressList(id);
+        return userAddressMapper.selectUserAddressList(id, search);
     }
 
     @Override
-    public List<UserAddressVo> selectAllAddressPageList() {
-        return userAddressMapper.selectAllAddressPageList(UserUuidThreadLocal.get().getId());
+    public List<UserAddressVo> selectAllAddressPageList(String search) {
+        return userAddressMapper.selectAllAddressPageList(UserUuidThreadLocal.get().getId(), search);
     }
 }

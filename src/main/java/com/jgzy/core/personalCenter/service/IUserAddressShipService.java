@@ -26,5 +26,5 @@ public interface IUserAddressShipService extends IService<UserAddressShip> {
 
     UserAddressVo selectDetailById(Integer shipAddressId);
 
-    List<UserAddressVo> selectMyList();
+    List<UserAddressVo> selectMyList(String search);
 }

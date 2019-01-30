@@ -103,5 +103,11 @@ public class UserDistributionController {
         return resultWrapper;
     }
 
+//    public static void main(String[] args) throws Exception{
+//        String url = "http://jungang.china-mail.com.cn/songnaerWechat/?#/?parentId=" + 1 + "&aaa=aaa";
+//        String logoRul = "logo1.png";
+//        String base64 = QRCodeUtil.encode(url, logoRul, new ByteArrayOutputStream(), true, false);
+//        System.out.println(base64);
+//    }
 }
 

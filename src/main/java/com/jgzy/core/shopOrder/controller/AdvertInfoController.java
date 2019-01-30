@@ -53,7 +53,7 @@ public class AdvertInfoController {
 
     @GetMapping(value = "/list")
     @ApiOperation(value = "获取广告信息", notes = "获取广告信息")
-    public ResultWrapper<List<AdvertInfoVo>> list(@ApiParam(value = "广告位置(首页=6 商学院=7 活动分类展示图=8 游学记=9)", required = true)
+    public ResultWrapper<List<AdvertInfoVo>> list(@ApiParam(value = "广告位置(首页=6 商学院=7 活动分类展示图=8 游学记=9 军港动态=10)", required = true)
                                                   @RequestParam Integer advertSite) {
         ResultWrapper<List<AdvertInfoVo>> resultWrapper = new ResultWrapper<>();
         List<AdvertInfoVo> advertInfoList = advertInfoService.getAdvertInfo(null, advertSite);

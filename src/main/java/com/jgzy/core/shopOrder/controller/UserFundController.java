@@ -109,6 +109,7 @@ public class UserFundController {
                         " OR (bussiness_type = 1 AND account_type = 2)" +
                         " OR (bussiness_type = 6 AND account_type = 2)" +
                         " OR (bussiness_type = 63 AND account_type = 2)" +
+                        " OR (bussiness_type = 2 AND account_type = 2)" +
                         ")")
                 .eq("trade_user_id", UserUuidThreadLocal.get().getId())
                 .orderBy("id DESC"));

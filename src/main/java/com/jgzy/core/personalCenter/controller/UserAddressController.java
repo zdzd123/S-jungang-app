@@ -78,18 +78,18 @@ public class UserAddressController {
 
     @ApiOperation(value = "获取所有收获地址", notes = "获取所有收获地址")
     @GetMapping(value = "list")
-    public ResultWrapper<List<UserAddressVo>> listPage() {
+    public ResultWrapper<List<UserAddressVo>> listPage(@ApiParam(value = "搜索") @RequestParam(required = false) String search) {
         ResultWrapper<List<UserAddressVo>> resultWrapper = new ResultWrapper<>();
-        List<UserAddressVo> userAddressList = userAddressService.selectMyList();
+        List<UserAddressVo> userAddressList = userAddressService.selectMyList(search);
         resultWrapper.setResult(userAddressList);
         return resultWrapper;
     }
 
     @ApiOperation(value = "获取所有收获地址和发货地址", notes = "获取所有收获地址和发货地址")
     @GetMapping(value = "allList")
-    public ResultWrapper<List<UserAddressVo>> allListPage() {
+    public ResultWrapper<List<UserAddressVo>> allListPage(@ApiParam(value = "搜索") @RequestParam(required = false) String search) {
         ResultWrapper<List<UserAddressVo>> resultWrapper = new ResultWrapper<>();
-        List<UserAddressVo> userAddressList = userAddressService.selectAllAddressPageList();
+        List<UserAddressVo> userAddressList = userAddressService.selectAllAddressPageList(search);
         resultWrapper.setResult(userAddressList);
         return resultWrapper;
     }

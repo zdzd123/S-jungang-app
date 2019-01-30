@@ -37,8 +37,8 @@ public class UserAddressShipServiceImpl extends ServiceImpl<UserAddressShipMappe
     }
 
     @Override
-    public List<UserAddressVo> selectMyList() {
+    public List<UserAddressVo> selectMyList(String search) {
         Integer id = UserUuidThreadLocal.get().getId();
-        return userAddressShipMapper.selectMyList(id);
+        return userAddressShipMapper.selectMyList(id, search);
     }
 }

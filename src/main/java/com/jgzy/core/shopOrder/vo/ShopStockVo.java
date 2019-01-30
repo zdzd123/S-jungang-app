@@ -26,6 +26,8 @@ public class ShopStockVo {
     private BigDecimal costPrice;
     @ApiModelProperty(value = "市场价", example = "1")
     private BigDecimal marketPrice;
+    @ApiModelProperty(value = "备注", example = "1")
+    private String remarks;
     @NotNull
     @ApiModelProperty(value = "商品库存数量", example = "1")
     private Integer stock;
@@ -52,6 +54,14 @@ public class ShopStockVo {
     private String receiveMan;
     @ApiModelProperty(value = "联系电话", example = "18311111111")
     private String contactPhone;
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
+    }
 
     public Integer getCarriageTypeDetail() {
         return carriageTypeDetail;

@@ -48,9 +48,8 @@ public class WeiXinInfoController {
             }
             JSONObject accessTokenObject = new JSONObject(result);
             accessToken = accessTokenObject.get("access_token").toString();
-            System.out.println("accessToken --------------------------------" + accessToken);
             // 缓存accessToken
-            RedisUtil.set(RedisConstant.REDIS_ACCESS_TOKEN, accessToken, RedisConstant.REDIS_ACCESSTOKEN_TIME_OUT);
+            RedisUtil.set(RedisConstant.REDIS_ACCESS_TOKEN, accessToken, RedisConstant.ACCESS_TOKEN_TIME_OUT);
         } else {
             accessToken = accessTokenObj.toString();
         }
@@ -59,11 +58,33 @@ public class WeiXinInfoController {
                 accessToken + "&type=jsapi";
         String ticketResult = TemplateMessageUtil.HttpGet(getJsApiTicket);
         if (!ticketResult.contains("ticket")) {
-            System.out.println("accessToken --------------------------------" + accessToken);
-            System.out.println("ticket --------------------------------" + ticketResult);
             resultMap.put("result", "ticket exception");
             resultWrapper.setResult(resultMap);
             return resultWrapper;
+        }else{
+            // 重新获取accessToken
+            // accessToken
+            String getAccessToken = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" +
+                    WeiXinPayConfig.getApp_id() + "&secret=" + WeiXinPayConfig.getApp_secret() + "";
+            String result = TemplateMessageUtil.HttpGet(getAccessToken);
+            if (result.contains("error")) {
+                resultMap.put("result", "access_token exception");
+                resultWrapper.setResult(resultMap);
+                return resultWrapper;
+            }
+            JSONObject accessTokenObject = new JSONObject(result);
+            accessToken = accessTokenObject.get("access_token").toString();
+            // 缓存accessToken
+            RedisUtil.set(RedisConstant.REDIS_ACCESS_TOKEN, accessToken, RedisConstant.ACCESS_TOKEN_TIME_OUT);
+            // 获取ticket
+            getJsApiTicket = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=" +
+                    accessToken + "&type=jsapi";
+            ticketResult = TemplateMessageUtil.HttpGet(getJsApiTicket);
+            if (!ticketResult.contains("ticket")) {
+                resultMap.put("result", "regain ticket fail");
+                resultWrapper.setResult(resultMap);
+                return resultWrapper;
+            }
         }
         JSONObject ticketObject = new JSONObject(ticketResult);
         String ticket = ticketObject.get("ticket").toString();

@@ -40,9 +40,9 @@ public class UserAddressShipController {
 
     @ApiOperation(value = "获取所有发货地址", notes = "获取所有发货地址")
     @GetMapping(value = "/list")
-    public ResultWrapper<List<UserAddressVo>> listPage() {
+    public ResultWrapper<List<UserAddressVo>> listPage(@ApiParam(value = "搜索") @RequestParam(required = false) String search) {
         ResultWrapper<List<UserAddressVo>> resultWrapper = new ResultWrapper<>();
-        List<UserAddressVo> userAddressVoList = userAddressShipService.selectMyList();
+        List<UserAddressVo> userAddressVoList = userAddressShipService.selectMyList(search);
         resultWrapper.setResult(userAddressVoList);
         return resultWrapper;
     }

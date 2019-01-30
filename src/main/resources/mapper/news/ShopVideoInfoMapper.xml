@@ -14,6 +14,7 @@
         <result column="describe" jdbcType="VARCHAR" property="describe"/>
         <result column="play_times" jdbcType="INTEGER" property="playTimes"/>
         <result column="add_time" jdbcType="TIMESTAMP" property="addTime"/>
+        <result column="show_pics" jdbcType="VARCHAR" property="showPics"/>
         <collection property="shopVideoGoodsList" ofType="com.jgzy.core.news.vo.ShopVideoGoodsVo"
                     javaType="java.util.ArrayList">
             <result column="shop_goods_id" jdbcType="INTEGER" property="shopGoodsId"/>
@@ -33,7 +34,7 @@
     <sql id="ShopVideoInfoColumnList">
       shopVideInfo.id, shopVideInfo.shop_info_id, shopVideInfo.platform_video_category_id, shopVideInfo.title,
       shopVideInfo.subtitle, shopVideInfo.time_length, shopVideInfo.play_url, shopVideInfo.remarks,
-      shopVideInfo.teacher, shopVideInfo.`describe`, shopVideInfo.play_times, shopVideInfo.add_time
+      shopVideInfo.teacher, shopVideInfo.`describe`, shopVideInfo.play_times, shopVideInfo.add_time,shopVideInfo.show_pics
     </sql>
 
     <update id="updatePlayTimes">

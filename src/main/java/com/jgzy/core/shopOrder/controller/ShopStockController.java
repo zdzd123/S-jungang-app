@@ -188,6 +188,8 @@ public class ShopStockController {
         shopGoodsOrder.setCreateTime(date);
         shopGoodsOrder.setIsStock(BaseConstant.IS_STOCK_1);
         shopGoodsOrder.setCarriageTypeDetail(voList.get(0).getCarriageTypeDetail());
+        // 备注
+        shopGoodsOrder.setRemarks(voList.get(0).getRemarks());
         if (voList.get(0).getIsStock().equals(BaseConstant.IS_STOCK_3)) {
             shopGoodsOrder.setIsStock(BaseConstant.IS_STOCK_3);
         }
@@ -258,14 +260,14 @@ public class ShopStockController {
             }
             // 插入余额流水
             if (shopGoodsOrder.getTotalPoint() != null && shopGoodsOrder.getTotalPoint().compareTo(BigDecimal.ZERO) > 0) {
-                // 插入冻结余额流水
+                // 插入余额流水
                 UserFund remain = new UserFund();
                 remain.setTradeUserId(userInfo.getId());
                 remain.setDecreaseMoney(shopGoodsOrder.getTotalPoint());
                 remain.setOrderNo(shopGoodsOrder.getOrderNo());
                 remain.setTradeType(BaseConstant.TRADE_TYPE_2);
                 remain.setTradeDescribe("余额支付");
-                remain.setAccountType(BaseConstant.ACCOUNT_TYPE_3);
+                remain.setAccountType(BaseConstant.ACCOUNT_TYPE_2);
                 remain.setBussinessType(BaseConstant.BUSSINESS_TYPE_1);
                 remain.setPayType(BaseConstant.PAY_TYPE_4);
                 remain.setTradeTime(date);

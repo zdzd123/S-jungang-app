@@ -34,8 +34,8 @@ public class QRCodeUtil {
     private static BufferedImage createImage(String content, String imgPath,
                                              boolean needCompress, boolean netWorkImage) throws Exception {
         Hashtable<EncodeHintType, Object> hints = new Hashtable<EncodeHintType, Object>();
-//        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
-        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
+//        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
         hints.put(EncodeHintType.CHARACTER_SET, CHARSET);
         hints.put(EncodeHintType.MARGIN, 1);
         BitMatrix bitMatrix = new MultiFormatWriter().encode(content,
@@ -82,6 +82,7 @@ public class QRCodeUtil {
             }
             myImagePath = imgPath;
         }
+//        Image src1 = Toolkit.getDefaultToolkit().getImage(new File(myImagePath).getPath());
         Image src = ImageIO.read(new File(myImagePath));
         int width = src.getWidth(null);
         int height = src.getHeight(null);

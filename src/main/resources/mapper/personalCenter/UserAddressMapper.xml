@@ -90,63 +90,87 @@
         </where>
     </select>
     <select id="selectUserAddressList" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
-        SELECT
-            id,
-            `name`,
-            phone,
-            zip_code zipCode,
-            (select `name` from province_info where id = address.province_id) province,
-            (select `name` from city_info where id = address.city_id) city,
-            (select `name` from area_info where id = address.area_id) area,
-            is_default,
-            address
-        FROM
-          user_address address
-        where
-            create_user = #{id}
+        SELECT * FROM (
+            SELECT
+                id,
+                `name`,
+                phone,
+                zip_code zipCode,
+                (select `name` from province_info where id = address.province_id) province,
+                (select `name` from city_info where id = address.city_id) city,
+                (select `name` from area_info where id = address.area_id) area,
+                is_default,
+                address
+            FROM
+              user_address address
+            where
+                create_user = #{id}
+        ) a
+        <where>
+            <if test="search != null and search != ''">
+                `name` like concat('%',#{search},'%')
+                or province like concat('%',#{search},'%')
+                or city like concat('%',#{search},'%')
+                or area like concat('%',#{search},'%')
+                or address like concat('%',#{search},'%')
+                or phone like concat('%',#{search},'%')
+            </if>
+        </where>
         ORDER BY is_default desc,id desc
     </select>
     <select id="selectAllAddressPageList" resultType="com.jgzy.core.personalCenter.vo.UserAddressVo">
-        SELECT
-            id,
-            `name`,
-            phone,
-            zip_code,
-            (select `name` from province_info where id = address.province_id) province,
-            province_id,
-            (select `name` from city_info where id = address.city_id) city,
-            city_id,
-            (select `name` from area_info where id = address.area_id) area,
-            area_id,
-            address,
-            create_user,
-            is_default,
-            add_time
-        FROM
-        user_address address
-        <where>
-            create_user = #{userId}
-        </where>
-        union
+        SELECT * FROM (
             SELECT
-            id,
-            `name`,
-            phone,
-            zip_code,
-            (select `name` from province_info where id = shipAddress.province_id) province,
-            province_id,
-            (select `name` from city_info where id = shipAddress.city_id) city,
-            city_id,
-            (select `name` from area_info where id = shipAddress.area_id) area,
-            area_id,
-            address,
-            create_user,
-            is_default,
-            add_time
+                id,
+                `name`,
+                phone,
+                zip_code,
+                (select `name` from province_info where id = address.province_id) province,
+                province_id,
+                (select `name` from city_info where id = address.city_id) city,
+                city_id,
+                (select `name` from area_info where id = address.area_id) area,
+                area_id,
+                address,
+                create_user,
+                is_default,
+                add_time
             FROM
-        user_address_ship shipAddress
+            user_address address
+            <where>
+                create_user = #{userId}
+            </where>
+            union
+                SELECT
+                id,
+                `name`,
+                phone,
+                zip_code,
+                (select `name` from province_info where id = shipAddress.province_id) province,
+                province_id,
+                (select `name` from city_info where id = shipAddress.city_id) city,
+                city_id,
+                (select `name` from area_info where id = shipAddress.area_id) area,
+                area_id,
+                address,
+                create_user,
+                is_default,
+                add_time
+                FROM
+            user_address_ship shipAddress
+            <where>
+                create_user = #{userId}
+            </where>
+        ) a
         <where>
-            create_user = #{userId}
+            <if test="search != null and search != ''">
+                `name` like concat('%',#{search},'%')
+                or province like concat('%',#{search},'%')
+                or city like concat('%',#{search},'%')
+                or area like concat('%',#{search},'%')
+                or address like concat('%',#{search},'%')
+                or phone like concat('%',#{search},'%')
+            </if>
         </where>
         ORDER BY is_default desc,id desc
     </select>
